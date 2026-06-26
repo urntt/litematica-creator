@@ -19,6 +19,7 @@ import net.minecraft.world.phys.Vec3;
 import fi.dy.masa.litematica.mixin.entity.IMixinEntity;
 import fi.dy.masa.litematica.util.RayTraceUtils;
 import fi.dy.masa.litematica.util.RayTraceUtils.RayTraceWrapper;
+import fi.dy.masa.litematica.util.EntityUtils;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
@@ -147,16 +148,26 @@ public class CreatorEditService
         }
 
         Level oldWorld = mc.player.level();
+        float oldYaw = mc.player.getYRot();
+        float oldPitch = mc.player.getXRot();
+        Entity camera = CreatorCameraCompat.getCameraEntity();
         BlockHitResult hit = new BlockHitResult(target.hitVec(), target.side(), target.clickedBlockPos(), false);
 
         try
         {
             ((IMixinEntity) mc.player).litematica_setWorld(schematicWorld);
+            // Block placement state helpers read the player rotation from the context player.
+            if (camera != null)
+            {
+                EntityUtils.setEntityRotations(mc.player, camera.getYRot(), camera.getXRot());
+            }
+
             BlockPlaceContext context = new BlockPlaceContext(mc.player, InteractionHand.MAIN_HAND, stack, hit);
             return blockItem.getBlock().getStateForPlacement(context);
         }
         finally
         {
+            EntityUtils.setEntityRotations(mc.player, oldYaw, oldPitch);
             ((IMixinEntity) mc.player).litematica_setWorld(oldWorld);
         }
     }
