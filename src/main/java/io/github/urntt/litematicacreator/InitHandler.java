@@ -2,6 +2,7 @@ package io.github.urntt.litematicacreator;
 
 import fi.dy.masa.malilib.config.ConfigManager;
 import fi.dy.masa.malilib.event.InputEventHandler;
+import fi.dy.masa.malilib.event.RenderEventHandler;
 import fi.dy.masa.malilib.interfaces.IInitializationHandler;
 import fi.dy.masa.malilib.registry.Registry;
 import fi.dy.masa.malilib.util.data.ModInfo;
@@ -11,6 +12,7 @@ import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.event.InputHandler;
 import io.github.urntt.litematicacreator.gui.GuiConfigs;
+import io.github.urntt.litematicacreator.render.CreatorStatusHud;
 
 public class InitHandler implements IInitializationHandler
 {
@@ -44,5 +46,6 @@ public class InitHandler implements IInitializationHandler
         InputEventHandler.getKeybindManager().registerKeybindProvider(InputHandler.getInstance());
         InputEventHandler.getInputManager().registerKeyboardInputHandler(InputHandler.getInstance());
         InputEventHandler.getInputManager().registerMouseInputHandler(InputHandler.getInstance());
+        RenderEventHandler.getInstance().registerInGameGuiRenderer(CreatorStatusHud.INSTANCE);
     }
 }

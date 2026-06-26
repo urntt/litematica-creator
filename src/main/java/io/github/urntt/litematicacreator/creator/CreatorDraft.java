@@ -89,6 +89,16 @@ public class CreatorDraft
         return this.dirty;
     }
 
+    public int getTileCount()
+    {
+        return this.regionNamesByTile.size();
+    }
+
+    public int getTotalBlocks()
+    {
+        return this.totalBlocks;
+    }
+
     public void markDirty()
     {
         this.dirty = true;
