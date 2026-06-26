@@ -24,6 +24,9 @@
 	"litematica-creator.gui.button.config_gui.hotkeys": "Hotkeys",
 	"litematica-creator.gui.title.configs": "Litematica Creator Settings",
 	"litematica-creator.hotkeys.category.generic_hotkeys": "Generic Hotkeys",
+	"litematica-creator.message.draft.created": "Created Creator draft: %s",
+	"litematica-creator.message.draft.discarded": "Discarded Creator draft",
+	"litematica-creator.message.draft.missing": "No active Creator draft",
 	"litematica-creator.message.creator_mode.disabled": "Litematica Creator mode disabled",
 	"litematica-creator.message.creator_mode.enabled": "Litematica Creator mode enabled"
 }

@@ -24,6 +24,9 @@
 	"litematica-creator.gui.button.config_gui.hotkeys": "快捷键",
 	"litematica-creator.gui.title.configs": "Litematica Creator 设置",
 	"litematica-creator.hotkeys.category.generic_hotkeys": "通用快捷键",
+	"litematica-creator.message.draft.created": "已创建 Creator 草稿：%s",
+	"litematica-creator.message.draft.discarded": "已丢弃 Creator 草稿",
+	"litematica-creator.message.draft.missing": "没有当前 Creator 草稿",
 	"litematica-creator.message.creator_mode.disabled": "Litematica Creator 模式已关闭",
 	"litematica-creator.message.creator_mode.enabled": "Litematica Creator 模式已开启"
 }
