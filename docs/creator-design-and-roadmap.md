@@ -574,6 +574,7 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 
 本地构建方式：
 
-- 当前环境无全局 `gradle`，使用工作树内忽略提交的 `.gradle-local/gradle-9.6.0/bin/gradle.bat`。
-- 构建命令：`.\.gradle-local\gradle-9.6.0\bin\gradle.bat build --no-daemon --console=plain --stacktrace`
+- 标准验证命令：`.\gradlew.bat build --no-daemon --console=plain --stacktrace`
+- 当前 wrapper 使用 Gradle `9.6.0`，已确认该命令可以完成 `BUILD SUCCESSFUL`。
+- 若 wrapper 分发下载不可用，可临时使用工作树内忽略提交的 `.gradle-local/gradle-9.6.0/bin/gradle.bat` 作为本地 fallback。
 - `.gradle-local/` 与 `gradle-*.zip` 已在 `.gitignore` 中忽略，避免把本地工具缓存提交进仓库。
