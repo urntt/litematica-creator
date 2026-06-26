@@ -35,6 +35,7 @@
 	"litematica-creator.gui.title.creator_inventory": "Creator 物品栏",
 	"litematica-creator.gui.title.configs": "Litematica Creator 设置",
 	"litematica-creator.hotkeys.category.generic_hotkeys": "通用快捷键",
+	"litematica-creator.message.compat.tweakeroo_free_camera_player_inputs": "Tweakeroo Free Camera 已开启且 freeCameraPlayerInputs=true；请将其设为 false 以使用 Creator 相机视角编辑。",
 	"litematica-creator.message.draft.created": "已创建 Creator 草稿：%s",
 	"litematica-creator.message.draft.discarded": "已丢弃 Creator 草稿",
 	"litematica-creator.message.draft.missing": "没有当前 Creator 草稿",

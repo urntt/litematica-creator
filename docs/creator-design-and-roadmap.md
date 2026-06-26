@@ -546,6 +546,7 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 - Creator 编辑闭环：右键用虚拟 `BlockItem` 创建投影方块，左键删除当前 Creator 投影方块，中键 pick 真实方块或 Creator 投影方块。
 - 保存入口：将当前草稿保存到 Litematica schematics 目录中的普通 `.litematic` 文件，保存后清除 dirty 状态。
 - Free Camera 基本兼容路径：编辑 ray trace 始终从 MaLiLib/Minecraft camera entity 获取；未安装 Tweakeroo 时自然回退玩家视角。
+- Tweakeroo Free Camera 配置提示：通过反射软检测 `TWEAK_FREE_CAMERA` 与 `FREE_CAMERA_PLAYER_INPUTS`，在不兼容组合下节流 warning，不引入硬依赖。
 - 左右键拦截：在 Creator 模式下通过 Mixin 消费 `Minecraft.startUseItem` 与 `Minecraft.startAttack`，避免真实服务器交互透传。
 
 当前已知边界：
@@ -553,7 +554,7 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 - 虚拟创造物品栏 GUI 仍是轻量搜索列表和槽位按钮，尚未完全还原原版创造模式分类页、物品图标网格和拖拽交互。
 - 空气命中暂未实现固定距离、网格、平面锁定或从最近投影面延伸。
 - 第一版只覆盖普通 `BlockItem` 的单方块放置语义；门、床、高草、复杂 block entity、undo/redo 需要后续专项完善。
-- Tweakeroo 的 `freeCameraPlayerInputs=false` 目前只作为行为要求记录，尚未做运行时检测或提示。
+- Tweakeroo 的 `freeCameraPlayerInputs=false` 已做运行时提示，但还没有自动临时切换和退出恢复。
 - Syncmatica 集成仍在后续范围。
 
 ## 10. 开发与验证记录
@@ -565,6 +566,7 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 - `3fc8718 feat: add creator draft placement core`
 - `feat: add creator editing virtual inventory and dynamic tiles`
 - `feat: improve creator virtual inventory gui`
+- `feat: warn about incompatible tweakeroo free camera inputs`
 
 本地构建方式：
 

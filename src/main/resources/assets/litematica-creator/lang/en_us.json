@@ -35,6 +35,7 @@
 	"litematica-creator.gui.title.creator_inventory": "Creator Inventory",
 	"litematica-creator.gui.title.configs": "Litematica Creator Settings",
 	"litematica-creator.hotkeys.category.generic_hotkeys": "Generic Hotkeys",
+	"litematica-creator.message.compat.tweakeroo_free_camera_player_inputs": "Tweakeroo Free Camera is active with freeCameraPlayerInputs=true; set it to false for Creator camera-based editing.",
 	"litematica-creator.message.draft.created": "Created Creator draft: %s",
 	"litematica-creator.message.draft.discarded": "Discarded Creator draft",
 	"litematica-creator.message.draft.missing": "No active Creator draft",

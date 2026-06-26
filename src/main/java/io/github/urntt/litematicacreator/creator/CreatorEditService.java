@@ -238,7 +238,14 @@ public class CreatorEditService
 
     private boolean canEdit(Minecraft mc)
     {
-        return CreatorManager.getInstance().isCreatorModeEnabled() && mc.level != null && mc.player != null;
+        boolean canEdit = CreatorManager.getInstance().isCreatorModeEnabled() && mc.level != null && mc.player != null;
+
+        if (canEdit)
+        {
+            CreatorCameraCompat.warnIfTweakerooFreeCameraPlayerInputsEnabled();
+        }
+
+        return canEdit;
     }
 
     private record CreatorTarget(BlockPos blockPos, BlockPos clickedBlockPos, Direction side, Vec3 hitVec, boolean schematicBlock)
