@@ -542,7 +542,7 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 - Creator 模式生命周期、从第一个目标方块创建 `LitematicaSchematic + SchematicPlacement` 草稿，并加入 Litematica placement manager。
 - `16x16x16` tile/subregion 动态扩容；新 tile 写入 schematic private maps，刷新 schematic metadata、placement subregion count、placement subregion values，并标记 touched chunk rebuild。
 - 客户端虚拟栏数据模型：9 格虚拟快捷栏、27 格虚拟背包、1 格副手、4 格盔甲、1 格丢弃栏；支持 selected slot、本地 JSON 持久化、数字键/滚轮切换。
-- 简化版虚拟创造物品栏 GUI：按 `BlockItem` 列表搜索和分页选择，点击后写入当前虚拟快捷栏，不触碰真实背包。
+- 简化版虚拟物品栏 GUI：左侧显示 42 个虚拟槽位并支持选中/清空目标槽位，右侧按 `BlockItem` 列表搜索和分页选择，点击后写入目标虚拟槽位，不触碰真实背包。
 - Creator 编辑闭环：右键用虚拟 `BlockItem` 创建投影方块，左键删除当前 Creator 投影方块，中键 pick 真实方块或 Creator 投影方块。
 - 保存入口：将当前草稿保存到 Litematica schematics 目录中的普通 `.litematic` 文件，保存后清除 dirty 状态。
 - Free Camera 基本兼容路径：编辑 ray trace 始终从 MaLiLib/Minecraft camera entity 获取；未安装 Tweakeroo 时自然回退玩家视角。
@@ -550,7 +550,7 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 
 当前已知边界：
 
-- 虚拟创造物品栏 GUI 还是轻量搜索列表，尚未完全还原原版创造模式分类页，也没有完整虚拟生存物品栏可视化和拖拽交互。
+- 虚拟创造物品栏 GUI 仍是轻量搜索列表和槽位按钮，尚未完全还原原版创造模式分类页、物品图标网格和拖拽交互。
 - 空气命中暂未实现固定距离、网格、平面锁定或从最近投影面延伸。
 - 第一版只覆盖普通 `BlockItem` 的单方块放置语义；门、床、高草、复杂 block entity、undo/redo 需要后续专项完善。
 - Tweakeroo 的 `freeCameraPlayerInputs=false` 目前只作为行为要求记录，尚未做运行时检测或提示。
@@ -564,6 +564,7 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 - `da765ec build: scaffold fabric 26.2 mod`
 - `3fc8718 feat: add creator draft placement core`
 - `feat: add creator editing virtual inventory and dynamic tiles`
+- `feat: improve creator virtual inventory gui`
 
 本地构建方式：
 
