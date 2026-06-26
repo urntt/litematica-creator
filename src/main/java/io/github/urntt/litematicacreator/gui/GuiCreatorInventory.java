@@ -8,6 +8,7 @@ import java.util.Locale;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -17,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import fi.dy.masa.malilib.gui.Message.MessageType;
+import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.util.InfoUtils;
 import io.github.urntt.litematicacreator.creator.CreatorInventory;
 
@@ -31,10 +33,19 @@ public class GuiCreatorInventory extends Screen
     private int page;
     private int pageSize = DEFAULT_PAGE_SIZE;
     private int targetSlot = CreatorInventory.getInstance().getSelectedHotbarSlot();
+    private final boolean suppressOpeningChar;
+    private long openNanos;
+    private boolean suppressedOpeningChar;
 
     public GuiCreatorInventory()
     {
+        this(false);
+    }
+
+    private GuiCreatorInventory(boolean suppressOpeningChar)
+    {
         super(Component.translatable("litematica-creator.gui.title.creator_inventory"));
+        this.suppressOpeningChar = suppressOpeningChar;
         BuiltInRegistries.ITEM.stream()
                               .filter(item -> item instanceof BlockItem && item != Items.AIR)
                               .sorted(Comparator.comparing(item -> BuiltInRegistries.ITEM.getKey(item).toString()))
@@ -42,10 +53,28 @@ public class GuiCreatorInventory extends Screen
         this.filteredBlockItems.addAll(this.allBlockItems);
     }
 
+    public static void openFromHotkey()
+    {
+        GuiBase.openGui(new GuiCreatorInventory(true));
+    }
+
     @Override
     protected void init()
     {
+        this.openNanos = System.nanoTime();
         this.rebuildWidgetsForFilter();
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent input)
+    {
+        if (this.suppressOpeningChar && !this.suppressedOpeningChar && System.nanoTime() - this.openNanos <= 100000000L)
+        {
+            this.suppressedOpeningChar = true;
+            return true;
+        }
+
+        return super.charTyped(input);
     }
 
     private void rebuildWidgetsForFilter()

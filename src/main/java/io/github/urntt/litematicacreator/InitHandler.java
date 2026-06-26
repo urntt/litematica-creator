@@ -2,14 +2,18 @@ package io.github.urntt.litematicacreator;
 
 import fi.dy.masa.malilib.config.ConfigManager;
 import fi.dy.masa.malilib.event.InputEventHandler;
-import fi.dy.masa.malilib.event.RenderEventHandler;
+import fi.dy.masa.malilib.event.TickHandler;
+import fi.dy.masa.litematica.render.infohud.InfoHud;
 import fi.dy.masa.malilib.interfaces.IInitializationHandler;
 import fi.dy.masa.malilib.registry.Registry;
+import fi.dy.masa.malilib.util.GuiUtils;
 import fi.dy.masa.malilib.util.data.ModInfo;
 import fi.dy.masa.malilib.util.i18n.i18nMode;
 import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
+import io.github.urntt.litematicacreator.event.CreatorClientTickHandler;
+import io.github.urntt.litematicacreator.event.CreatorHotkeyCallbacks;
 import io.github.urntt.litematicacreator.event.InputHandler;
 import io.github.urntt.litematicacreator.gui.GuiConfigs;
 import io.github.urntt.litematicacreator.render.CreatorStatusHud;
@@ -32,20 +36,33 @@ public class InitHandler implements IInitializationHandler
                         )
         );
         Configs.Generic.TRANSLATION_MODE.setValueChangeCallback(
-                cfg ->
-                        Registry.TRANSLATION_OVERRIDE_MANAGER.registerLanguageMode(
-                                Reference.MOD_ID,
-                                (i18nMode) cfg.getOptionListValue()
-                        )
+                cfg -> {
+                    Registry.TRANSLATION_OVERRIDE_MANAGER.registerLanguageMode(
+                            Reference.MOD_ID,
+                            (i18nMode) cfg.getOptionListValue()
+                    );
+                    Configs.checkBaseLanguage();
+                    this.refreshCurrentCreatorConfigGui();
+                }
         );
         Configs.Generic.ENABLE_CREATOR_MODE.setValueChangeCallback(
                 cfg -> CreatorManager.getInstance().setCreatorModeEnabled(cfg.getBooleanValue(), false)
         );
         CreatorInventory.getInstance().load();
 
+        CreatorHotkeyCallbacks.register();
         InputEventHandler.getKeybindManager().registerKeybindProvider(InputHandler.getInstance());
         InputEventHandler.getInputManager().registerKeyboardInputHandler(InputHandler.getInstance());
         InputEventHandler.getInputManager().registerMouseInputHandler(InputHandler.getInstance());
-        RenderEventHandler.getInstance().registerInGameGuiRenderer(CreatorStatusHud.INSTANCE);
+        TickHandler.getInstance().registerClientTickHandler(CreatorClientTickHandler.INSTANCE);
+        InfoHud.getInstance().addInfoHudRenderer(CreatorStatusHud.INSTANCE, true);
+    }
+
+    private void refreshCurrentCreatorConfigGui()
+    {
+        if (GuiUtils.getCurrentScreen() instanceof GuiConfigs gui)
+        {
+            gui.requestRefresh();
+        }
     }
 }

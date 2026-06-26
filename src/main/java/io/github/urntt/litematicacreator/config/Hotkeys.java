@@ -17,6 +17,9 @@ public class Hotkeys
     public static final ConfigHotkey OPEN_CREATOR_INVENTORY = new ConfigHotkey(
             "openCreatorInventory", "", KeybindSettings.PRESS_ALLOWEXTRA
     ).apply(HOTKEYS_KEY);
+    public static final ConfigHotkey OPEN_CONFIG_GUI = new ConfigHotkey(
+            "openConfigGui", "M,K", KeybindSettings.PRESS_ALLOWEXTRA
+    ).apply(HOTKEYS_KEY);
     public static final ConfigHotkey SAVE_DRAFT = new ConfigHotkey(
             "saveDraft", "", KeybindSettings.PRESS_ALLOWEXTRA
     ).apply(HOTKEYS_KEY);
@@ -27,6 +30,7 @@ public class Hotkeys
     public static final List<ConfigHotkey> HOTKEY_LIST = ImmutableList.of(
             TOGGLE_CREATOR_MODE,
             OPEN_CREATOR_INVENTORY,
+            OPEN_CONFIG_GUI,
             SAVE_DRAFT,
             DISCARD_DRAFT
     );

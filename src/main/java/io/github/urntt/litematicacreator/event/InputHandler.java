@@ -5,14 +5,12 @@ import fi.dy.masa.malilib.hotkeys.IKeybindManager;
 import fi.dy.masa.malilib.hotkeys.IKeybindProvider;
 import fi.dy.masa.malilib.hotkeys.IKeyboardInputHandler;
 import fi.dy.masa.malilib.hotkeys.IMouseInputHandler;
-import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.util.GuiUtils;
 import io.github.urntt.litematicacreator.Reference;
 import io.github.urntt.litematicacreator.config.Hotkeys;
 import io.github.urntt.litematicacreator.creator.CreatorEditService;
 import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
-import io.github.urntt.litematicacreator.gui.GuiCreatorInventory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -52,25 +50,6 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
     @Override
     public boolean onKeyInput(KeyEvent input, boolean eventKeyState)
     {
-        if (eventKeyState && Hotkeys.TOGGLE_CREATOR_MODE.getKeybind().matches(input.key()))
-        {
-            CreatorManager.getInstance().toggleCreatorMode();
-            return true;
-        }
-        else if (eventKeyState && Hotkeys.SAVE_DRAFT.getKeybind().matches(input.key()))
-        {
-            return CreatorManager.getInstance().saveCurrentDraft();
-        }
-        else if (eventKeyState && Hotkeys.DISCARD_DRAFT.getKeybind().matches(input.key()))
-        {
-            return CreatorManager.getInstance().discardCurrentDraft();
-        }
-        else if (eventKeyState && Hotkeys.OPEN_CREATOR_INVENTORY.getKeybind().matches(input.key()))
-        {
-            GuiBase.openGui(new GuiCreatorInventory());
-            return true;
-        }
-
         Minecraft mc = Minecraft.getInstance();
 
         if (eventKeyState && CreatorManager.getInstance().isCreatorModeEnabled() && GuiUtils.getCurrentScreen() == null)

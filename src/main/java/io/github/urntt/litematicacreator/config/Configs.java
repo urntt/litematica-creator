@@ -16,7 +16,6 @@ import fi.dy.masa.malilib.config.options.ConfigOptionList;
 import fi.dy.masa.malilib.registry.Registry;
 import fi.dy.masa.malilib.util.FileUtils;
 import fi.dy.masa.malilib.util.data.json.JsonUtils;
-import fi.dy.masa.malilib.util.i18n.i18nConfig;
 import fi.dy.masa.malilib.util.i18n.i18nManager;
 import fi.dy.masa.malilib.util.i18n.i18nMode;
 import fi.dy.masa.malilib.util.i18n.i18nOption;
@@ -39,7 +38,7 @@ public class Configs implements IConfigHandler
                 "debugLogging", false
         ).apply(GENERIC_KEY);
         public static final ConfigOptionList TRANSLATION_LANGUAGE = new ConfigOptionList(
-                "translationLanguage", new i18nConfig(LANG.orElseThrow())
+                "translationLanguage", new CreatorI18nConfig(LANG.orElseThrow())
         ).apply(GENERIC_KEY);
         public static final ConfigOptionList TRANSLATION_MODE = new ConfigOptionList(
                 "translationMode", i18nMode.FOLLOW_VANILLA
@@ -145,7 +144,7 @@ public class Configs implements IConfigHandler
             if (entry.getKey().equalsIgnoreCase(languageCode))
             {
                 manager.setLang(languageCode);
-                Generic.TRANSLATION_LANGUAGE.setOptionListValue(new i18nConfig(manager).fromString(languageCode));
+                Generic.TRANSLATION_LANGUAGE.setOptionListValue(new CreatorI18nConfig(manager).fromString(languageCode));
                 return;
             }
         }

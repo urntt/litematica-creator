@@ -23,11 +23,17 @@ import fi.dy.masa.litematica.util.EntityUtils;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
+import io.github.urntt.litematicacreator.event.CreatorClientTickHandler;
 
 public class CreatorEditService
 {
     private static final CreatorEditService INSTANCE = new CreatorEditService();
     private static final double EDIT_RANGE = 10.0D;
+    private static final int PLACE_INTERVAL_TICKS = 4;
+    private static final long NO_TARGET_MESSAGE_INTERVAL_MS = 1500L;
+
+    private long nextPlaceTick;
+    private long lastNoTargetWarning;
 
     private CreatorEditService()
     {
@@ -47,11 +53,18 @@ public class CreatorEditService
             return false;
         }
 
+        if (!this.canPlaceNow())
+        {
+            return true;
+        }
+
+        this.nextPlaceTick = CreatorClientTickHandler.getClientTicks() + PLACE_INTERVAL_TICKS;
+
         @Nullable CreatorTarget target = this.getPlacementTarget(mc);
 
         if (target == null)
         {
-            InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_target");
+            this.showNoTargetWarningThrottled();
             return true;
         }
 
@@ -253,10 +266,26 @@ public class CreatorEditService
 
         if (canEdit)
         {
-            CreatorCameraCompat.warnIfTweakerooFreeCameraPlayerInputsEnabled();
+            CreatorClientTickHandler.INSTANCE.updateTweakerooFreeCameraCompatibility(mc);
         }
 
         return canEdit;
+    }
+
+    private boolean canPlaceNow()
+    {
+        return CreatorClientTickHandler.getClientTicks() >= this.nextPlaceTick;
+    }
+
+    private void showNoTargetWarningThrottled()
+    {
+        long now = System.currentTimeMillis();
+
+        if (now - this.lastNoTargetWarning >= NO_TARGET_MESSAGE_INTERVAL_MS)
+        {
+            this.lastNoTargetWarning = now;
+            InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_target");
+        }
     }
 
     private record CreatorTarget(BlockPos blockPos, BlockPos clickedBlockPos, Direction side, Vec3 hitVec, boolean schematicBlock)

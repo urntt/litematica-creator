@@ -32,26 +32,51 @@ public class CreatorCameraCompat
         }
     }
 
-    private static boolean isTweakerooFreeCameraPlayerInputsEnabled()
+    public static boolean isTweakerooFreeCameraActive()
     {
         try
         {
             Class<?> featureToggleClass = Class.forName("fi.dy.masa.tweakeroo.config.FeatureToggle");
             Object freeCameraToggle = getEnumConstant(featureToggleClass, "TWEAK_FREE_CAMERA");
+            return getBooleanValue(freeCameraToggle);
+        }
+        catch (ReflectiveOperationException | LinkageError | RuntimeException ignored)
+        {
+            return false;
+        }
+    }
 
-            if (!getBooleanValue(freeCameraToggle))
-            {
-                return false;
-            }
-
-            Class<?> genericConfigsClass = Class.forName("fi.dy.masa.tweakeroo.config.Configs$Generic");
-            Object freeCameraPlayerInputs = genericConfigsClass.getField("FREE_CAMERA_PLAYER_INPUTS").get(null);
+    public static boolean isTweakerooFreeCameraPlayerInputsEnabled()
+    {
+        try
+        {
+            Object freeCameraPlayerInputs = getTweakerooFreeCameraPlayerInputsConfig();
             return getBooleanValue(freeCameraPlayerInputs);
         }
         catch (ReflectiveOperationException | LinkageError | RuntimeException ignored)
         {
             return false;
         }
+    }
+
+    public static boolean setTweakerooFreeCameraPlayerInputs(boolean value)
+    {
+        try
+        {
+            Object freeCameraPlayerInputs = getTweakerooFreeCameraPlayerInputsConfig();
+            freeCameraPlayerInputs.getClass().getMethod("setBooleanValue", boolean.class).invoke(freeCameraPlayerInputs, value);
+            return getBooleanValue(freeCameraPlayerInputs) == value;
+        }
+        catch (ReflectiveOperationException | LinkageError | RuntimeException ignored)
+        {
+            return false;
+        }
+    }
+
+    private static Object getTweakerooFreeCameraPlayerInputsConfig() throws ReflectiveOperationException
+    {
+        Class<?> genericConfigsClass = Class.forName("fi.dy.masa.tweakeroo.config.Configs$Generic");
+        return genericConfigsClass.getField("FREE_CAMERA_PLAYER_INPUTS").get(null);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
