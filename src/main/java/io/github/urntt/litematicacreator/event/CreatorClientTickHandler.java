@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import fi.dy.masa.malilib.interfaces.IClientTickHandler;
 import io.github.urntt.litematicacreator.LitematicaCreator;
 import io.github.urntt.litematicacreator.creator.CreatorCameraCompat;
+import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 
 public class CreatorClientTickHandler implements IClientTickHandler
@@ -28,6 +29,12 @@ public class CreatorClientTickHandler implements IClientTickHandler
     public void onClientTick(Minecraft mc)
     {
         ++clientTicks;
+
+        if (mc.level != null && mc.player != null)
+        {
+            CreatorInventory.getInstance().load();
+        }
+
         this.updateTweakerooFreeCameraCompatibility(mc);
     }
 

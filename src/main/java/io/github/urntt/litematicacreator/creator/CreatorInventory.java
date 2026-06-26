@@ -33,6 +33,7 @@ public class CreatorInventory
 
     private final ItemStack[] stacks = new ItemStack[SLOT_COUNT];
     private int selectedHotbarSlot;
+    private boolean loaded;
 
     private CreatorInventory()
     {
@@ -108,6 +109,12 @@ public class CreatorInventory
 
     public void load()
     {
+        if (this.loaded)
+        {
+            return;
+        }
+
+        this.loaded = true;
         Path file = this.getFile();
 
         if (!Files.exists(file) || !Files.isReadable(file))

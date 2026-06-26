@@ -10,7 +10,6 @@ import fi.dy.masa.malilib.util.GuiUtils;
 import fi.dy.masa.malilib.util.data.ModInfo;
 import fi.dy.masa.malilib.util.i18n.i18nMode;
 import io.github.urntt.litematicacreator.config.Configs;
-import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.event.CreatorClientTickHandler;
 import io.github.urntt.litematicacreator.event.CreatorHotkeyCallbacks;
@@ -48,7 +47,6 @@ public class InitHandler implements IInitializationHandler
         Configs.Generic.ENABLE_CREATOR_MODE.setValueChangeCallback(
                 cfg -> CreatorManager.getInstance().setCreatorModeEnabled(cfg.getBooleanValue(), false)
         );
-        CreatorInventory.getInstance().load();
 
         CreatorHotkeyCallbacks.register();
         InputEventHandler.getKeybindManager().registerKeybindProvider(InputHandler.getInstance());
