@@ -1,0 +1,8 @@
+.gradle/
+build/
+out/
+.gradle-local/
+gradle-*.zip
+
+*.class
+*.log

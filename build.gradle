@@ -1,0 +1,83 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version '1.17.+'
+	id 'maven-publish'
+}
+
+repositories {
+	mavenLocal()
+	maven {
+		url = 'https://masa.dy.fi/maven/sakura-ryoko'
+		content { includeGroupAndSubgroups('fi.dy.masa') }
+	}
+	maven {
+		url = 'https://maven.fallenbreath.me/releases'
+		content { includeGroupAndSubgroups('me.fallenbreath') }
+	}
+	maven {
+		url = 'https://maven.terraformersmc.com/releases/'
+		content { includeGroupAndSubgroups('com.terraformersmc') }
+	}
+	maven {
+		url = 'https://jitpack.io'
+		content { includeGroupAndSubgroups('com.github') }
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
+	implementation "com.google.code.findbugs:jsr305:3.0.2"
+
+	implementation "fi.dy.masa.malilib:malilib-fabric-${project.minecraft_version_out}:${project.malilib_version}"
+	implementation "fi.dy.masa.litematica:litematica-fabric-${project.minecraft_version_out}:${project.litematica_version}"
+
+	compileOnly "com.terraformersmc:modmenu:${project.mod_menu_version}"
+}
+
+base {
+	group = project.group + "." + project.mod_id
+	archivesName = project.mod_file_name + '-' + project.minecraft_version_out
+	version = project.mod_version
+
+	if (version.endsWith('-dev')) {
+		version += "." + new Date().format('yyyyMMdd.HHmmss')
+	}
+}
+
+loom {
+	accessWidenerPath = file("src/main/resources/litematica-creator.accesswidener")
+}
+
+processResources {
+	inputs.property "mod_version", project.mod_version
+
+	filesMatching("fabric.mod.json") {
+		expand "mod_version": project.mod_version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.encoding = "UTF-8"
+	it.options.release = 25
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+	preserveFileTimestamps = true
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+	withSourcesJar()
+}
+
+tasks.publish.dependsOn build
+
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			artifactId = base.archivesName.get()
+			from components.java
+		}
+	}
+}
