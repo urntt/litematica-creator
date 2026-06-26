@@ -7,6 +7,7 @@ import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 
+import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.data.SchematicHolder;
 import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
@@ -89,6 +90,26 @@ public class CreatorManager
         this.currentDraft = null;
         InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.draft.discarded");
         return true;
+    }
+
+    public boolean saveCurrentDraft()
+    {
+        if (this.currentDraft == null)
+        {
+            InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.draft.missing");
+            return false;
+        }
+
+        String fileName = this.currentDraft.getPlacement().getName();
+        boolean saved = this.currentDraft.getSchematic().writeToFile(DataManager.getSchematicsBaseDirectory(), fileName, true);
+
+        if (saved)
+        {
+            this.currentDraft.markSaved();
+            InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.draft.saved", fileName);
+        }
+
+        return saved;
     }
 
     private String createDraftName()

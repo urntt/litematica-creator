@@ -5,10 +5,17 @@ import fi.dy.masa.malilib.hotkeys.IKeybindManager;
 import fi.dy.masa.malilib.hotkeys.IKeybindProvider;
 import fi.dy.masa.malilib.hotkeys.IKeyboardInputHandler;
 import fi.dy.masa.malilib.hotkeys.IMouseInputHandler;
+import fi.dy.masa.malilib.gui.GuiBase;
+import fi.dy.masa.malilib.util.GuiUtils;
 import io.github.urntt.litematicacreator.Reference;
 import io.github.urntt.litematicacreator.config.Hotkeys;
+import io.github.urntt.litematicacreator.creator.CreatorEditService;
+import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
+import io.github.urntt.litematicacreator.gui.GuiCreatorInventory;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 
 public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IMouseInputHandler
 {
@@ -48,6 +55,63 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
         if (eventKeyState && Hotkeys.TOGGLE_CREATOR_MODE.getKeybind().matches(input.key()))
         {
             CreatorManager.getInstance().toggleCreatorMode();
+            return true;
+        }
+        else if (eventKeyState && Hotkeys.SAVE_DRAFT.getKeybind().matches(input.key()))
+        {
+            return CreatorManager.getInstance().saveCurrentDraft();
+        }
+        else if (eventKeyState && Hotkeys.DISCARD_DRAFT.getKeybind().matches(input.key()))
+        {
+            return CreatorManager.getInstance().discardCurrentDraft();
+        }
+        else if (eventKeyState && Hotkeys.OPEN_CREATOR_INVENTORY.getKeybind().matches(input.key()))
+        {
+            GuiBase.openGui(new GuiCreatorInventory());
+            return true;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+
+        if (eventKeyState && CreatorManager.getInstance().isCreatorModeEnabled() && GuiUtils.getCurrentScreen() == null)
+        {
+            for (int i = 0; i < mc.options.keyHotbarSlots.length; ++i)
+            {
+                if (mc.options.keyHotbarSlots[i].matches(input))
+                {
+                    CreatorInventory.getInstance().setSelectedHotbarSlot(i);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean onMouseClick(MouseButtonEvent click, boolean eventButtonState)
+    {
+        Minecraft mc = Minecraft.getInstance();
+
+        if (!eventButtonState || !CreatorManager.getInstance().isCreatorModeEnabled() || GuiUtils.getCurrentScreen() != null)
+        {
+            return false;
+        }
+
+        if (mc.options.keyPickItem.matchesMouse(click))
+        {
+            return CreatorEditService.getInstance().pickBlock();
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean onMouseScroll(double mouseX, double mouseY, double amount)
+    {
+        if (CreatorManager.getInstance().isCreatorModeEnabled() && GuiUtils.getCurrentScreen() == null)
+        {
+            CreatorInventory.getInstance().scrollHotbar(amount);
             return true;
         }
 
