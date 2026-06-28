@@ -58,11 +58,12 @@ Last updated: 2026-06-28
   - recovery cache 存在 Creator 专用缓存目录，包含临时 `.litematic` 和 sidecar manifest。
   - manifest 记录世界/服务器/dimension、schematic 名、原始文件路径、缓存文件路径、相关 placement transforms、dirty 时间戳等。
   - 退出世界、断线、卸载/丢弃前扫描 loaded schematics，对符合缓存条件的 schematic 写 recovery cache。
-  - 进入世界时先让 Litematica 按原生逻辑恢复 file-backed placements；Creator 再扫描 recovery entries，至少提供手动恢复 UI。是否自动提示恢复/删除继续讨论；无论哪种方式，都不要静默混入普通 loaded placements。
+  - 进入世界时先让 Litematica 按原生逻辑恢复 file-backed placements；Creator 再扫描匹配当前世界的 recovery entries，并直接恢复缓存的 schematic/placements，效果等同于 Litematica 恢复未关闭的 placements。
   - 操作目标规则：
     - 没有 selected placement，右键真实方块/空气：新建 in-memory 草稿 schematic + placement，并把新 placement 设为 selected。
     - 有 selected placement，右键真实方块/空气：继续通过 selected placement 扩展它背后的 schematic。
-    - 对某个投影方块右键/左键/中键：把该投影所属 placement 设为 selected，并执行 Creator 操作。
+    - 对某个投影方块右键/左键：把该投影所属 placement 设为 selected，并执行 Creator 编辑操作。
+    - 对某个投影方块中键：pick block 到虚拟物品栏，但不切换 selected placement。
     - 对同一个 schematic 的另一个 placement 操作：切换 selected placement，但仍编辑同一份 schematic。
     - 对另一个 schematic 的 placement 操作：切换 selected placement，后续操作进入那个 schematic。
     - HUD 显示当前 selected placement、schematic 名、Litematica dirty 状态、recovery cache 状态。
@@ -73,13 +74,16 @@ Last updated: 2026-06-28
   - 注册 Litematica `SchematicPlacementEventHandler` listener，但只把它当作事件观察器使用：
     - 监听 placement added/removed/updated/selected/transform/subregion/serialization 相关事件，用于刷新 HUD、候选列表和 recovery manifest。
     - 如果当前 selected placement 被外部移除，直接视为 selected placement 为空，不保留半失效的 Creator 活动目标。
-    - 如果 schematic 被外部卸载导致 placements 全部移除，清理相关临时状态；符合缓存条件的内容应已在卸载前写入 recovery cache。
+    - 如果玩家主动 remove placement，删除 recovery manifest 中对应 placement；如果这是该 schematic 的最后一个 placement，清空该 schematic 的 recovery cache。
+    - 如果玩家主动 unload schematic 或执行 Creator 丢弃，清空该 schematic 的 recovery cache。
+    - 如果世界退出、断线、关闭游戏等生命周期清理导致 placement/schematic 被卸载，不视为玩家丢弃；符合缓存条件的内容应在卸载前写入并保留 recovery cache。
     - 该 event handler 不是 cancellable transaction API，不能用来阻止原生 unload/reload，也不能替代 Litematica metadata dirty 追踪。
   - Acceptance: Creator 活动目标和 Litematica selected placement 完全一致；Litematica dirty 标记是唯一内容 dirty 来源；非 file-backed 或 file-backed 且未保存修改的 schematics 可通过 recovery cache 恢复；多个镜像 placement 显示同一份修改结果。
 
 - [!] #33 非 selected placement 范围内操作与主动切换 selected placement
   - 默认不因为目标坐标落在某个非 selected placement 的 bounding box/空气区域内而自动切换 selected placement。
-  - 命中投影方块时，可以把该投影方块所属 placement 设为 selected 并执行 Creator 操作；这里命中的是实际非空气投影块，不是透明体积。
+  - 右键/左键命中投影方块时，可以把该投影方块所属 placement 设为 selected 并执行 Creator 编辑操作；这里命中的是实际非空气投影块，不是透明体积。
+  - 中键命中投影方块时只执行 pick block，不切换 selected placement。
   - 命中真实方块或空气，且当前已有 selected placement 时，继续编辑 selected placement 背后的 schematic。
   - 命中真实方块或空气，且当前没有 selected placement 时，新建 in-memory 草稿 schematic + placement，并把新 placement 设为 selected。
   - 想编辑某个非 selected placement 的空气位置时，必须先主动把它设为 selected placement。
