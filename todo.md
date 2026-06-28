@@ -40,58 +40,64 @@ Last updated: 2026-06-28
   - 与 #31 一起处理。
   - Acceptance: 重新进入任意世界后 Creator 模式默认关闭；HUD 不会消失但模式仍开启。
 
-- [!] #18 编辑目标、selected placement、卸载与未保存缓存
-  - Creator 不维护长期 focus，也不把所有逻辑建立在 Litematica `selected placement` 上。
-  - Creator 每次输入操作都解析一个临时 `editTarget = placement + schematic + region/subregion context`；operation 结束后不把它保存成独立 focus。
-  - Litematica `selected placement` 是默认编辑上下文、Litematica 原生 UI 状态、以及真实方块/空气操作的目标 fallback；它不是唯一可编辑对象。
+- [!] #18 Creator focus、selected placement、卸载与未保存缓存
+  - 重新引入独立于 Litematica `selected placement` 的 Creator focus，语义是“当前编辑画布/当前草稿窗口”。
+  - `creatorFocus = placement + schematic + optional subregion/region context`；它只属于 Creator，不写回 Litematica selected placement。
+  - Litematica `selected placement` 保持原生 UI/列表/材料/verifier/rebuild 状态；Creator 不应为了普通编辑自动改写 selected placement。
+  - Creator operation 的 `editTarget` 优先来自 Creator focus；命中投影块或显式切换 focus 时才更新 Creator focus。
   - placement 是操作镜头/镜像，schematic 是实际数据；同一个 schematic 有多个 placement 时，对任何一个 placement 操作都修改同一份 schematic。
-  - 对旋转/镜像 placement 操作时，坐标、朝向、方块状态都要经该 operation 的 `editTarget.placement` 反变换后写回 schematic。
+  - 对旋转/镜像 placement 操作时，坐标、朝向、方块状态都要经 `editTarget.placement` 反变换后写回 schematic。
   - Creator 自己不维护“是否 dirty”的主状态；直接沿用 Litematica 的 `schematic.getMetadata().wasModifiedSinceSaved()`。
   - Creator 每次编辑成功后和 Litematica rebuild mode 一样更新 metadata：`setTotalBlocks(...)`、`setTimeModifiedToNow()`、`setModifiedSinceSaved()`，并标记相关 chunks rebuild。
-  - 新增 `New Blank Draft`/`新建空白草稿` 命令：显式创建 in-memory 空白 schematic + placement，并把新 placement 设为 selected。
-  - “完成编辑/失焦”只清空 Litematica selected placement；它不导出文件、不卸载 schematic、不删除 placement。
-  - “丢弃草稿/关闭当前编辑”作用于当前 selected placement 背后的 schematic；如果没有 selected placement，则打开 placement/schematic 选择器或禁用该命令。
+  - 新增 `New Blank Draft`/`新建空白草稿` 命令：显式创建 in-memory 空白 schematic + placement，并将 Creator focus 切到新 placement。
+  - 配置项：`selectNewDraftPlacement`，控制新建草稿时是否同时把新 placement 设为 Litematica selected placement；默认关闭。
+  - “完成编辑/失焦”只清空 Creator focus；它不修改 Litematica selected placement、不导出文件、不卸载 schematic、不删除 placement。
+  - “丢弃草稿/关闭当前编辑”作用于 Creator focus 背后的 schematic；如果没有 Creator focus，则打开 placement/schematic 选择器或禁用该命令。
   - 丢弃会卸载目标 schematic 及其所有 placements，并删除对应 recovery cache；如果它来自已有 `.litematic` 文件，只影响当前加载/编辑会话，不删除原文件。
-  - Litematica 的 `unloadCurrentSchematic` 基于 selected placement 卸载 schematic；Creator 的丢弃可以复用同样目标语义，但需要额外清理 Creator recovery cache。
+  - Litematica 的 `unloadCurrentSchematic` 基于 selected placement 卸载 schematic；Creator 丢弃必须基于 Creator focus，避免误用玩家已经安排好的 selected placement。
   - Litematica 原生界面继续负责导出 `.litematic`、管理已加载原理图、创建/删除/移动 placement。
   - recovery cache 只补 Litematica 持久化覆盖不到的内容，不区分 schematic 是否由 Creator 创建或编辑：
     - `schematic.getFile() == null`：需要缓存，因为 Litematica placement JSON 不会保存 in-memory schematic placement。
     - `schematic.getFile() != null && schematic.getMetadata().wasModifiedSinceSaved()`：需要缓存，因为 Litematica 退出/重进只会从原文件恢复，未保存的内存修改会丢失。
     - `schematic.getFile() != null && !schematic.getMetadata().wasModifiedSinceSaved()`：不需要缓存，依赖 Litematica 原生 per-dimension placement 恢复即可。
   - recovery cache 存在 Creator 专用缓存目录，包含临时 `.litematic` 和 sidecar manifest。
-  - manifest 记录世界/服务器/dimension、schematic 名、原始文件路径、缓存文件路径、相关 placement transforms、dirty 时间戳等。
+  - manifest 记录世界/服务器/dimension、schematic 名、原始文件路径、缓存文件路径、相关 placement transforms、dirty 时间戳；可选记录退出前 Creator focus，用于恢复后继续编辑。
   - 退出世界、断线、卸载/丢弃前扫描 loaded schematics，对符合缓存条件的 schematic 写 recovery cache。
   - 进入世界时先让 Litematica 按原生逻辑恢复 file-backed placements；Creator 再扫描匹配当前世界的 recovery entries，并直接恢复缓存的 schematic/placements，效果等同于 Litematica 恢复未关闭的 placements。
   - 注册 Litematica `SchematicPlacementEventHandler` listener，但只把它当作事件观察器使用：
-    - 监听 placement added/removed/updated/selected/transform/subregion/serialization 相关事件，用于刷新 HUD、候选列表和 recovery manifest。
-    - 如果玩家主动 remove placement，删除 recovery manifest 中对应 placement；如果这是该 schematic 的最后一个 placement，清空该 schematic 的 recovery cache。
+    - 监听 placement added/removed/updated/selected/transform/subregion/serialization 相关事件，用于刷新 HUD、候选列表、Creator focus 有效性和 recovery manifest。
+    - 如果 Creator focus 的 placement 被玩家主动 remove，清空 Creator focus，并删除 recovery manifest 中对应 placement；如果这是该 schematic 的最后一个 placement，清空该 schematic 的 recovery cache。
     - 如果玩家主动 unload schematic 或执行 Creator 丢弃，清空该 schematic 的 recovery cache。
     - 如果世界退出、断线、关闭游戏等生命周期清理导致 placement/schematic 被卸载，不视为玩家丢弃；符合缓存条件的内容应在卸载前写入并保留 recovery cache。
+    - Litematica selected placement 变化不自动抢占 Creator focus，只作为 UI 候选信息。
     - 该 event handler 不是 cancellable transaction API，不能用来阻止原生 unload/reload，也不能替代 Litematica metadata dirty 追踪。
-  - Acceptance: Creator 可以编辑未 selected 的 placement；selected placement 只作为默认上下文；Litematica dirty 标记是唯一内容 dirty 来源；非 file-backed 或 file-backed 且未保存修改的 schematics 可通过 recovery cache 恢复；多个镜像 placement 显示同一份修改结果。
+  - Acceptance: Creator focus 与 Litematica selected placement 互不覆盖；Creator 可以持续扩展当前画布；Litematica dirty 标记是唯一内容 dirty 来源；非 file-backed 或 file-backed 且未保存修改的 schematics 可通过 recovery cache 恢复。
 
-- [!] #33 操作目标解析、新建空白草稿与重叠 placement
-  - 不因为目标坐标落在某个非 selected placement 的 bounding box/空气区域内而自动切换 selected placement。
-  - 不在右键真实方块/空气时隐式新建草稿；新建必须通过显式 `New Blank Draft` 命令完成。
+- [!] #33 Creator focus 目标解析、新建草稿与 selected 快捷操作
+  - Creator mode 下右键真实方块/空气时，如果存在 Creator focus，则操作进入 Creator focus 背后的 schematic，不根据 Litematica selected placement 或空间距离另行猜测。
+  - 如果没有 Creator focus，右键真实方块/空气时先检查目标位置是否落入唯一 enabled placement 的可编辑范围；唯一候选可成为 Creator focus 并被编辑。
+  - 可编辑范围第一版定义为 enabled placement 的 enabled subregion/placement boxes 外扩 1 格；禁用的 placement 不参与候选。
+  - 如果没有 Creator focus 且没有 placement 候选，则右键真实方块/空气会新建 in-memory 草稿 + placement，并将 Creator focus 切到新 placement。
+  - 如果没有 Creator focus 且存在多个 placement 候选：若 Litematica selected placement 在候选中，可将它作为初始 Creator focus；否则打开 `Creator Focus Chooser`，不按渲染覆盖顺序或 touched list 顺序猜目标。
   - 右键/左键命中投影方块时，收集该世界坐标下所有包含实际非空气投影块的候选 placements。
   - 投影方块候选解析优先级：
-    - 如果 Litematica selected placement 是候选之一，使用 selected placement 作为本次 operation 的 `editTarget`。
-    - 否则如果只有一个候选 placement，直接编辑该 placement，但不切换 selected placement。
-    - 否则打开 `Edit Target Chooser`，让玩家选择本次 operation 要编辑的 placement；选择本身不自动改变 selected placement。
-  - 中键命中投影方块时只执行 pick block，不切换 selected placement；重叠时默认拾取当前渲染/命中的方块状态，后续如需要精确拾取某个候选 placement 再加 chooser。
-  - 右键/左键命中真实方块或空气时：
-    - 如果存在 selected placement，使用 selected placement 作为 `editTarget`，允许向其外部动态扩展 subregion。
-    - 如果没有 selected placement，提示先选择 placement 或使用 `New Blank Draft`；不猜测玩家是想新建还是想编辑某个现有投影。
-  - 想编辑某个非 selected placement 的空气/透明体积位置时，必须先显式选择 placement，或通过后续专门的 target chooser 模式指定 operation target。
-  - 新增 `Select Looked-at Placement` 快捷操作：
-    - 看向投影方块、placement box 或 placement origin 时选择对应 placement。
-    - 唯一命中时直接选择。
-    - 多个 placement 重叠时打开 Placement Switcher。
-  - 新增 `Placement Switcher` 界面，类似 F3+F4/Alt+Tab，但使用 Creator 自己的快捷键，避免与系统 Alt+Tab 冲突。
-  - Placement Switcher 候选项包含：当前 selected placement、准星下候选 placements、最近编辑过的 placements、全部 loaded placements。
-  - 选择某个 placement 后调用 `SchematicPlacementManager#setSelectedSchematicPlacement(placement)`。
-  - 可选后续配置：`autoSelectPlacementVolumes`，允许高级用户在真实方块/空气目标落入非 selected placement 体积时自动切换 selected placement；默认关闭。
-  - Acceptance: Creator 不把普通编辑强行绑定到 selected placement；投影块命中可编辑未 selected placement；空气/真实方块操作必须依赖 selected placement 或显式新建/选择；重叠投影不按 Litematica 合成渲染顺序或 touched list 顺序猜目标。
+    - 如果当前 Creator focus 在候选中，继续编辑 Creator focus。
+    - 否则如果 Litematica selected placement 在候选中，使用 selected placement，并将 Creator focus 切到它。
+    - 否则如果只有一个候选 placement，直接编辑该 placement，并将 Creator focus 切到它。
+    - 否则打开 `Creator Focus Chooser`，让玩家选择后再编辑。
+  - 中键命中投影方块时只执行 pick block，不切换 Creator focus 或 selected placement；重叠时默认拾取当前渲染/命中的方块状态，后续如需要精确拾取某个候选 placement 再加 chooser。
+  - `New Blank Draft` 始终强制新建草稿并切换 Creator focus，即使当前位置位于已有 placement 范围内。
+  - 想编辑某个非 focus placement 的空气/透明体积位置时，必须先显式切换 Creator focus，或通过后续专门的 target chooser 模式指定 operation target。
+  - 新增 `Focus Looked-at Placement` 快捷操作：
+    - 看向投影方块、placement box 或 placement origin 时把对应 placement 设为 Creator focus。
+    - 唯一命中时直接 focus。
+    - 多个 placement 重叠时打开 Creator Focus Chooser。
+  - 新增 `Creator Focus Switcher` 界面，类似 F3+F4/Alt+Tab，但使用 Creator 自己的快捷键，避免与系统 Alt+Tab 冲突。
+  - Creator Focus Switcher 候选项包含：当前 Creator focus、准星下候选 placements、Litematica selected placement、最近编辑过的 placements、全部 loaded placements。
+  - 保留 `Select Looked-at Placement` 和 `Placement Switcher` 作为 Litematica selected placement 的快捷操作；它们只调用 `SchematicPlacementManager#setSelectedSchematicPlacement(placement)`，不自动改变 Creator focus。
+  - 新增 `Toggle Looked-at Placement Enabled` 快捷操作，方便玩家临时排除不想被 Creator 命中的 placement。
+  - 可选后续配置：`autoFocusPlacementVolumes`，允许高级用户在无 Creator focus 时通过真实方块/空气目标落入 placement 体积来自动 focus；默认只在唯一候选时启用。
+  - Acceptance: Creator 能用独立 focus 持续扩展当前草稿；selected placement 只作为候选和快捷选择，不替玩家做主；无 focus 且无候选时右键可新建草稿；重叠投影需要 selected/focus/chooser 消歧。
 
 - [ ] #19 翻译设置独立模式不生效
   - `translationMode=INDEPENDENT` 时，`translationLanguage` 改变后直接切换 Creator i18n manager。
