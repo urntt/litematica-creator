@@ -44,7 +44,7 @@ Last updated: 2026-06-28
   - 重新引入独立于 Litematica `selected placement` 的 Creator focus，语义是“当前编辑画布/当前草稿窗口”。
   - `creatorFocus = placement + schematic + optional subregion/region context`；它只属于 Creator，不写回 Litematica selected placement。
   - Litematica `selected placement` 保持原生 UI/列表/材料/verifier/rebuild 状态；Creator 不应为了普通编辑自动改写 selected placement。
-  - Creator operation 的 `editTarget` 优先来自 Creator focus；命中投影块或显式切换 focus 时才更新 Creator focus。
+  - Creator focus 负责承接位于所有现有 placement 范围之外的扩展操作；命中投影块、操作位置落入现有 placement 范围或显式切换时，按 #33 的空间归属规则更新 Creator focus。
   - placement 是操作镜头/镜像，schematic 是实际数据；同一个 schematic 有多个 placement 时，对任何一个 placement 操作都修改同一份 schematic。
   - 对旋转/镜像 placement 操作时，坐标、朝向、方块状态都要经 `editTarget.placement` 反变换后写回 schematic。
   - Creator 自己不维护“是否 dirty”的主状态；直接沿用 Litematica 的 `schematic.getMetadata().wasModifiedSinceSaved()`。
@@ -73,31 +73,20 @@ Last updated: 2026-06-28
     - 该 event handler 不是 cancellable transaction API，不能用来阻止原生 unload/reload，也不能替代 Litematica metadata dirty 追踪。
   - Acceptance: Creator focus 与 Litematica selected placement 互不覆盖；Creator 可以持续扩展当前画布；Litematica dirty 标记是唯一内容 dirty 来源；非 file-backed 或 file-backed 且未保存修改的 schematics 可通过 recovery cache 恢复。
 
-- [!] #33 Creator focus 目标解析、新建草稿与 selected 快捷操作
-  - Creator mode 下右键真实方块/空气时，如果存在 Creator focus，则操作进入 Creator focus 背后的 schematic，不根据 Litematica selected placement 或空间距离另行猜测。
-  - 如果没有 Creator focus，右键真实方块/空气时先检查目标位置是否落入唯一 enabled placement 的可编辑范围；唯一候选可成为 Creator focus 并被编辑。
-  - 可编辑范围第一版定义为 enabled placement 的 enabled subregion/placement boxes 外扩 1 格；禁用的 placement 不参与候选。
-  - 如果没有 Creator focus 且没有 placement 候选，则右键真实方块/空气会新建 in-memory 草稿 + placement，并将 Creator focus 切到新 placement。
-  - 如果没有 Creator focus 且存在多个 placement 候选：若 Litematica selected placement 在候选中，可将它作为初始 Creator focus；否则打开 `Creator Focus Chooser`，不按渲染覆盖顺序或 touched list 顺序猜目标。
-  - 右键/左键命中投影方块时，收集该世界坐标下所有包含实际非空气投影块的候选 placements。
-  - 投影方块候选解析优先级：
-    - 如果当前 Creator focus 在候选中，继续编辑 Creator focus。
-    - 否则如果 Litematica selected placement 在候选中，使用 selected placement，并将 Creator focus 切到它。
-    - 否则如果只有一个候选 placement，直接编辑该 placement，并将 Creator focus 切到它。
-    - 否则打开 `Creator Focus Chooser`，让玩家选择后再编辑。
-  - 中键命中投影方块时只执行 pick block，不切换 Creator focus 或 selected placement；重叠时默认拾取当前渲染/命中的方块状态，后续如需要精确拾取某个候选 placement 再加 chooser。
-  - `New Blank Draft` 始终强制新建草稿并切换 Creator focus，即使当前位置位于已有 placement 范围内。
-  - 想编辑某个非 focus placement 的空气/透明体积位置时，必须先显式切换 Creator focus，或通过后续专门的 target chooser 模式指定 operation target。
-  - 新增 `Focus Looked-at Placement` 快捷操作：
-    - 看向投影方块、placement box 或 placement origin 时把对应 placement 设为 Creator focus。
-    - 唯一命中时直接 focus。
-    - 多个 placement 重叠时打开 Creator Focus Chooser。
-  - 新增 `Creator Focus Switcher` 界面，类似 F3+F4/Alt+Tab，但使用 Creator 自己的快捷键，避免与系统 Alt+Tab 冲突。
-  - Creator Focus Switcher 候选项包含：当前 Creator focus、准星下候选 placements、Litematica selected placement、最近编辑过的 placements、全部 loaded placements。
-  - 保留 `Select Looked-at Placement` 和 `Placement Switcher` 作为 Litematica selected placement 的快捷操作；它们只调用 `SchematicPlacementManager#setSelectedSchematicPlacement(placement)`，不自动改变 Creator focus。
-  - 新增 `Toggle Looked-at Placement Enabled` 快捷操作，方便玩家临时排除不想被 Creator 命中的 placement。
-  - 可选后续配置：`autoFocusPlacementVolumes`，允许高级用户在无 Creator focus 时通过真实方块/空气目标落入 placement 体积来自动 focus；默认只在唯一候选时启用。
-  - Acceptance: Creator 能用独立 focus 持续扩展当前草稿；selected placement 只作为候选和快捷选择，不替玩家做主；无 focus 且无候选时右键可新建草稿；重叠投影需要 selected/focus/chooser 消歧。
+- [!] #33 Creator focus 目标解析与切换
+  - Creator 的目标归属只依据操作位置、现有投影范围和 Creator focus；Litematica `selected placement` 不参与优先级判断。
+  - “投影范围”直接使用 enabled placement 已有的 enabled subregion 范围，不额外外扩，不限制 focused placement 后续可以扩展到多远；disabled placement 不参与目标解析。
+  - 未命中投影方块，且操作位置不属于任意投影范围时：
+    - 没有 Creator focus：新建 in-memory 空白 schematic + placement，将其设为 Creator focus，再执行本次放置。
+    - 已有 Creator focus：通过该 focused placement 把本次编辑写入其 schematic；目标可以与现有 subregion 不接触，并按 tile/subregion 规则在目标处扩展。
+  - 命中投影方块，或操作位置落入唯一一个投影范围时：把对应 placement 设为 Creator focus，并通过它编辑背后的 schematic；原有 focus 不覆盖该空间归属。
+  - 操作位置同时落入两个或更多 placement 范围时，视为投影重叠：直接打开 `Creator Focus Switcher` 让玩家选择本次操作所属的 placement，不使用当前 focus、selected placement、渲染覆盖顺序或 touched list 顺序自动消歧。
+  - 不鼓励投影重叠；即使重叠 placements 指向同一个 schematic，也需要选择具体 placement，因为它们的变换和 schematic-space 落点可能不同。
+  - 新增 `Creator Focus Switcher` 界面及快捷键，交互类似 F3+F4：平时可主动打开，并从全部当前已加载且可编辑的 placements 中自由切换 Creator focus；因重叠自动打开时优先展示本次操作位置的候选。
+  - `New Blank Draft` 始终显式新建空白 schematic + placement 并设为 Creator focus，供玩家在任何位置主动开始另一个草稿。
+  - 中键始终只执行 pick block，不创建草稿、不切换或清空 Creator focus，也不改变 Litematica selected placement；重叠位置按当前实际命中的渲染结果拾取。
+  - Creator focus 的任何变化都不写回 Litematica selected placement；后者只保留 Litematica 自己的原生语义。
+  - Acceptance: 范围外操作由 focus 明确决定“新建还是扩展”；范围内操作自动归属唯一 placement；重叠位置必定由玩家选择；focused schematic 可在任意不相接的位置创建新 subregion；中键不产生 focus 副作用。
 
 - [ ] #19 翻译设置独立模式不生效
   - `translationMode=INDEPENDENT` 时，`translationLanguage` 改变后直接切换 Creator i18n manager。
@@ -129,7 +118,8 @@ Last updated: 2026-06-28
   - First implementation option: `1x1x1 subregion per edited block`，语义正确但大量方块时 subregion 数量较多。
   - Later optimization: 将相邻投影方块 pack 成紧凑 cuboid subregion，减少 subregion 数量和保存体积。
   - Avoid: 只屏蔽 overlay/红色渲染，因为保存后的 `.litematic` 仍会携带错误空气语义。
-  - Acceptance: 在真实方块旁或真实方块区域内创建少量投影时，未编辑位置不会被 verifier/render 视为应为空气。
+  - 新增配置 `hideSubregionBoxesInCreatorMode`，默认开启；Creator 模式下仅抑制 subregion box 渲染，避免稀疏草稿产生的大量边框遮挡视野，不修改玩家的 Litematica 全局渲染配置。
+  - Acceptance: 在真实方块旁或真实方块区域内创建少量投影时，未编辑位置不会被 verifier/render 视为应为空气；默认配置下 Creator 模式不显示密集的 subregion boxes，退出 Creator 模式后 Litematica 原有显示设置不受影响。
 
 ## Virtual Inventory And Presentation
 
