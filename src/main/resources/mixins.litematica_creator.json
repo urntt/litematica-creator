@@ -4,8 +4,12 @@
 	"package": "io.github.urntt.litematicacreator.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
+		"AvatarRendererMixin",
+		"HudMixin",
+		"ItemInHandRendererMixin",
 		"LitematicaInputHandlerMixin",
 		"LitematicaSchematicAccessor",
+		"LivingEntityRendererAccessor",
 		"MinecraftClientMixin",
 		"MultiPlayerGameModeMixin",
 		"OverlayRendererMixin",
