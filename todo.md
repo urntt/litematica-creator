@@ -1,6 +1,6 @@
 # Litematica Creator TODO
 
-Last updated: 2026-06-28
+Last updated: 2026-08-01
 
 ## Status Legend
 
@@ -30,17 +30,20 @@ Last updated: 2026-06-28
 
 这些项优先做。它们决定后续虚拟背包、相机、多方块放置和撤销/重做是否会返工。
 
-- [ ] #31 退出世界时关闭 Creator 模式
+- [x] #31 退出世界时关闭 Creator 模式
   - 在离开世界/断开连接时关闭 Creator 模式。
   - 清理输入拦截、放置 cooldown、相机兼容状态。
-  - 明确当前草稿状态：保留内存草稿、提示未保存，或主动解除引用。
+  - 已实现：world pre 清理 mode、focus、输入 cooldown 和 Tweakeroo 临时兼容状态；不把生命周期卸载解释为玩家丢弃。
   - Acceptance: Creator 模式下退出世界再回到主菜单，配置状态不再保持开启。
 
-- [ ] #32 重新进入世界后 Creator 模式状态与 HUD 不一致
+- [x] #32 重新进入世界后 Creator 模式状态与 HUD 不一致
   - 与 #31 一起处理。
-  - Acceptance: 重新进入任意世界后 Creator 模式默认关闭；HUD 不会消失但模式仍开启。
+  - 已实现：Litematica 加载 placement 后强制 mode off，并重建 Creator placement index。
+  - Acceptance: 重新进入任意世界后 Creator 模式默认关闭；不会出现“模式仍开启但 HUD 消失”。
 
-- [!] #18 Creator focus、selected placement、卸载与未保存缓存
+- [~] #18 Creator focus、selected placement、卸载与未保存缓存
+  - 2026-08-01 已完成：独立 Creator focus、任意 Litematica schematic 编辑、Litematica dirty metadata、完成编辑、按 focus 卸载、真正空白 schematic、`selectNewDraftPlacement=false`。
+  - 仍未完成：针对 non-file-backed 和 file-backed dirty schematic 的 recovery cache、manifest、异常退出恢复与玩家主动卸载时的缓存清理。
   - 重新引入独立于 Litematica `selected placement` 的 Creator focus，语义是“当前编辑画布/当前草稿窗口”。
   - `creatorFocus = placement + schematic + optional subregion/region context`；它只属于 Creator，不写回 Litematica selected placement。
   - Litematica `selected placement` 保持原生 UI/列表/材料/verifier/rebuild 状态；Creator 不应为了普通编辑自动改写 selected placement。
@@ -52,7 +55,7 @@ Last updated: 2026-06-28
   - 新增 `New Blank Draft`/`新建空白草稿` 命令：显式创建 in-memory 空白 schematic + placement，并将 Creator focus 切到新 placement。
   - 配置项：`selectNewDraftPlacement`，控制新建草稿时是否同时把新 placement 设为 Litematica selected placement；默认关闭。
   - “完成编辑/失焦”只清空 Creator focus；它不修改 Litematica selected placement、不导出文件、不卸载 schematic、不删除 placement。
-  - “丢弃草稿/关闭当前编辑”作用于 Creator focus 背后的 schematic；如果没有 Creator focus，则打开 placement/schematic 选择器或禁用该命令。
+  - “卸载当前原理图”作用于 Creator focus 背后的 schematic；没有 Creator focus 时禁用该命令并提示。
   - 丢弃会卸载目标 schematic 及其所有 placements，并删除对应 recovery cache；如果它来自已有 `.litematic` 文件，只影响当前加载/编辑会话，不删除原文件。
   - Litematica 的 `unloadCurrentSchematic` 基于 selected placement 卸载 schematic；Creator 丢弃必须基于 Creator focus，避免误用玩家已经安排好的 selected placement。
   - Litematica 原生界面继续负责导出 `.litematic`、管理已加载原理图、创建/删除/移动 placement。
@@ -71,14 +74,16 @@ Last updated: 2026-06-28
     - 如果世界退出、断线、关闭游戏等生命周期清理导致 placement/schematic 被卸载，不视为玩家丢弃；符合缓存条件的内容应在卸载前写入并保留 recovery cache。
     - Litematica selected placement 变化不自动抢占 Creator focus，只作为 UI 候选信息。
     - 该 event handler 不是 cancellable transaction API，不能用来阻止原生 unload/reload，也不能替代 Litematica metadata dirty 追踪。
-  - Acceptance: Creator focus 与 Litematica selected placement 互不覆盖；Creator 可以持续扩展当前画布；Litematica dirty 标记是唯一内容 dirty 来源；非 file-backed 或 file-backed 且未保存修改的 schematics 可通过 recovery cache 恢复。
+  - Acceptance: focus/selected、扩展、dirty、完成编辑和卸载语义已通过实现；recovery cache 验收仍待完成。
 
-- [!] #33 Creator focus 目标解析与切换
+- [x] #33 Creator focus 目标解析与切换
+  - 2026-08-01 已实现：chunk 空间索引、唯一候选归属、范围外 focus 扩展/无 focus 新建、重叠 switcher、`M,F`、`M,N`、中键无 focus 副作用。
+  - 重叠选择后，未选候选仅在 Creator 内临时从渲染和目标索引抑制；切换/清空 focus、关闭 Creator 或退出世界时恢复，不修改原生 enabled/render 配置。
   - Creator 的目标归属只依据操作位置、现有投影范围和 Creator focus；Litematica `selected placement` 不参与优先级判断。
   - “投影范围”直接使用 enabled placement 已有的 enabled subregion 范围，不额外外扩，不限制 focused placement 后续可以扩展到多远；disabled placement 不参与目标解析。
   - 未命中投影方块，且操作位置不属于任意投影范围时：
     - 没有 Creator focus：新建 in-memory 空白 schematic + placement，将其设为 Creator focus，再执行本次放置。
-    - 已有 Creator focus：通过该 focused placement 把本次编辑写入其 schematic；目标可以与现有 subregion 不接触，并按 tile/subregion 规则在目标处扩展。
+    - 已有 Creator focus：通过该 focused placement 把本次编辑写入其 schematic；目标可以与现有 subregion 不接触，并按稀疏 subregion 规则在目标处扩展。
   - 命中投影方块，或操作位置落入唯一一个投影范围时：把对应 placement 设为 Creator focus，并通过它编辑背后的 schematic；原有 focus 不覆盖该空间归属。
   - 操作位置同时落入两个或更多 placement 范围时，视为投影重叠：直接打开 `Creator Focus Switcher` 让玩家选择本次操作所属的 placement，不使用当前 focus、selected placement、渲染覆盖顺序或 touched list 顺序自动消歧。
   - 不鼓励投影重叠；即使重叠 placements 指向同一个 schematic，也需要选择具体 placement，因为它们的变换和 schematic-space 落点可能不同。
@@ -99,10 +104,11 @@ Last updated: 2026-06-28
   - 后续 Creator camera 可复用同一配置。
   - Acceptance: 修改配置后，放置、删除、pick block 的有效距离同步变化。
 
-- [ ] #10 placement/选区移动后投影方块放置位置异常
+- [x] #10 placement/选区移动后投影方块放置位置异常
   - 不再直接使用世界坐标作为 schematic container 坐标。
   - 复用或等价实现 Litematica rebuild 模式的 world -> schematic 反变换逻辑。
   - 动态 subregion 创建也必须基于 placement 变换后的 Creator 局部坐标。
+  - 已实现：已有 region 使用 Litematica world→container 逆变换，新增稀疏 region 使用 placement mirror/rotation 逆变换，方块状态也执行逆变换。
   - Acceptance: 移动 Creator placement origin 后，在投影上继续放置/删除仍命中正确位置。
 
 - [ ] #12 面向投影方块时黑线边框穿透到真实方块
@@ -112,13 +118,15 @@ Last updated: 2026-06-28
 
 ## Draft Data Model
 
-- [!] #11 包含真实方块的区域放置投影后，已有方块被标红并显示应为空气
+- [x] #11 包含真实方块的区域放置投影后，已有方块被标红并显示应为空气
   - Root cause: 当前 tile/subregion 把未编辑格子也声明为空气。
   - Recommended direction: Creator 内部维护稀疏草稿，只把玩家明确编辑过的位置视为草稿内容。
   - First implementation option: `1x1x1 subregion per edited block`，语义正确但大量方块时 subregion 数量较多。
   - Later optimization: 将相邻投影方块 pack 成紧凑 cuboid subregion，减少 subregion 数量和保存体积。
   - Avoid: 只屏蔽 overlay/红色渲染，因为保存后的 `.litematic` 仍会携带错误空气语义。
   - 新增配置 `hideSubregionBoxesInCreatorMode`，默认开启；Creator 模式下仅抑制 subregion box 渲染，避免稀疏草稿产生的大量边框遮挡视野，不修改玩家的 Litematica 全局渲染配置。
+  - 已实现：边界外每个明确写入位置创建带保留前缀的 1×1 Creator cell；删除其中最后一块会删除该 region，普通 region 删除则保留显式空气。
+  - 已实现：新增/移除 region 会同步同一 schematic 的全部 placements，保留各 placement 及已有 subregion 的变换，不调用 `resetAllSubRegionsToSchematicValues`。
   - Acceptance: 在真实方块旁或真实方块区域内创建少量投影时，未编辑位置不会被 verifier/render 视为应为空气；默认配置下 Creator 模式不显示密集的 subregion boxes，退出 Creator 模式后 Litematica 原有显示设置不受影响。
 
 ## Virtual Inventory And Presentation
@@ -207,7 +215,7 @@ Last updated: 2026-06-28
 
 ## Future Cleanup
 
-- [ ] 调整 Creator 完成编辑/关闭当前编辑命令与 Litematica 原生导出/卸载的边界。
-- [ ] 为 Creator draft 添加明确身份标记，避免误操作非 Creator schematic。
-- [ ] 为核心编辑服务添加小型单元测试或 headless 测试，覆盖坐标变换和 metadata 计数。
-- [ ] 更新 `docs/creator-design-and-roadmap.md`，同步已确定的数据模型和 camera 方案。
+- [x] 调整 Creator 完成编辑/卸载当前原理图命令与 Litematica 原生导出/卸载的边界。
+- [ ] 实现 recovery cache；缓存资格只看 file backing 与 Litematica dirty，不维护 Creator-owned/managed 身份。
+- [x] 为核心编辑服务添加小型单元测试，覆盖旋转/镜像坐标往返、候选身份合并和稀疏 region 移除策略。
+- [x] 更新 `docs/creator-design-and-roadmap.md`，同步已确定的 focus、稀疏 subregion 和生命周期模型；Creator Camera 仍保留为后续方案。

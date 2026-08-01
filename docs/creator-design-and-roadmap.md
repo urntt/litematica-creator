@@ -84,8 +84,9 @@ Creator 模式下的左右键由 `litematica-creator` 消费，不能落到真�
 - 右键：用虚拟栏当前方块创建或放置投影方块。
 - 左键：删除目标投影方块。
 - 中键：拾取目标真实方块或投影方块到虚拟栏。
-- 保存：把当前草稿保存为普通 `.litematic`。
-- 退出 Creator 模式：草稿仍可保留为未保存状态，并随时可以保存或丢弃。
+- 完成编辑：清空 Creator focus；不导出文件、不卸载 schematic，也不修改 Litematica selected placement。
+- 卸载当前原理图：卸载 focus schematic 及其全部 placements，但永不删除原 `.litematic` 文件。
+- 退出 Creator 模式：loaded schematic/placements 由 Litematica 继续管理；Creator focus 可保留，但临时重叠抑制会恢复。
 
 目标选择：
 
@@ -95,13 +96,9 @@ Creator 模式下的左右键由 `litematica-creator` 消费，不能落到真�
 
 ### 3.4 动态扩容
 
-不采用单个巨大 region 频繁 resize 的模型。
+不采用单个巨大 region 频繁 resize，也不再采用会声明大量隐式空气的固定 tile。
 
-第一版采用 tile/subregion 模型，例如：
-
-- `16x16x16`
-- `16x64x16`
-- chunk column
+当前实现使用稀疏 subregion 模型：边界外每个明确编辑的位置创建一个 `1x1x1` Creator cell；普通 Litematica region 内的编辑继续写入原 container。
 
 玩家在新区域放置方块时，自动创建对应 subregion。扩容后需要：
 
@@ -138,41 +135,23 @@ Syncmatica 集成不进入第一版核心范围。
 
 ## 4. 核心技术设计
 
-### 4.1 Draft 数据模型
+### 4.1 Creator Focus 数据模型
 
-新增 `CreatorDraft` 作为草稿生命周期的核心对象。
+Creator 不再维护 `CreatorDraft` 或 Creator-owned schematic 集合。唯一会话状态是独立于 Litematica selected placement 的 `CreatorFocus`，它包装当前编辑使用的 `SchematicPlacement`；实际内容始终直接写入该 placement 背后的普通 `LitematicaSchematic`。
 
-职责：
+- placement 是坐标、旋转和镜像视图；schematic 是数据真源。
+- 同一 schematic 的任意 placement 都可作为编辑入口，修改会反映到全部镜像。
+- dirty 唯一来源是 `schematic.getMetadata().wasModifiedSinceSaved()`。
+- finish 只清空 focus；unload 按 focus schematic 工作；导出文件仍由 Litematica 原生界面负责。
+- 新建空白对象没有占位 region，placement origin 使用目标位置或显式 New Blank 时的 camera block position。
 
-- 持有当前 `LitematicaSchematic`。
-- 持有当前 `SchematicPlacement`。
-- 管理 tile/subregion。
-- 管理未保存状态。
-- 提供保存、丢弃、恢复、查询和修改 API。
+### 4.2 稀疏 Subregion 模型
 
-建议内部模型：
-
-- 世界坐标按 tile 坐标映射到 region name。
-- 每个 tile 对应一个 Litematica subregion。
-- 每个 subregion 内部坐标为固定尺寸局部坐标。
-- 所有写入最终落到 `LitematicaBlockStateContainer#set(...)`。
-
-### 4.2 Tile/Subregion 模型
-
-推荐第一版采用 `16x64x16` 或 chunk column 作为默认 tile。
-
-优点：
-
-- X/Z 与 chunk 对齐，便于 rebuild 和命中计算。
-- 避免每次越界都复制巨大 container。
-- 动态扩容只需要新增 subregion。
-- 保存后仍是普通 multi-region `.litematic`。
-
-需要注意：
-
-- `SchematicPlacement` 内部有 subregion placement map，需要在新增 subregion 后同步刷新。
-- Litematica 的 `SchematicPlacementManager` 对 touched chunks 有缓存，新 subregion 创建后必须更新这些缓存。
-- 如果现有 API 不够，需要 mixin/access widener 暴露最小必要方法。
+- 现有 enabled subregion 范围内：使用 Litematica 的 world→container 逆变换和 block state 逆变换写入原 region。
+- 范围外：把世界位置按编辑 placement 的 mirror/rotation 逆变换为 schematic-relative 位置，并创建 `1x1x1` Creator cell。
+- Creator cell 使用保留前缀；删除其最后一个非空气方块时移除整个 region。普通 region 中删除方块只写入显式空气。
+- region 增删逐 placement 执行 pre-change→map change→post-change，同步同一 schematic 的全部 placements，保留已有 placement/subregion transforms。
+- metadata 由 Litematica 对象直接维护；结构变化重算 region count、volume 和 enclosing size，内容变化增量维护 total blocks，并标记全部相关 placements rebuild。
 
 ### 4.3 投影方块写入流程
 
@@ -188,7 +167,7 @@ Syncmatica 集成不进入第一版核心范围。
 6. 从 `CreatorInventory` 读取当前虚拟 `ItemStack`。
 7. 用 camera entity 的 yaw/pitch 和 schematic world 构造 placement context。
 8. 从 `BlockItem` 计算目标 `BlockState`。
-9. 找到或创建目标 tile/subregion。
+9. 找到目标 region，或在边界外创建稀疏 Creator cell。
 10. 写入 container。
 11. 更新 metadata。
 12. 标记相关 chunk rebuild。
@@ -198,7 +177,7 @@ Syncmatica 集成不进入第一版核心范围。
 1. 判断 Creator 模式是否开启。
 2. 消费本次 attack input。
 3. 从 camera entity ray trace 到 Creator 投影。
-4. 找到对应 tile/subregion 和局部坐标。
+4. 找到对应 region/container 和局部坐标。
 5. 设置为空气。
 6. 更新 metadata 和 rebuild。
 
@@ -295,17 +274,17 @@ Creator 模式需要比真实交互更早消费左右键。
 任务：
 
 - 实现 `CreatorManager`。
-- 实现 `CreatorDraft`。
-- 创建空 `LitematicaSchematic`。
-- 创建初始 tile/subregion。
+- 实现独立 `CreatorFocus`。
+- 创建真正零 region 的空 `LitematicaSchematic`。
+- 创建 placement，但不自动覆盖 Litematica selected placement。
 - 创建 `SchematicPlacement` 并加入 Litematica placement manager。
-- 实现保存/丢弃/退出时保留未保存状态。
+- 实现完成编辑和按 focus 卸载语义；未保存 recovery 单列后续任务。
 
 验收：
 
 - 开启 Creator 模式后 placement manager 中出现草稿。
 - 关闭 Creator 模式后草稿仍可保留。
-- 可保存为普通 `.litematic`。
+- 可通过 Litematica 原生界面导出为普通 `.litematic`。
 
 ### 阶段 2：基础投影编辑
 
@@ -347,25 +326,25 @@ Creator 模式需要比真实交互更早消费左右键。
 - 真实背包不被修改。
 - 重启客户端后虚拟快捷栏保留。
 
-### 阶段 4：动态扩容
+### 阶段 4：动态扩容（已完成稀疏第一版）
 
-目标：玩家向新区域放置时自动创建 tile/subregion。
+目标：玩家向新区域放置时自动创建稀疏 subregion。
 
 任务：
 
-- 实现 world pos 到 tile key 的映射。
-- 实现按需创建 subregion。
+- 实现 placement-aware world pos 到 schematic relative/container 坐标的逆变换。
+- 实现按需创建 1×1 Creator cell subregion。
 - 实现 region name 规则。
 - 实现 schematic metadata 更新。
 - 实现 placement subregion 刷新。
 - 实现 placement manager touched chunks 更新。
-- 处理跨 tile 相邻放置。
+- 处理不相接位置和跨 chunk 放置。
 
 验收：
 
 - 在远离已有投影的位置放置会自动扩容。
-- 新 tile 能正确渲染。
-- 新 tile 保存到 `.litematic`。
+- 新 Creator cell 能正确渲染。
+- 新 Creator cell 可由 Litematica 导出到 `.litematic`。
 - 重新加载后 placement 区域正确。
 
 ### 阶段 5：虚拟创造物品栏 GUI
@@ -504,8 +483,8 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 - 左键删除投影方块。
 - 9 格虚拟快捷栏。
 - 中键 pick block。
-- tile/subregion 动态扩容。
-- 保存普通 `.litematic`。
+- 稀疏 subregion 动态扩容。
+- 使用 Litematica 原生界面导出普通 `.litematic`。
 - Tweakeroo Free Camera 下基本可用。
 
 第一版暂不包含：
@@ -528,27 +507,33 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 5. 触发 Litematica 渲染 rebuild。
 6. 接入右键目标选择。
 7. 接入 9 格虚拟快捷栏。
-8. 实现动态 tile。
-9. 实现保存。
+8. 实现稀疏 subregion 动态扩展。
+9. 对接 Litematica 原生导出/卸载边界。
 10. 再做 GUI 和 Free Camera 细节。
 
 这个顺序能尽早验证最关键风险：Litematica 的 schematic/placement 数据能否被外部 addon 稳定修改并实时渲染。
 
-## 9. 当前 MVP 实现状态
+## 9. 当前 MVP 实现状态（2026-08-01）
 
 截至当前工作树，已实现并通过本地编译闭环的内容：
 
 - Fabric `26.2` 客户端模组骨架、MaLiLib/Litematica 硬依赖、Tweakeroo/Syncmatica `suggests`、Mod Menu 入口、MaLiLib 配置页、热键与中英文 i18n。
-- Creator 模式生命周期、从第一个目标方块创建 `LitematicaSchematic + SchematicPlacement` 草稿，并加入 Litematica placement manager。
-- `16x16x16` tile/subregion 动态扩容；新 tile 写入 schematic private maps，刷新 schematic metadata、placement subregion count、placement subregion values，并标记 touched chunk rebuild。
+- Creator 世界生命周期：退出/加入世界时 mode off，清理 focus、输入 cooldown、临时 placement 抑制和 Tweakeroo 兼容状态，并在 Litematica 加载后重建 placement index。
+- 独立 `CreatorFocus`，不覆盖 Litematica selected placement；支持编辑任意普通 Litematica schematic/placement。
+- 真正零 region 的空白 schematic；`M,N` 新建，`selectNewDraftPlacement` 默认关闭。
+- chunk 空间索引和目标解析：唯一范围自动归属、范围外扩展 focus/无 focus 新建、重叠时打开 `M,F` Focus Switcher。
+- 重叠候选的 Creator-local 临时抑制，不持久化或改写原生 enabled/render 状态。
+- placement/subregion 变换感知编辑；1×1 稀疏 Creator cell 动态扩展；新增/移除 region 同步同一 schematic 的全部 placements。
+- `hideSubregionBoxesInCreatorMode=true` 默认隐藏密集 placement subregion box，不修改 Litematica 配置。
 - 客户端虚拟栏数据模型：9 格虚拟快捷栏、27 格虚拟背包、1 格副手、4 格盔甲、1 格丢弃栏；支持 selected slot、本地 JSON 持久化、数字键/滚轮切换。
 - 简化版虚拟物品栏 GUI：左侧显示 42 个虚拟槽位并支持选中/清空目标槽位，右侧按 `BlockItem` 列表搜索和分页选择，点击后写入目标虚拟槽位，不触碰真实背包。
-- 基础 HUD 状态显示：Creator 模式开启时显示虚拟槽位、虚拟方块、草稿名、保存状态、tile 数和投影方块数。
+- 基础 HUD 状态显示：虚拟槽位/方块、focus placement、schematic、dirty、region 数和方块数。
 - Creator 编辑闭环：右键用虚拟 `BlockItem` 创建投影方块，左键删除当前 Creator 投影方块，中键 pick 真实方块或 Creator 投影方块。
-- 保存入口：将当前草稿保存到 Litematica schematics 目录中的普通 `.litematic` 文件，保存后清除 dirty 状态。
+- 完成编辑入口只清空 focus；卸载入口按 focus schematic 卸载全部 placements；文件导出继续使用 Litematica 原生界面。
 - Free Camera 基本兼容路径：编辑 ray trace 始终从 MaLiLib/Minecraft camera entity 获取；未安装 Tweakeroo 时自然回退玩家视角。
 - 放置状态计算会在构造 `BlockPlaceContext` 时临时使用 camera entity 的 yaw/pitch，再立即恢复真实 player 旋转，让 Free Camera 下的朝向跟随相机。
-- Tweakeroo Free Camera 配置提示：通过反射软检测 `TWEAK_FREE_CAMERA` 与 `FREE_CAMERA_PLAYER_INPUTS`，在不兼容组合下节流 warning，不引入硬依赖。
+- Tweakeroo Free Camera 配置通过反射软检测；Creator 临时关闭不兼容的 `freeCameraPlayerInputs`，退出时恢复，不引入硬依赖。
+- JUnit 回归测试覆盖旋转/镜像坐标往返、候选身份合并和 Creator cell 安全移除策略。
 - 左右键拦截：在 Creator 模式下通过 Mixin 消费 `Minecraft.startUseItem` 与 `Minecraft.startAttack`，避免真实服务器交互透传。
 
 当前已知边界：
@@ -556,25 +541,21 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 - 虚拟创造物品栏 GUI 仍是轻量搜索列表和槽位按钮，尚未完全还原原版创造模式分类页、物品图标网格和拖拽交互。
 - 空气命中暂未实现固定距离、网格、平面锁定或从最近投影面延伸。
 - 第一版只覆盖普通 `BlockItem` 的单方块放置语义；门、床、高草、复杂 block entity、undo/redo 需要后续专项完善。
-- Tweakeroo 的 `freeCameraPlayerInputs=false` 已做运行时提示，但还没有自动临时切换和退出恢复。
+- non-file-backed 和 file-backed dirty schematic 的 recovery cache 尚未实现；异常退出恢复仍是 #18 剩余工作。
 - Syncmatica 集成仍在后续范围。
 
 ## 10. 开发与验证记录
 
-已完成/当前准备提交的 git 里程碑：
+本轮 Creator 编辑内核 git 里程碑：
 
-- `a8408df init: init git repo and create planning doc file`
-- `da765ec build: scaffold fabric 26.2 mod`
-- `3fc8718 feat: add creator draft placement core`
-- `feat: add creator editing virtual inventory and dynamic tiles`
-- `feat: improve creator virtual inventory gui`
-- `feat: warn about incompatible tweakeroo free camera inputs`
-- `feat: add creator status hud`
-- `fix: use camera rotation for creator placement state`
+- `a8c0078 build: avoid local malilib composite jar lock`
+- `d4aea51 feat: add creator focus and placement target resolution`
+- `9a3d14e feat: support transformed sparse schematic editing`
+- `fe2cd4f feat: add focus switcher and lifecycle cleanup`
 
 本地构建方式：
 
-- 标准验证命令：`.\gradlew.bat build --no-daemon --console=plain --stacktrace`
-- 当前 wrapper 使用 Gradle `9.6.0`，已确认该命令可以完成 `BUILD SUCCESSFUL`。
+- 标准验证命令：`.\gradlew.bat build --no-daemon --max-workers=1`
+- 当前 wrapper 使用 Gradle `9.6.0`。OneDrive 对 Gradle ZIP/JAR 输出存在文件锁时，应把所有 composite project 的 `layout.buildDirectory` 重定向到非 OneDrive 临时目录；本轮完整 build 与测试已用该方式通过。
 - 若 wrapper 分发下载不可用，可临时使用工作树内忽略提交的 `.gradle-local/gradle-9.6.0/bin/gradle.bat` 作为本地 fallback。
 - `.gradle-local/` 与 `gradle-*.zip` 已在 `.gitignore` 中忽略，避免把本地工具缓存提交进仓库。
