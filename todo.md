@@ -1,6 +1,6 @@
 # Litematica Creator TODO
 
-最后更新：2026-08-01
+最后更新：2026-08-02
 
 ## 已完成
 
@@ -18,6 +18,7 @@
 - [x] #15 长按放置的固定间隔
 - [x] #16 Creator 模式下真实破坏阻断
 - [x] #17 退出 Creator 模式后的异常交互阻断
+- [x] #18 未保存 schematic 的 recovery cache
 - [x] #31 退出世界时关闭 Creator 模式
 - [x] #32 重新进入世界后 Creator 模式与 HUD 状态不一致
 - [x] #33 Creator focus 目标解析与切换
@@ -35,18 +36,6 @@
 
 ## 状态与生命周期
 
-- [~] #18 未保存 schematic 的 recovery cache
-  - 继续以 Litematica metadata 作为 dirty 状态的唯一依据，不维护 Creator-owned 或 Creator-managed 身份。
-  - 生命周期卸载前，缓存所有 non-file-backed schematic 和所有已修改的 file-backed schematic。
-  - 不缓存未修改的 file-backed schematic，由 Litematica 原生 per-dimension placement 持久化负责恢复。
-  - 在 Creator 专用恢复目录中保存临时 `.litematic` 和 sidecar manifest。
-  - Manifest 记录世界/服务器、dimension、schematic 标识、原始文件路径、缓存路径、placement transforms、dirty 时间戳，以及可选的退出前 Creator focus。
-  - 进入世界时先让 Litematica 恢复原生 file-backed placements，再恢复匹配当前世界的 cache entries。
-  - 区分玩家主动移除 placement/卸载 schematic 与退出世界、断线、关闭游戏等生命周期卸载。
-  - 玩家主动卸载或 Creator 丢弃时清除对应缓存；生命周期清理时写入并保留缓存。
-  - `SchematicPlacementEventHandler` 只作为 placement、focus 和 manifest 更新的观察器；它不是可取消事务 API，也不能替代 dirty metadata。
-  - 验收：non-file-backed 和已修改的 file-backed schematics 在退出世界或异常中断后可以恢复，而玩家明确卸载/丢弃的内容不会被恢复。
-
 - [ ] #34 切换 Creator focus 时提示当前编辑目标
   - 在 focus 状态变更入口统一发送提示，使自动目标归属、Focus Switcher、快捷键和新建草稿行为一致。
   - Focus 真正发生变化时显示 placement 名和 schematic 名；清空 focus 时显示单独提示。
@@ -58,14 +47,14 @@
 - [ ] #35 删除 subregion 中最后一个投影方块后自动删除该 subregion
   - 将现有仅针对 `1x1x1` Creator cell 的自动清理扩展到任何经 Creator 编辑后变空的 subregion。
   - 从 schematic 及该 schematic 的所有 placements 中移除 region，并刷新几何 metadata、方块数、touched chunks 和 placement index。
-  - 判定 subregion 为空之前，正确处理残留 block entities、entities 和 scheduled ticks。
+  - 仅在方块、block entities/NBT、entities、scheduled block ticks 和 scheduled fluid ticks 全部为空时删除 subregion；任一附属数据仍存在都必须保留。
   - 验收：删除一个 subregion 中的全部投影方块后，该 subregion 自动消失；保存重载和同 schematic 的所有 placements 仍保持一致。
 
 - [ ] #36 普通放置不得覆盖目标位置已有的投影方块
   - Creator 当前会直接把计算出的状态写入目标位置，没有先检查该位置已有的 schematic state。
   - 铁砧等非完整轮廓方块可能让射线穿过空隙命中后方方块，从而把已被铁砧占据的位置算作放置目标。
   - Litematica Rebuild 的基础 `placeSchematicBlock()` 路径也缺少目标空气检查，但方向放置和填充空气路径会检查空气。将其视为共享的上游行为缺口，但在 Creator 内独立修复。
-  - 普通放置仅在目标投影状态为空气，或按原版放置语义可替换时允许写入；显式替换属于另一种编辑操作。
+  - 使用原版实际 `VoxelShape` 命中与 replaceable 放置语义；普通放置仅在目标投影状态为空气或可替换时允许写入，显式替换属于另一种编辑操作。
   - 占用检查必须发生在切换 focus、创建草稿/subregion 和标记 metadata dirty 之前。
   - 验收：透过铁砧及其他非完整轮廓投影方块的空隙观察时，放置操作不会静默顶掉已有投影方块。
 

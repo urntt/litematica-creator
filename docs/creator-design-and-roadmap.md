@@ -513,7 +513,7 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 
 这个顺序能尽早验证最关键风险：Litematica 的 schematic/placement 数据能否被外部 addon 稳定修改并实时渲染。
 
-## 9. 当前 MVP 实现状态（2026-08-01）
+## 9. 当前 MVP 实现状态（2026-08-02）
 
 截至当前工作树，已实现并通过本地编译闭环的内容：
 
@@ -533,15 +533,16 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 - Free Camera 基本兼容路径：编辑 ray trace 始终从 MaLiLib/Minecraft camera entity 获取；未安装 Tweakeroo 时自然回退玩家视角。
 - 放置状态计算会在构造 `BlockPlaceContext` 时临时使用 camera entity 的 yaw/pitch，再立即恢复真实 player 旋转，让 Free Camera 下的朝向跟随相机。
 - Tweakeroo Free Camera 配置通过反射软检测；Creator 临时关闭不兼容的 `freeCameraPlayerInputs`，退出时恢复，不引入硬依赖。
-- JUnit 回归测试覆盖旋转/镜像坐标往返、候选身份合并和 Creator cell 安全移除策略。
+- JUnit 回归测试覆盖旋转/镜像坐标往返、候选身份合并、Creator cell 安全移除，以及 recovery eligibility、manifest、调度、原子 generation 和主动删除抑制。
 - 左右键拦截：在 Creator 模式下通过 Mixin 消费 `Minecraft.startUseItem` 与 `Minecraft.startAttack`，避免真实服务器交互透传。
+- Recovery cache：non-file-backed 和已修改的 file-backed schematics 使用标准 `.litematic` generation 与 manifest v1 自动缓存；世界恢复时保留 placement 变换、selected placement 和 Creator focus，但不自动开启 Creator 模式。
+- Recovery 写入采用客户端 snapshot、单线程后台压缩、5 秒 idle/30 秒最大延迟和生命周期同步 flush；主动移除、卸载与 Creator 丢弃不会在下次进入世界时复活。
 
 当前已知边界：
 
 - 虚拟创造物品栏 GUI 仍是轻量搜索列表和槽位按钮，尚未完全还原原版创造模式分类页、物品图标网格和拖拽交互。
 - 空气命中暂未实现固定距离、网格、平面锁定或从最近投影面延伸。
 - 第一版只覆盖普通 `BlockItem` 的单方块放置语义；门、床、高草、复杂 block entity、undo/redo 需要后续专项完善。
-- non-file-backed 和 file-backed dirty schematic 的 recovery cache 尚未实现；异常退出恢复仍是 #18 剩余工作。
 - Syncmatica 集成仍在后续范围。
 
 ## 10. 开发与验证记录
@@ -552,6 +553,8 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 - `d4aea51 feat: add creator focus and placement target resolution`
 - `9a3d14e feat: support transformed sparse schematic editing`
 - `fe2cd4f feat: add focus switcher and lifecycle cleanup`
+- `5912a5a feat: add schematic recovery storage`
+- `22ef7e0 feat: restore unsaved schematics across sessions`
 
 本地构建方式：
 

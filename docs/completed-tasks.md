@@ -1,6 +1,6 @@
 # Litematica Creator 已完成工作记录
 
-最后更新：2026-08-01
+最后更新：2026-08-02
 
 本文档保存已完成工作的实现细节和历史验收记录。当前和部分完成的工作统一维护在 [`../todo.md`](../todo.md)。
 
@@ -45,7 +45,7 @@
 - Litematica 为新世界加载 placements 后，Creator 模式会保持关闭，并重建 Creator placement index。
 - 重新进入世界后不再出现 Creator 模式仍开启但 HUD 缺失的状态。
 
-## Creator Focus 与编辑语义（#18 已完成部分）
+## Creator Focus 与编辑语义（#18）
 
 - Creator focus 独立于 Litematica selected placement，表示当前编辑画布。
 - Focus 包含 placement 及其 schematic：placement 是带变换的编辑视图，schematic 是实际共享数据。
@@ -56,7 +56,20 @@
 - 完成编辑只清空 Creator focus，不修改 Litematica selection、不导出文件、不卸载 schematic，也不删除 placements。
 - Creator 卸载/丢弃针对 focused schematic 及其所有 placements，但不会删除已有 `.litematic` 原文件。
 - 文件导出及原生已加载 schematic/placement 管理继续由 Litematica 负责。
-- Non-file-backed 和已修改 file-backed schematics 的 recovery cache 仍作为 #18 的未完成部分维护。
+
+## 未保存 Schematic Recovery（#18）
+
+- Recovery 只依据 Litematica 状态判断资格：non-file-backed schematic 始终缓存；file-backed schematic 仅在 `wasModifiedSinceSaved()` 为真时缓存；干净的 file-backed schematic 继续由 Litematica 原生 per-dimension 数据恢复。
+- 每个 schematic 在 `config/litematica-creator/recovery/` 使用独立 UUID entry。Manifest v1 保存世界/服务器、dimension、原始路径和类型、dirty 状态、完整 placement JSON、Litematica selected placement hash 与 Creator focus hash。
+- Schematic 内容使用标准压缩 `.litematic` NBT。写入采用 generation 文件、临时 manifest 和原子移动；新 manifest 提交成功后才删除上一代，因此中断提交至少保留上一份完整缓存。
+- Creator 编辑会直接标记待写；placement 新增、更新、移除、selected/focus 变化会同步更新待写状态；每秒扫描 Litematica metadata 以捕获 Rebuild 或其他入口的修改。
+- 停止变化 5 秒后异步写入，持续编辑最多延迟 30 秒；切换世界、断线和正常关闭前在客户端线程生成 snapshot，并等待单线程后台 writer 完成压缩与 I/O。
+- 进入世界后的下一 client tick 才执行恢复，确保 Litematica 已先加载原生 placements。Cache 和全部 placement JSON 验证成功后才替换对应原生干净对象，原 `.litematic` 文件不会被改写。
+- Placement 使用 Litematica `toJson()/fromJson()` 往返，保留 hash、origin、rotation、mirror、enabled/render、subregion 状态、颜色及扩展事件字段；空 subregion placement 列表显式保存为 `[]`。
+- 恢复会按 hash 还原 Litematica selected placement 和 Creator focus，但 Creator 模式保持关闭。成功只显示一条汇总提示；失败保留 cache 和原生 placements，并记录详细日志和一次警告。
+- 玩家移除单个 placement 后，下一份 manifest 不再包含它；移除最后一个 placement 会同步删除 entry 并抑制本会话自动重建，重新添加 placement 后解除抑制。
+- 玩家卸载 schematic 或执行 Creator 丢弃会同步取消旧 generation 并删除对应 cache；退出世界、切换 dimension、断线和关闭游戏不视为主动丢弃。
+- 单元测试覆盖 eligibility、manifest 往返、世界/维度匹配、5 秒/30 秒调度、generation 中断提交、主动删除和基于对象身份的会话抑制。
 
 ## Focus 目标解析（#33）
 
