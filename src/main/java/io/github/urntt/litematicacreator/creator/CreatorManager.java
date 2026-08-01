@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.data.SchematicHolder;
+import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
 import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
 import io.github.urntt.litematicacreator.config.Configs;
@@ -20,6 +21,8 @@ public class CreatorManager
 
     @Nullable
     private CreatorDraft currentDraft;
+    @Nullable
+    private CreatorFocus focus;
 
     private CreatorManager()
     {
@@ -60,6 +63,30 @@ public class CreatorManager
     public CreatorDraft getCurrentDraft()
     {
         return this.currentDraft;
+    }
+
+    @Nullable
+    public CreatorFocus getFocus()
+    {
+        return this.focus;
+    }
+
+    public void focusPlacement(SchematicPlacement placement)
+    {
+        this.focus = new CreatorFocus(placement);
+    }
+
+    public void clearFocus()
+    {
+        this.focus = null;
+    }
+
+    public void onPlacementRemoved(SchematicPlacement placement)
+    {
+        if (this.focus != null && this.focus.placement() == placement)
+        {
+            this.clearFocus();
+        }
     }
 
     @Nullable

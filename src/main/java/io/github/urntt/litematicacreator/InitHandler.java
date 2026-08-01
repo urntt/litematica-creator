@@ -11,6 +11,7 @@ import fi.dy.masa.malilib.util.data.ModInfo;
 import fi.dy.masa.malilib.util.i18n.i18nMode;
 import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
+import io.github.urntt.litematicacreator.creator.CreatorPlacementIndex;
 import io.github.urntt.litematicacreator.event.CreatorClientTickHandler;
 import io.github.urntt.litematicacreator.event.CreatorHotkeyCallbacks;
 import io.github.urntt.litematicacreator.event.InputHandler;
@@ -49,6 +50,7 @@ public class InitHandler implements IInitializationHandler
         );
 
         CreatorHotkeyCallbacks.register();
+        CreatorPlacementIndex.INSTANCE.register();
         InputEventHandler.getKeybindManager().registerKeybindProvider(InputHandler.getInstance());
         InputEventHandler.getInputManager().registerKeyboardInputHandler(InputHandler.getInstance());
         InputEventHandler.getInputManager().registerMouseInputHandler(InputHandler.getInstance());
