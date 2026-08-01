@@ -110,6 +110,30 @@
 - 放置状态无效或目标不可替换时，不会切换 focus、创建草稿/subregion、标记 dirty 或调度 recovery；占用阻断保持静默。
 - 只有预检成功后才提交 focus、新草稿和 schematic 写入；重叠 placement 仍先打开 Focus Switcher，不执行本次放置。
 
+## 虚拟创造物品栏（#8）
+
+- 虚拟物品栏配置升级为 v2，使用 `ItemStack.CODEC` 保存数量和完整 data components；旧 item-id 配置会迁移为对应物品的最大堆叠数。
+- GUI 使用独立的客户端 `AbstractContainerScreen`、menu 和 container，复用 26.2 原版创造栏的尺寸、背景、tab、滚动条、搜索框、槽位布局和 tooltip，但不会替换 `player.containerMenu` 或调用网络 game mode。
+- 原版和已注册创造分类均由当前 feature flags 重建，OP 分类固定按有权限状态生成；搜索页合并创造栏变体与所有已启用注册物品，不再局限于 `BlockItem`。
+- 搜索支持本地化名称、注册 ID、tooltip 与 `#tag`；原版保存快捷栏只读加载，Creator 不过滤或覆写其中物品。
+- Inventory 页提供虚拟 9 格快捷栏、27 格主栏、副手、四个受装备位限制的盔甲槽和丢弃槽，不提供合成栏。
+- 左右键拿取/放入/拆分/交换、拖拽、数字键、shift-click、clone 和本地丢弃均只修改虚拟状态；物品网格和中键 clone 使用最大堆叠数，投影放置不消耗数量。
+- 每次 GUI 事务只保存一次，配置先写临时文件再原子替换；损坏栏位单独跳过，丢弃槽不持久化。
+
+## 虚拟快捷栏与玩家渲染（#9、#24）
+
+- Creator 模式下，原版 HUD 快捷栏读取虚拟九格、虚拟 selected slot 和虚拟副手，物品名称提示也跟随虚拟选中物品；真实 selected slot 和真实背包保持不变。
+- 第一人称 `ItemInHandRenderer` 在 tick 和双手选择阶段读取稳定的虚拟主副手快照，因此保留原版换物品过渡动画且不会因配置副本每 tick 抖动。
+- 第三人称只替换本地玩家 `AvatarRenderState` 中的主副手、左右主手映射、手臂姿势和四件盔甲；其他玩家始终使用真实同步状态。
+- 虚拟盔甲仅进入渲染快照，不修改真实装备、属性、护甲值、耐久、HUD 护甲条或服务器状态；退出 Creator 模式后所有读取自动恢复真实物品。
+
+## 本地编辑动作反馈（#25）
+
+- 只有 `CreatorSchematicEditor.setBlockState()` 确认实际修改成功后，放置或删除才调用 `swing(InteractionHand.MAIN_HAND, false)`。
+- 被占用、无目标、重叠待选择、重复状态和其他失败路径不播放动画；中键 pick block 按原版行为不挥手。
+- 两参数非广播 swing 只更新本地动画，不调用 `LocalPlayer.swing(hand)` 的发包路径；投影交互动画留待 #29。
+- 单元测试覆盖配置迁移与完整 ItemStack 往返、搜索合并和文本匹配、左右主手及盔甲位映射，以及成功/失败编辑的反馈决策。
+
 ## 配套工作
 
 - Creator 的完成编辑/卸载命令已与 Litematica 原生导出和 selected-placement 行为分离。
