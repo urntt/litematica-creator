@@ -85,6 +85,22 @@ class RecoveryStorageTest
         }
     }
 
+    @Test
+    void invalidExistingManifestIsRetainedInsteadOfBeingOverwritten() throws Exception
+    {
+        RecoveryStorage storage = new RecoveryStorage(this.tempDir.resolve("recovery"));
+        UUID entryId = UUID.randomUUID();
+        Files.createDirectories(storage.getRoot());
+        Path manifest = storage.manifestPath(entryId);
+        Files.writeString(manifest, "{ invalid recovery manifest");
+
+        assertThrows(IOException.class, () -> storage.commit(snapshot(entryId, 1L, "value")));
+
+        assertEquals("{ invalid recovery manifest", Files.readString(manifest));
+        assertFalse(Files.exists(storage.generationPath(entryId, 1L)));
+        assertEquals(List.of(manifest), storage.scan().invalidManifests());
+    }
+
     private static RecoverySnapshot snapshot(UUID entryId, long generation, String marker)
     {
         JsonObject placement = new JsonObject();

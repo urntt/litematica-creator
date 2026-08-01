@@ -66,6 +66,12 @@ public final class RecoveryStorage
         Path manifestTemp = this.root.resolve(manifest.entryId() + ".json.tmp");
         Optional<RecoveryManifest> previous = this.readManifest(manifestFile);
 
+        if (Files.exists(manifestFile) &&
+            (previous.isEmpty() || !previous.get().entryId().equals(manifest.entryId())))
+        {
+            throw new IOException("Refusing to overwrite an invalid recovery manifest: " + manifestFile);
+        }
+
         Files.deleteIfExists(generationTemp);
         Files.deleteIfExists(manifestTemp);
 
