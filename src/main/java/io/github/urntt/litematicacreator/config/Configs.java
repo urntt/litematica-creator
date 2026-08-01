@@ -37,6 +37,9 @@ public class Configs implements IConfigHandler
         public static final ConfigBoolean DEBUG_LOGGING = new ConfigBoolean(
                 "debugLogging", false
         ).apply(GENERIC_KEY);
+        public static final ConfigBoolean SELECT_NEW_DRAFT_PLACEMENT = new ConfigBoolean(
+                "selectNewDraftPlacement", false
+        ).apply(GENERIC_KEY);
         public static final ConfigOptionList TRANSLATION_LANGUAGE = new ConfigOptionList(
                 "translationLanguage", new CreatorI18nConfig(LANG.orElseThrow())
         ).apply(GENERIC_KEY);
@@ -47,6 +50,7 @@ public class Configs implements IConfigHandler
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 ENABLE_CREATOR_MODE,
                 DEBUG_LOGGING,
+                SELECT_NEW_DRAFT_PLACEMENT,
                 TRANSLATION_LANGUAGE,
                 TRANSLATION_MODE
         );

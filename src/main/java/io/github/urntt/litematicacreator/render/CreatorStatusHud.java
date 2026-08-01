@@ -11,7 +11,7 @@ import fi.dy.masa.litematica.render.infohud.IInfoHudRenderer;
 import fi.dy.masa.litematica.render.infohud.RenderPhase;
 import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.util.StringUtils;
-import io.github.urntt.litematicacreator.creator.CreatorDraft;
+import io.github.urntt.litematicacreator.creator.CreatorFocus;
 import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 
@@ -40,7 +40,7 @@ public class CreatorStatusHud implements IInfoHudRenderer
     {
         List<String> lines = new ArrayList<>();
         CreatorInventory inventory = CreatorInventory.getInstance();
-        CreatorDraft draft = CreatorManager.getInstance().getCurrentDraft();
+        CreatorFocus focus = CreatorManager.getInstance().getFocus();
         ItemStack selectedStack = inventory.getSelectedStack();
         String green = GuiBase.TXT_GREEN;
         String red = GuiBase.TXT_RED;
@@ -54,16 +54,16 @@ public class CreatorStatusHud implements IInfoHudRenderer
         lines.add(StringUtils.translate("litematica-creator.hud.selected_slot", green + (inventory.getSelectedHotbarSlot() + 1) + reset));
         lines.add(StringUtils.translate("litematica-creator.hud.selected_block", yellow + blockName + reset));
 
-        if (draft == null)
+        if (focus == null)
         {
             lines.add(StringUtils.translate("litematica-creator.hud.draft_missing", red + StringUtils.translate("litematica-creator.hud.none") + reset));
         }
         else
         {
-            String dirty = draft.isDirty() ? red + StringUtils.translate("litematica-creator.hud.dirty") + reset : green + StringUtils.translate("litematica-creator.hud.saved") + reset;
-            lines.add(StringUtils.translate("litematica-creator.hud.draft_name", green + draft.getPlacement().getName() + reset));
+            String dirty = focus.isDirty() ? red + StringUtils.translate("litematica-creator.hud.dirty") + reset : green + StringUtils.translate("litematica-creator.hud.saved") + reset;
+            lines.add(StringUtils.translate("litematica-creator.hud.draft_name", green + focus.placement().getName() + reset));
             lines.add(StringUtils.translate("litematica-creator.hud.draft_state", dirty));
-            lines.add(StringUtils.translate("litematica-creator.hud.draft_counts", green + draft.getTileCount() + reset, green + draft.getTotalBlocks() + reset));
+            lines.add(StringUtils.translate("litematica-creator.hud.draft_counts", green + focus.schematic().getMetadata().getRegionCount() + reset, green + focus.schematic().getMetadata().getTotalBlocks() + reset));
         }
 
         return lines;

@@ -1,5 +1,6 @@
 package io.github.urntt.litematicacreator.creator;
 
+import java.util.List;
 import javax.annotation.Nullable;
 
 import net.minecraft.client.Minecraft;
@@ -17,6 +18,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 import fi.dy.masa.litematica.mixin.entity.IMixinEntity;
+import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
 import fi.dy.masa.litematica.util.RayTraceUtils;
 import fi.dy.masa.litematica.util.RayTraceUtils.RayTraceWrapper;
 import fi.dy.masa.litematica.util.EntityUtils;
@@ -76,9 +78,9 @@ public class CreatorEditService
             return true;
         }
 
-        CreatorDraft draft = CreatorManager.getInstance().getOrCreateDraft(target.blockPos());
+        @Nullable SchematicPlacement placement = this.resolvePlacementForWrite(target);
 
-        if (draft == null)
+        if (placement == null)
         {
             return true;
         }
@@ -91,7 +93,7 @@ public class CreatorEditService
             return true;
         }
 
-        draft.setBlockState(target.blockPos(), state);
+        CreatorSchematicEditor.setBlockState(placement, target.blockPos(), state);
         return true;
     }
 
@@ -108,7 +110,18 @@ public class CreatorEditService
 
         if (target != null)
         {
-            CreatorManager.getInstance().getCurrentDraft().setBlockState(target.blockPos(), Blocks.AIR.defaultBlockState());
+            List<CreatorPlacementTarget> candidates = CreatorPlacementIndex.INSTANCE.findAt(target.blockPos());
+
+            if (candidates.size() > 1)
+            {
+                CreatorManager.getInstance().requestFocusChoice(candidates.stream().map(CreatorPlacementTarget::placement).toList());
+            }
+            else if (candidates.size() == 1)
+            {
+                SchematicPlacement placement = candidates.getFirst().placement();
+                CreatorManager.getInstance().focusPlacement(placement);
+                CreatorSchematicEditor.setBlockState(placement, target.blockPos(), Blocks.AIR.defaultBlockState());
+            }
         }
 
         return true;
@@ -131,11 +144,10 @@ public class CreatorEditService
         }
 
         BlockState state;
-        CreatorDraft draft = CreatorManager.getInstance().getCurrentDraft();
-
-        if (target.schematicBlock() && draft != null)
+        if (target.schematicBlock())
         {
-            state = draft.getBlockState(target.blockPos());
+            Level schematicWorld = SchematicWorldHandler.getSchematicWorld();
+            state = schematicWorld != null ? schematicWorld.getBlockState(target.blockPos()) : Blocks.AIR.defaultBlockState();
         }
         else
         {
@@ -197,7 +209,7 @@ public class CreatorEditService
 
         BlockHitResult hit = trace.getBlockHitResult();
 
-        if (trace.getHitType() == RayTraceWrapper.HitType.SCHEMATIC_BLOCK && this.isCurrentDraftBlock(hit.getBlockPos()))
+        if (trace.getHitType() == RayTraceWrapper.HitType.SCHEMATIC_BLOCK)
         {
             return new CreatorTarget(hit.getBlockPos().relative(hit.getDirection()), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true);
         }
@@ -220,7 +232,7 @@ public class CreatorEditService
         }
 
         BlockHitResult hit = trace.getBlockHitResult();
-        return this.isCurrentDraftBlock(hit.getBlockPos()) ? new CreatorTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true) : null;
+        return new CreatorTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true);
     }
 
     @Nullable
@@ -235,7 +247,7 @@ public class CreatorEditService
 
         BlockHitResult hit = trace.getBlockHitResult();
 
-        if (trace.getHitType() == RayTraceWrapper.HitType.SCHEMATIC_BLOCK && this.isCurrentDraftBlock(hit.getBlockPos()))
+        if (trace.getHitType() == RayTraceWrapper.HitType.SCHEMATIC_BLOCK)
         {
             return new CreatorTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true);
         }
@@ -254,10 +266,28 @@ public class CreatorEditService
         return camera != null && mc.level != null ? RayTraceUtils.getGenericTrace(mc.level, camera, EDIT_RANGE, true, false, false) : null;
     }
 
-    private boolean isCurrentDraftBlock(BlockPos pos)
+    @Nullable
+    private SchematicPlacement resolvePlacementForWrite(CreatorTarget target)
     {
-        CreatorDraft draft = CreatorManager.getInstance().getCurrentDraft();
-        return draft != null && !draft.getBlockState(pos).isAir();
+        CreatorManager manager = CreatorManager.getInstance();
+        List<CreatorPlacementTarget> hitCandidates = target.schematicBlock() ? CreatorPlacementIndex.INSTANCE.findAt(target.clickedBlockPos()) : List.of();
+        List<CreatorPlacementTarget> writeCandidates = CreatorPlacementIndex.INSTANCE.findAt(target.blockPos());
+        CreatorTargetResolver.Resolution resolution = CreatorTargetResolver.resolve(hitCandidates, writeCandidates, manager.getFocus());
+
+        return switch (resolution.action())
+        {
+            case EDIT ->
+            {
+                manager.focusPlacement(resolution.placement());
+                yield resolution.placement();
+            }
+            case CREATE_NEW -> manager.createBlank(target.blockPos());
+            case CHOOSE_OVERLAP ->
+            {
+                manager.requestFocusChoice(resolution.candidates());
+                yield null;
+            }
+        };
     }
 
     private boolean canEdit(Minecraft mc)

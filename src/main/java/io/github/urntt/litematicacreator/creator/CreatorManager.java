@@ -2,6 +2,7 @@ package io.github.urntt.litematicacreator.creator;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import javax.annotation.Nullable;
 
 import net.minecraft.client.Minecraft;
@@ -9,10 +10,15 @@ import net.minecraft.core.BlockPos;
 
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.data.SchematicHolder;
+import fi.dy.masa.litematica.schematic.LitematicaSchematic;
+import fi.dy.masa.litematica.schematic.SchematicMetadata;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
+import fi.dy.masa.litematica.schematic.placement.SchematicPlacementManager;
+import fi.dy.masa.litematica.util.FileType;
 import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
 import io.github.urntt.litematicacreator.config.Configs;
+import io.github.urntt.litematicacreator.mixin.LitematicaSchematicAccessor;
 
 public class CreatorManager
 {
@@ -20,9 +26,8 @@ public class CreatorManager
     private static final DateTimeFormatter NAME_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
     @Nullable
-    private CreatorDraft currentDraft;
-    @Nullable
     private CreatorFocus focus;
+    private List<SchematicPlacement> pendingFocusChoices = List.of();
 
     private CreatorManager()
     {
@@ -60,12 +65,6 @@ public class CreatorManager
     }
 
     @Nullable
-    public CreatorDraft getCurrentDraft()
-    {
-        return this.currentDraft;
-    }
-
-    @Nullable
     public CreatorFocus getFocus()
     {
         return this.focus;
@@ -74,11 +73,13 @@ public class CreatorManager
     public void focusPlacement(SchematicPlacement placement)
     {
         this.focus = new CreatorFocus(placement);
+        this.pendingFocusChoices = List.of();
     }
 
     public void clearFocus()
     {
         this.focus = null;
+        this.pendingFocusChoices = List.of();
     }
 
     public void onPlacementRemoved(SchematicPlacement placement)
@@ -89,54 +90,83 @@ public class CreatorManager
         }
     }
 
-    @Nullable
-    public CreatorDraft getOrCreateDraft(BlockPos seedWorldPos)
+    public List<SchematicPlacement> getPendingFocusChoices()
     {
-        if (this.currentDraft == null)
-        {
-            this.currentDraft = CreatorDraft.create(this.createDraftName(), seedWorldPos, this.getAuthorName());
+        return this.pendingFocusChoices;
+    }
 
-            if (this.currentDraft != null)
-            {
-                InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.draft.created", this.currentDraft.getPlacement().getName());
-            }
+    public void requestFocusChoice(List<SchematicPlacement> placements)
+    {
+        this.pendingFocusChoices = List.copyOf(placements);
+    }
+
+    public SchematicPlacement createBlank(BlockPos origin)
+    {
+        String name = this.createDraftName();
+        LitematicaSchematic schematic = LitematicaSchematicAccessor.litematicacreator$create(null);
+        SchematicMetadata metadata = schematic.getMetadata();
+        long now = System.currentTimeMillis();
+
+        metadata.setName(name);
+        metadata.setAuthor(this.getAuthorName());
+        metadata.setRegionCount(0);
+        metadata.setTotalVolume(0);
+        metadata.setTotalBlocks(0);
+        metadata.setEnclosingSize(BlockPos.ZERO);
+        metadata.setTimeCreated(now);
+        metadata.setTimeModified(now);
+        metadata.setSchematicVersion(LitematicaSchematic.SCHEMATIC_VERSION);
+        metadata.setMinecraftDataVersion(LitematicaSchematic.MINECRAFT_DATA_VERSION);
+        metadata.setFileType(FileType.LITEMATICA_SCHEMATIC);
+
+        SchematicPlacementManager placementManager = DataManager.getSchematicPlacementManager();
+        SchematicPlacement previousSelection = placementManager.getSelectedSchematicPlacement();
+        SchematicPlacement placement = SchematicPlacement.createFor(schematic, origin, name, true, true);
+        SchematicHolder.getInstance().addSchematic(schematic, false);
+        placementManager.addSchematicPlacement(placement, false);
+
+        if (Configs.Generic.SELECT_NEW_DRAFT_PLACEMENT.getBooleanValue())
+        {
+            placementManager.setSelectedSchematicPlacement(placement);
+        }
+        else
+        {
+            placementManager.setSelectedSchematicPlacement(previousSelection);
         }
 
-        return this.currentDraft;
+        this.focusPlacement(placement);
+        InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.draft.created", placement.getName());
+        return placement;
+    }
+
+    /** Retains the old config action name while changing its behavior to finish editing. */
+    public boolean saveCurrentDraft()
+    {
+        if (this.focus == null)
+        {
+            InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.draft.missing");
+            return false;
+        }
+
+        String name = this.focus.placement().getName();
+        this.clearFocus();
+        InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.draft.saved", name);
+        return true;
     }
 
     public boolean discardCurrentDraft()
     {
-        if (this.currentDraft == null)
+        if (this.focus == null)
         {
             InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.draft.missing");
             return false;
         }
 
-        SchematicHolder.getInstance().removeSchematic(this.currentDraft.getSchematic());
-        this.currentDraft = null;
+        LitematicaSchematic schematic = this.focus.schematic();
+        this.clearFocus();
+        SchematicHolder.getInstance().removeSchematic(schematic);
         InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.draft.discarded");
         return true;
-    }
-
-    public boolean saveCurrentDraft()
-    {
-        if (this.currentDraft == null)
-        {
-            InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.draft.missing");
-            return false;
-        }
-
-        String fileName = this.currentDraft.getPlacement().getName();
-        boolean saved = this.currentDraft.getSchematic().writeToFile(DataManager.getSchematicsBaseDirectory(), fileName, true);
-
-        if (saved)
-        {
-            this.currentDraft.markSaved();
-            InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.draft.saved", fileName);
-        }
-
-        return saved;
     }
 
     private String createDraftName()
