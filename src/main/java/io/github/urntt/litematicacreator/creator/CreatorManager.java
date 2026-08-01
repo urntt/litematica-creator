@@ -79,25 +79,22 @@ public class CreatorManager
 
     public void focusPlacement(SchematicPlacement placement)
     {
-        CreatorFocus previous = this.focus;
+        this.changeFocus(placement, FocusNotice.SHOW, true);
+    }
 
-        if (this.focus == null || this.focus.placement() != placement)
-        {
-            CreatorPlacementVisibility.restoreAll();
-        }
-
-        this.focus = new CreatorFocus(placement);
-        this.pendingFocusChoices = List.of();
-        CreatorRecoveryManager.getInstance().onFocusChanged(previous, this.focus);
+    public void restoreFocus(SchematicPlacement placement)
+    {
+        this.changeFocus(placement, FocusNotice.SILENT, true);
     }
 
     public void clearFocus()
     {
-        CreatorFocus previous = this.focus;
-        CreatorPlacementVisibility.restoreAll();
-        this.focus = null;
-        this.pendingFocusChoices = List.of();
-        CreatorRecoveryManager.getInstance().onFocusChanged(previous, null);
+        this.changeFocus(null, FocusNotice.SHOW, true);
+    }
+
+    public void clearFocusSilently()
+    {
+        this.changeFocus(null, FocusNotice.SILENT, true);
     }
 
     public void onPlacementRemoved(SchematicPlacement placement)
@@ -125,11 +122,8 @@ public class CreatorManager
 
     public void focusPlacementFromOverlap(SchematicPlacement placement, List<SchematicPlacement> candidates)
     {
-        CreatorFocus previous = this.focus;
-        this.focus = new CreatorFocus(placement);
-        this.pendingFocusChoices = List.of();
+        this.changeFocus(placement, FocusNotice.SHOW, false);
         CreatorPlacementVisibility.suppressOverlapAlternatives(placement, candidates);
-        CreatorRecoveryManager.getInstance().onFocusChanged(previous, this.focus);
     }
 
     public SchematicPlacement createBlank(BlockPos origin)
@@ -166,8 +160,13 @@ public class CreatorManager
             placementManager.setSelectedSchematicPlacement(previousSelection);
         }
 
-        this.focusPlacement(placement);
-        InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.draft.created", placement.getName());
+        this.changeFocus(placement, FocusNotice.SILENT, true);
+        InfoUtils.showGuiOrInGameMessage(
+                MessageType.SUCCESS,
+                "litematica-creator.message.draft.created",
+                placement.getName(),
+                schematic.getMetadata().getName()
+        );
         return placement;
     }
 
@@ -181,7 +180,7 @@ public class CreatorManager
         }
 
         String name = this.focus.placement().getName();
-        this.clearFocus();
+        this.clearFocusSilently();
         InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.draft.saved", name);
         return true;
     }
@@ -195,11 +194,65 @@ public class CreatorManager
         }
 
         LitematicaSchematic schematic = this.focus.schematic();
-        this.clearFocus();
+        this.clearFocusSilently();
         CreatorRecoveryManager.getInstance().discardSchematic(schematic);
         SchematicHolder.getInstance().removeSchematic(schematic);
         InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.draft.discarded");
         return true;
+    }
+
+    private boolean changeFocus(
+            @Nullable SchematicPlacement placement,
+            FocusNotice notice,
+            boolean restoreVisibility)
+    {
+        CreatorFocus previous = this.focus;
+        @Nullable SchematicPlacement previousPlacement = previous != null ? previous.placement() : null;
+        CreatorFocusChangePolicy.Decision decision = CreatorFocusChangePolicy.decide(
+                previousPlacement,
+                placement,
+                notice == FocusNotice.SHOW
+        );
+
+        this.pendingFocusChoices = List.of();
+
+        if (!decision.changed())
+        {
+            return false;
+        }
+
+        if (restoreVisibility)
+        {
+            CreatorPlacementVisibility.restoreAll();
+        }
+
+        this.focus = placement != null ? new CreatorFocus(placement) : null;
+        CreatorRecoveryManager.getInstance().onFocusChanged(previous, this.focus);
+
+        if (decision.notifyPlayer())
+        {
+            if (this.focus != null)
+            {
+                InfoUtils.showGuiOrInGameMessage(
+                        MessageType.SUCCESS,
+                        "litematica-creator.message.focus.changed",
+                        this.focus.placement().getName(),
+                        this.focus.schematic().getMetadata().getName()
+                );
+            }
+            else
+            {
+                InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.focus.cleared");
+            }
+        }
+
+        return true;
+    }
+
+    private enum FocusNotice
+    {
+        SHOW,
+        SILENT
     }
 
     private String createDraftName()

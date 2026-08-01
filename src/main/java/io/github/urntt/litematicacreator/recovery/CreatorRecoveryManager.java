@@ -576,7 +576,7 @@ public final class CreatorRecoveryManager implements ISchematicPlacementEventLis
 
             if (focusHash != null && restoredByHash.containsKey(focusHash))
             {
-                CreatorManager.getInstance().focusPlacement(restoredByHash.get(focusHash));
+                CreatorManager.getInstance().restoreFocus(restoredByHash.get(focusHash));
             }
         }
         finally

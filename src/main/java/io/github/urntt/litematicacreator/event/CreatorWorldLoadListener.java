@@ -53,7 +53,7 @@ public class CreatorWorldLoadListener implements IWorldLoadListener
     {
         CreatorManager manager = CreatorManager.getInstance();
         manager.setCreatorModeEnabled(false, false);
-        manager.clearFocus();
+        manager.clearFocusSilently();
         CreatorEditService.getInstance().resetTransientState();
         CreatorClientTickHandler.INSTANCE.resetCompatibilityState();
     }
