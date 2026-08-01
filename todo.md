@@ -22,6 +22,9 @@
 - [x] #31 退出世界时关闭 Creator 模式
 - [x] #32 重新进入世界后 Creator 模式与 HUD 状态不一致
 - [x] #33 Creator focus 目标解析与切换
+- [x] #34 切换 Creator focus 时提示当前编辑目标
+- [x] #35 删除彻底为空的 subregion
+- [x] #36 普通放置不覆盖已有投影方块
 - [x] Creator 与 Litematica 的完成编辑/卸载命令边界
 - [x] 坐标、目标解析和稀疏 region 核心单元测试
 - [x] Focus、稀疏 subregion 和生命周期设计文档同步
@@ -34,29 +37,7 @@
 - [~] 进行中或已部分实现
 - [!] 需要设计决策
 
-## 状态与生命周期
-
-- [ ] #34 切换 Creator focus 时提示当前编辑目标
-  - 在 focus 状态变更入口统一发送提示，使自动目标归属、Focus Switcher、快捷键和新建草稿行为一致。
-  - Focus 真正发生变化时显示 placement 名和 schematic 名；清空 focus 时显示单独提示。
-  - 操作仍解析到当前 focus 时不重复提示。
-  - 验收：每次真实 focus 切换只出现一条简短提示，能够明确识别新的编辑目标，普通连续操作不会刷屏。
-
 ## 编辑正确性
-
-- [ ] #35 删除 subregion 中最后一个投影方块后自动删除该 subregion
-  - 将现有仅针对 `1x1x1` Creator cell 的自动清理扩展到任何经 Creator 编辑后变空的 subregion。
-  - 从 schematic 及该 schematic 的所有 placements 中移除 region，并刷新几何 metadata、方块数、touched chunks 和 placement index。
-  - 仅在方块、block entities/NBT、entities、scheduled block ticks 和 scheduled fluid ticks 全部为空时删除 subregion；任一附属数据仍存在都必须保留。
-  - 验收：删除一个 subregion 中的全部投影方块后，该 subregion 自动消失；保存重载和同 schematic 的所有 placements 仍保持一致。
-
-- [ ] #36 普通放置不得覆盖目标位置已有的投影方块
-  - Creator 当前会直接把计算出的状态写入目标位置，没有先检查该位置已有的 schematic state。
-  - 铁砧等非完整轮廓方块可能让射线穿过空隙命中后方方块，从而把已被铁砧占据的位置算作放置目标。
-  - Litematica Rebuild 的基础 `placeSchematicBlock()` 路径也缺少目标空气检查，但方向放置和填充空气路径会检查空气。将其视为共享的上游行为缺口，但在 Creator 内独立修复。
-  - 使用原版实际 `VoxelShape` 命中与 replaceable 放置语义；普通放置仅在目标投影状态为空气或可替换时允许写入，显式替换属于另一种编辑操作。
-  - 占用检查必须发生在切换 focus、创建草稿/subregion 和标记 metadata dirty 之前。
-  - 验收：透过铁砧及其他非完整轮廓投影方块的空隙观察时，放置操作不会静默顶掉已有投影方块。
 
 - [ ] #12 面向投影方块时选中框穿透到真实方块
   - Creator 模式下使用 Creator/Litematica trace 结果渲染目标框。

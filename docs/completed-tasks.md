@@ -36,7 +36,7 @@
 - 新增和移除 region 会同步到同一 schematic 的所有 placements，同时保留 placement 及已有 subregion transforms。
 - `hideSubregionBoxesInCreatorMode` 默认开启，只在 Creator 模式抑制密集 subregion box，不改写 Litematica 全局渲染配置。
 - 删除保留 Creator cell 中的方块时，会移除该 cell region、更新 metadata 并重建相关 placements。
-- 当前已完成边界仅覆盖保留 Creator cells；任意空 subregion 的通用清理由 #35 继续跟踪。
+- #35 已将清理规则扩展到任意经 Creator 删除后彻底为空的 subregion。
 
 ## 世界生命周期（#31、#32）
 
@@ -83,8 +83,34 @@
 - 中键始终只执行 pick block，不创建、切换或清空 Creator focus。
 - Creator focus 变化不会写回 Litematica selected placement。
 
+## Focus 切换提示（#34）
+
+- Focus 设置、重叠选择、清空和生命周期恢复统一经过按 placement 对象身份比较的状态变更入口。
+- 只有 placement 对象真正变化时才更新 `CreatorFocus`、通知 recovery 并显示消息；连续操作仍归属同一 focus 时保持静默。
+- 普通切换显示 placement 与 schematic 名称，主动清空显示单独提示。
+- 新建草稿合并为一条“已新建并聚焦”消息；结束编辑和丢弃只保留各自的结果消息。
+- 世界切换清理和 recovery 恢复 focus 使用显式静默入口，因此不会与 #18 的恢复汇总重复。
+- 从 Litematica 移除当前 focus placement 时会清空 focus；重叠选择后的临时可见性抑制行为保持不变。
+
+## 空 Subregion 清理（#35）
+
+- Creator 删除方块时先写入空气并只更新一次 schematic 总方块数；只有这次删除可能使 region 变空时才执行扫描。
+- 容器扫描逐格检查真实 block state 并在首个非空气方块处短路，不使用 Litematica 普通 `set()` 不会维护的 `blockCounts`。
+- 只有 block states、block entities/NBT、entities、scheduled block ticks 和 scheduled fluid ticks 全部为空时才删除 region；任一附属数据存在都会保留。
+- Region 会从 schematic 的全部数据映射及同一 schematic 的所有 placements 中移除。
+- Litematica placement pre/post change 流程负责旧、新 touched chunks、渲染缓存和 Creator placement index；最后一个 region 被删除时也会清空旧 enclosing box。
+- 几何 metadata、region count、volume、enclosing size、修改时间和 recovery dirty 调度会同步更新。
+
+## 投影放置占用预检（#36）
+
+- Litematica 通用射线已经使用方块的实际 `VoxelShape`；Creator 保持“命中方块相邻格”的落点语义，并在最终目标格增加独立占用检查。
+- 目标解析现在先产生无副作用 resolution；从最终候选 placement 的 region container 直接读取并变换世界朝向状态，避免组合 schematic world 或其他 placement 干扰。
+- 使用虚拟物品、camera 朝向和 schematic world 构造目标 `BlockPlaceContext`，按原版 `BlockState.canBeReplaced()` 语义允许空气或可替换投影。
+- 放置状态无效或目标不可替换时，不会切换 focus、创建草稿/subregion、标记 dirty 或调度 recovery；占用阻断保持静默。
+- 只有预检成功后才提交 focus、新草稿和 schematic 写入；重叠 placement 仍先打开 Focus Switcher，不执行本次放置。
+
 ## 配套工作
 
 - Creator 的完成编辑/卸载命令已与 Litematica 原生导出和 selected-placement 行为分离。
-- 单元测试覆盖坐标旋转/镜像往返、候选身份合并、目标决策和稀疏 Creator-cell 移除策略。
+- 单元测试覆盖坐标旋转/镜像往返、候选身份合并、目标决策、放置占用策略、通用 region 空状态和 focus 通知决策。
 - `docs/creator-design-and-roadmap.md` 已同步当前 focus、稀疏 subregion 和生命周期模型。

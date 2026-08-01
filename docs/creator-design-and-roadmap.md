@@ -533,7 +533,7 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 - Free Camera 基本兼容路径：编辑 ray trace 始终从 MaLiLib/Minecraft camera entity 获取；未安装 Tweakeroo 时自然回退玩家视角。
 - 放置状态计算会在构造 `BlockPlaceContext` 时临时使用 camera entity 的 yaw/pitch，再立即恢复真实 player 旋转，让 Free Camera 下的朝向跟随相机。
 - Tweakeroo Free Camera 配置通过反射软检测；Creator 临时关闭不兼容的 `freeCameraPlayerInputs`，退出时恢复，不引入硬依赖。
-- JUnit 回归测试覆盖旋转/镜像坐标往返、候选身份合并、Creator cell 安全移除，以及 recovery eligibility、manifest、调度、原子 generation 和主动删除抑制。
+- JUnit 回归测试覆盖旋转/镜像坐标往返、候选身份合并、放置占用策略、通用 region 空状态、focus 通知决策，以及 recovery eligibility、manifest、调度、原子 generation 和主动删除抑制。
 - 左右键拦截：在 Creator 模式下通过 Mixin 消费 `Minecraft.startUseItem` 与 `Minecraft.startAttack`，避免真实服务器交互透传。
 - Recovery cache：non-file-backed 和已修改的 file-backed schematics 使用标准 `.litematic` generation 与 manifest v1 自动缓存；世界恢复时保留 placement 变换、selected placement 和 Creator focus，但不自动开启 Creator 模式。
 - Recovery 写入采用客户端 snapshot、单线程后台压缩、5 秒 idle/30 秒最大延迟和生命周期同步 flush；主动移除、卸载与 Creator 丢弃不会在下次进入世界时复活。
