@@ -329,15 +329,22 @@ final class CreatorInventoryMenu extends AbstractContainerMenu
 
     private Slot findActiveVirtualSlot(int inventorySlot)
     {
+        Slot fallback = null;
+
         for (Slot slot : this.slots)
         {
-            if (slot.container == this.inventoryContainer && slot.getContainerSlot() == inventorySlot && slot.isActive())
+            if (slot.container == this.inventoryContainer && slot.getContainerSlot() == inventorySlot)
             {
-                return slot;
+                if (slot.isActive())
+                {
+                    return slot;
+                }
+
+                fallback = slot;
             }
         }
 
-        return null;
+        return fallback;
     }
 
     private void moveIntoRange(ItemStack source, int start, int end)
