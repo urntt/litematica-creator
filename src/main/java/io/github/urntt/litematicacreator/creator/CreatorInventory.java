@@ -1,13 +1,14 @@
 package io.github.urntt.litematicacreator.creator;
 
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -25,6 +26,10 @@ public class CreatorInventory
     public static final int OFFHAND_SLOT = HOTBAR_SIZE + MAIN_SIZE;
     public static final int ARMOR_START = OFFHAND_SLOT + 1;
     public static final int ARMOR_SIZE = 4;
+    public static final int ARMOR_HEAD_SLOT = ARMOR_START;
+    public static final int ARMOR_CHEST_SLOT = ARMOR_START + 1;
+    public static final int ARMOR_LEGS_SLOT = ARMOR_START + 2;
+    public static final int ARMOR_FEET_SLOT = ARMOR_START + 3;
     public static final int DISCARD_SLOT = ARMOR_START + ARMOR_SIZE;
     public static final int SLOT_COUNT = DISCARD_SLOT + 1;
 
@@ -32,8 +37,11 @@ public class CreatorInventory
     private static final String FILE_NAME = Reference.MOD_ID + "-inventory.json";
 
     private final ItemStack[] stacks = new ItemStack[SLOT_COUNT];
+    private final CreatorInventorySaveGate saveGate = new CreatorInventorySaveGate();
     private int selectedHotbarSlot;
     private boolean loaded;
+    private boolean savePending;
+    private RegistryAccess registryAccess;
 
     private CreatorInventory()
     {
@@ -55,8 +63,13 @@ public class CreatorInventory
 
     public void setSelectedHotbarSlot(int slot)
     {
-        this.selectedHotbarSlot = Math.floorMod(slot, HOTBAR_SIZE);
-        this.save();
+        int normalized = Math.floorMod(slot, HOTBAR_SIZE);
+
+        if (this.selectedHotbarSlot != normalized)
+        {
+            this.selectedHotbarSlot = normalized;
+            this.markChanged();
+        }
     }
 
     public void scrollHotbar(double amount)
@@ -82,16 +95,15 @@ public class CreatorInventory
             return;
         }
 
-        if (slot == DISCARD_SLOT)
+        ItemStack normalized = slot == DISCARD_SLOT ? ItemStack.EMPTY : normalize(stack);
+
+        if (ItemStack.matches(this.stacks[slot], normalized))
         {
-            this.stacks[slot] = ItemStack.EMPTY;
-        }
-        else
-        {
-            this.stacks[slot] = stack.isEmpty() ? ItemStack.EMPTY : stack.copyWithCount(1);
+            return;
         }
 
-        this.save();
+        this.stacks[slot] = normalized;
+        this.markChanged();
     }
 
     public boolean pickBlock(BlockState state)
@@ -103,14 +115,41 @@ public class CreatorInventory
             return false;
         }
 
-        this.setStack(this.selectedHotbarSlot, new ItemStack(item));
+        ItemStack stack = new ItemStack(item);
+        stack.setCount(stack.getMaxStackSize());
+        this.setStack(this.selectedHotbarSlot, stack);
         return true;
     }
 
-    public void load()
+    public void runTransaction(Runnable action)
     {
+        this.saveGate.begin();
+
+        try
+        {
+            action.run();
+        }
+        finally
+        {
+            if (this.saveGate.end())
+            {
+                this.save();
+            }
+        }
+    }
+
+    public void load(RegistryAccess registryAccess)
+    {
+        this.registryAccess = registryAccess;
+
         if (this.loaded)
         {
+            if (this.savePending)
+            {
+                this.savePending = false;
+                this.save();
+            }
+
             return;
         }
 
@@ -129,39 +168,34 @@ public class CreatorInventory
             return;
         }
 
-        JsonObject root = element.getAsJsonObject();
-        this.selectedHotbarSlot = Math.floorMod(JsonUtils.getInteger(root, "selectedHotbarSlot"), HOTBAR_SIZE);
-        JsonArray slots = root.has("slots") && root.get("slots").isJsonArray() ? root.getAsJsonArray("slots") : null;
+        CreatorInventoryStorage.LoadResult result = CreatorInventoryStorage.fromJson(
+                element.getAsJsonObject(),
+                registryAccess,
+                message -> LitematicaCreator.LOGGER.warn("Creator inventory: {}", message)
+        );
+        this.selectedHotbarSlot = result.selectedHotbarSlot();
 
-        if (slots == null)
+        for (int slot = 0; slot < SLOT_COUNT; ++slot)
         {
-            return;
+            this.stacks[slot] = result.stacks()[slot];
         }
 
-        for (JsonElement slotElement : slots)
+        if (result.migrated())
         {
-            if (!slotElement.isJsonObject())
-            {
-                continue;
-            }
-
-            JsonObject slotObject = slotElement.getAsJsonObject();
-            int slot = JsonUtils.getInteger(slotObject, "slot");
-            String idString = JsonUtils.getString(slotObject, "item");
-
-            if (!this.isValidSlot(slot) || idString == null)
-            {
-                continue;
-            }
-
-            Identifier id = Identifier.tryParse(idString);
-            Item item = id != null ? BuiltInRegistries.ITEM.getOptional(id).orElse(Items.AIR) : Items.AIR;
-            this.stacks[slot] = item != Items.AIR ? new ItemStack(item) : ItemStack.EMPTY;
+            this.save();
         }
     }
 
     public void save()
     {
+        RegistryAccess registryAccess = this.getRegistryAccess();
+
+        if (registryAccess == null)
+        {
+            this.savePending = true;
+            return;
+        }
+
         Path file = this.getFile();
         Path dir = file.getParent();
 
@@ -170,25 +204,67 @@ public class CreatorInventory
             FileUtils.createDirectoriesIfMissing(dir);
         }
 
-        JsonObject root = new JsonObject();
-        JsonArray slots = new JsonArray();
-        root.addProperty("selectedHotbarSlot", this.selectedHotbarSlot);
+        JsonObject root = CreatorInventoryStorage.toJson(
+                this.stacks,
+                this.selectedHotbarSlot,
+                registryAccess,
+                message -> LitematicaCreator.LOGGER.warn("Creator inventory: {}", message)
+        );
+        Path temp = file.resolveSibling(file.getFileName() + ".tmp");
 
-        for (int i = 0; i < this.stacks.length; ++i)
+        if (!JsonUtils.writeJsonToFile(root, temp))
         {
-            ItemStack stack = this.stacks[i];
-
-            if (!stack.isEmpty())
-            {
-                JsonObject slotObject = new JsonObject();
-                slotObject.addProperty("slot", i);
-                slotObject.addProperty("item", BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
-                slots.add(slotObject);
-            }
+            LitematicaCreator.LOGGER.error("Failed to write temporary Creator inventory config {}", temp);
+            return;
         }
 
-        root.add("slots", slots);
-        JsonUtils.writeJsonToFile(root, file);
+        try
+        {
+            try
+            {
+                Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            }
+            catch (AtomicMoveNotSupportedException ignored)
+            {
+                Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+        catch (Exception exception)
+        {
+            LitematicaCreator.LOGGER.error("Failed to commit Creator inventory config {}", file, exception);
+        }
+    }
+
+    private void markChanged()
+    {
+        if (this.saveGate.markChanged())
+        {
+            this.save();
+        }
+    }
+
+    private RegistryAccess getRegistryAccess()
+    {
+        Minecraft mc = Minecraft.getInstance();
+
+        if (mc.level != null)
+        {
+            this.registryAccess = mc.level.registryAccess();
+        }
+
+        return this.registryAccess;
+    }
+
+    private static ItemStack normalize(ItemStack stack)
+    {
+        if (stack == null || stack.isEmpty())
+        {
+            return ItemStack.EMPTY;
+        }
+
+        ItemStack copy = stack.copy();
+        copy.limitSize(copy.getMaxStackSize());
+        return copy;
     }
 
     private Path getFile()

@@ -33,7 +33,7 @@ public class CreatorClientTickHandler implements IClientTickHandler
 
         if (mc.level != null && mc.player != null)
         {
-            CreatorInventory.getInstance().load();
+            CreatorInventory.getInstance().load(mc.level.registryAccess());
         }
 
         this.updateTweakerooFreeCameraCompatibility(mc);
