@@ -119,7 +119,10 @@ public class CreatorEditService
             placement = manager.createBlank(target.blockPos());
         }
 
-        CreatorSchematicEditor.setBlockState(placement, target.blockPos(), preflight.state());
+        CreatorEditFeedback.afterSuccessfulEdit(
+                CreatorSchematicEditor.setBlockState(placement, target.blockPos(), preflight.state()),
+                () -> mc.player.swing(InteractionHand.MAIN_HAND, false)
+        );
         return true;
     }
 
@@ -146,7 +149,10 @@ public class CreatorEditService
             {
                 SchematicPlacement placement = candidates.getFirst().placement();
                 CreatorManager.getInstance().focusPlacement(placement);
-                CreatorSchematicEditor.setBlockState(placement, target.blockPos(), Blocks.AIR.defaultBlockState());
+                CreatorEditFeedback.afterSuccessfulEdit(
+                        CreatorSchematicEditor.setBlockState(placement, target.blockPos(), Blocks.AIR.defaultBlockState()),
+                        () -> mc.player.swing(InteractionHand.MAIN_HAND, false)
+                );
             }
         }
 
