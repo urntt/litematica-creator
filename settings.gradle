@@ -10,13 +10,6 @@ pluginManagement {
 
 rootProject.name = 'litematica-creator-26.2'
 
-includeBuild('../malilib-26.2') {
-	dependencySubstitution {
-		substitute module('fi.dy.masa.malilib:malilib-fabric-26.2') using project(':')
-		substitute module('fi.dy.masa:malilib-fabric-26.2') using project(':')
-	}
-}
-
 includeBuild('../litematica-26.2') {
 	dependencySubstitution {
 		substitute module('fi.dy.masa.litematica:litematica-fabric-26.2') using project(':')
