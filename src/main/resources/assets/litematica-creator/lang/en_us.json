@@ -83,6 +83,8 @@
 	"litematica-creator.message.edit.no_target": "No editable target found",
 	"litematica-creator.message.edit.pick_failed": "Could not pick that block into the virtual Creator hotbar",
 	"litematica-creator.message.inventory.selected": "Selected virtual block: %s",
+	"litematica-creator.message.recovery.failed": "Some unsaved schematics could not be recovered; the recovery files were retained and details were written to the log",
+	"litematica-creator.message.recovery.restored": "Recovered %s unsaved schematic(s) with %s placement(s)",
 	"litematica-creator.message.creator_mode.disabled": "Litematica Creator mode disabled",
 	"litematica-creator.message.creator_mode.enabled": "Litematica Creator mode enabled"
 }

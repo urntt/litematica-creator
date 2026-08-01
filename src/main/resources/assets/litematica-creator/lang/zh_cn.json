@@ -83,6 +83,8 @@
 	"litematica-creator.message.edit.no_target": "未找到可编辑目标",
 	"litematica-creator.message.edit.pick_failed": "无法把该方块拾取到 Creator 虚拟快捷栏",
 	"litematica-creator.message.inventory.selected": "已选择虚拟方块：%s",
+	"litematica-creator.message.recovery.failed": "部分未保存原理图未能恢复；恢复文件已保留，详细信息已写入日志",
+	"litematica-creator.message.recovery.restored": "已恢复 %s 个未保存原理图及 %s 个 placement",
 	"litematica-creator.message.creator_mode.disabled": "Litematica Creator 模式已关闭",
 	"litematica-creator.message.creator_mode.enabled": "Litematica Creator 模式已开启"
 }

@@ -22,6 +22,7 @@ import fi.dy.masa.litematica.selection.Box;
 import fi.dy.masa.litematica.util.SchematicUtils;
 import io.github.urntt.litematicacreator.mixin.LitematicaSchematicAccessor;
 import io.github.urntt.litematicacreator.mixin.SchematicPlacementAccessor;
+import io.github.urntt.litematicacreator.recovery.CreatorRecoveryManager;
 
 public final class CreatorSchematicEditor
 {
@@ -240,6 +241,7 @@ public final class CreatorSchematicEditor
     {
         schematic.getMetadata().setModifiedSinceSaved();
         schematic.getMetadata().setTimeModifiedToNow();
+        CreatorRecoveryManager.getInstance().onSchematicChanged(schematic);
     }
 
     private static boolean isRemovableCellRegion(LitematicaSchematic schematic, String regionName)

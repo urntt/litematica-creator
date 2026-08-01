@@ -19,6 +19,7 @@ import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
 import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.mixin.LitematicaSchematicAccessor;
+import io.github.urntt.litematicacreator.recovery.CreatorRecoveryManager;
 
 public class CreatorManager
 {
@@ -78,6 +79,8 @@ public class CreatorManager
 
     public void focusPlacement(SchematicPlacement placement)
     {
+        CreatorFocus previous = this.focus;
+
         if (this.focus == null || this.focus.placement() != placement)
         {
             CreatorPlacementVisibility.restoreAll();
@@ -85,13 +88,16 @@ public class CreatorManager
 
         this.focus = new CreatorFocus(placement);
         this.pendingFocusChoices = List.of();
+        CreatorRecoveryManager.getInstance().onFocusChanged(previous, this.focus);
     }
 
     public void clearFocus()
     {
+        CreatorFocus previous = this.focus;
         CreatorPlacementVisibility.restoreAll();
         this.focus = null;
         this.pendingFocusChoices = List.of();
+        CreatorRecoveryManager.getInstance().onFocusChanged(previous, null);
     }
 
     public void onPlacementRemoved(SchematicPlacement placement)
@@ -119,9 +125,11 @@ public class CreatorManager
 
     public void focusPlacementFromOverlap(SchematicPlacement placement, List<SchematicPlacement> candidates)
     {
+        CreatorFocus previous = this.focus;
         this.focus = new CreatorFocus(placement);
         this.pendingFocusChoices = List.of();
         CreatorPlacementVisibility.suppressOverlapAlternatives(placement, candidates);
+        CreatorRecoveryManager.getInstance().onFocusChanged(previous, this.focus);
     }
 
     public SchematicPlacement createBlank(BlockPos origin)
@@ -188,6 +196,7 @@ public class CreatorManager
 
         LitematicaSchematic schematic = this.focus.schematic();
         this.clearFocus();
+        CreatorRecoveryManager.getInstance().discardSchematic(schematic);
         SchematicHolder.getInstance().removeSchematic(schematic);
         InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.draft.discarded");
         return true;

@@ -19,6 +19,7 @@ import io.github.urntt.litematicacreator.event.CreatorWorldLoadListener;
 import io.github.urntt.litematicacreator.event.InputHandler;
 import io.github.urntt.litematicacreator.gui.GuiConfigs;
 import io.github.urntt.litematicacreator.render.CreatorStatusHud;
+import io.github.urntt.litematicacreator.recovery.CreatorRecoveryManager;
 
 public class InitHandler implements IInitializationHandler
 {
@@ -53,6 +54,7 @@ public class InitHandler implements IInitializationHandler
 
         CreatorHotkeyCallbacks.register();
         CreatorPlacementIndex.INSTANCE.register();
+        CreatorRecoveryManager.getInstance().register();
         WorldLoadHandler.getInstance().registerWorldLoadPreHandler(CreatorWorldLoadListener.INSTANCE);
         WorldLoadHandler.getInstance().registerWorldLoadPostHandler(CreatorWorldLoadListener.INSTANCE);
         InputEventHandler.getKeybindManager().registerKeybindProvider(InputHandler.getInstance());

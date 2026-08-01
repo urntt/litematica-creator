@@ -7,6 +7,7 @@ import io.github.urntt.litematicacreator.LitematicaCreator;
 import io.github.urntt.litematicacreator.creator.CreatorCameraCompat;
 import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
+import io.github.urntt.litematicacreator.recovery.CreatorRecoveryManager;
 
 public class CreatorClientTickHandler implements IClientTickHandler
 {
@@ -36,6 +37,7 @@ public class CreatorClientTickHandler implements IClientTickHandler
         }
 
         this.updateTweakerooFreeCameraCompatibility(mc);
+        CreatorRecoveryManager.getInstance().onClientTick(mc, clientTicks);
     }
 
     public void updateTweakerooFreeCameraCompatibility(Minecraft mc)

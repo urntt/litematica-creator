@@ -9,6 +9,7 @@ import fi.dy.masa.malilib.interfaces.IWorldLoadListener;
 import io.github.urntt.litematicacreator.creator.CreatorEditService;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.creator.CreatorPlacementIndex;
+import io.github.urntt.litematicacreator.recovery.CreatorRecoveryManager;
 
 public class CreatorWorldLoadListener implements IWorldLoadListener
 {
@@ -21,9 +22,14 @@ public class CreatorWorldLoadListener implements IWorldLoadListener
     @Override
     public void onWorldLoadPre(@Nullable ClientLevel worldBefore, @Nullable ClientLevel worldAfter, Minecraft mc)
     {
-        if (worldBefore != null && worldAfter == null)
+        if (worldBefore != null)
         {
-            this.resetSessionState();
+            CreatorRecoveryManager.getInstance().beforeWorldChange(worldBefore);
+
+            if (worldAfter == null)
+            {
+                this.resetSessionState();
+            }
         }
     }
 
@@ -33,6 +39,11 @@ public class CreatorWorldLoadListener implements IWorldLoadListener
         if (worldAfter != null)
         {
             this.resetSessionState();
+            CreatorRecoveryManager.getInstance().afterWorldJoin(worldAfter);
+        }
+        else
+        {
+            CreatorRecoveryManager.getInstance().afterWorldLeave();
         }
 
         CreatorPlacementIndex.INSTANCE.rebuild();
