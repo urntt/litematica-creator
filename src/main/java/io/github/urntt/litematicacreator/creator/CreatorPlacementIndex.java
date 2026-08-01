@@ -93,6 +93,7 @@ public class CreatorPlacementIndex implements ISchematicPlacementEventListener
     public void onPlacementRemoved(SchematicPlacement placement)
     {
         this.removePlacement(placement);
+        CreatorPlacementVisibility.onPlacementRemoved(placement);
         CreatorManager.getInstance().onPlacementRemoved(placement);
     }
 
@@ -105,6 +106,12 @@ public class CreatorPlacementIndex implements ISchematicPlacementEventListener
 
     private void indexPlacement(SchematicPlacement placement)
     {
+        if (CreatorPlacementVisibility.isSuppressed(placement))
+        {
+            this.chunksByPlacement.put(placement, Set.of());
+            return;
+        }
+
         Map<String, Box> boxes = placement.getSubRegionBoxes(RequiredEnabled.PLACEMENT_ENABLED);
         Set<Long> touchedChunks = new LinkedHashSet<>();
 

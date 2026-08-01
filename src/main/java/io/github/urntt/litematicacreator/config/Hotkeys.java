@@ -26,12 +26,20 @@ public class Hotkeys
     public static final ConfigHotkey DISCARD_DRAFT = new ConfigHotkey(
             "discardDraft", "", KeybindSettings.PRESS_ALLOWEXTRA
     ).apply(HOTKEYS_KEY);
+    public static final ConfigHotkey OPEN_FOCUS_SWITCHER = new ConfigHotkey(
+            "openFocusSwitcher", "M,F", KeybindSettings.PRESS_ALLOWEXTRA
+    ).apply(HOTKEYS_KEY);
+    public static final ConfigHotkey NEW_BLANK = new ConfigHotkey(
+            "newBlank", "M,N", KeybindSettings.PRESS_ALLOWEXTRA
+    ).apply(HOTKEYS_KEY);
 
     public static final List<ConfigHotkey> HOTKEY_LIST = ImmutableList.of(
             TOGGLE_CREATOR_MODE,
             OPEN_CREATOR_INVENTORY,
             OPEN_CONFIG_GUI,
             SAVE_DRAFT,
-            DISCARD_DRAFT
+            DISCARD_DRAFT,
+            OPEN_FOCUS_SWITCHER,
+            NEW_BLANK
     );
 }

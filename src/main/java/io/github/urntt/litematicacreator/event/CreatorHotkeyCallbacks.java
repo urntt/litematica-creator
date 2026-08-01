@@ -6,9 +6,11 @@ import fi.dy.masa.malilib.hotkeys.IKeybind;
 import fi.dy.masa.malilib.hotkeys.KeyAction;
 import io.github.urntt.litematicacreator.config.Hotkeys;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
+import io.github.urntt.litematicacreator.creator.CreatorCameraCompat;
 import io.github.urntt.litematicacreator.data.DataManager;
 import io.github.urntt.litematicacreator.gui.GuiConfigs;
 import io.github.urntt.litematicacreator.gui.GuiCreatorInventory;
+import io.github.urntt.litematicacreator.gui.GuiFocusSwitcher;
 
 public class CreatorHotkeyCallbacks implements IHotkeyCallback
 {
@@ -25,6 +27,8 @@ public class CreatorHotkeyCallbacks implements IHotkeyCallback
         Hotkeys.OPEN_CONFIG_GUI.getKeybind().setCallback(INSTANCE);
         Hotkeys.SAVE_DRAFT.getKeybind().setCallback(INSTANCE);
         Hotkeys.DISCARD_DRAFT.getKeybind().setCallback(INSTANCE);
+        Hotkeys.OPEN_FOCUS_SWITCHER.getKeybind().setCallback(INSTANCE);
+        Hotkeys.NEW_BLANK.getKeybind().setCallback(INSTANCE);
     }
 
     @Override
@@ -50,6 +54,20 @@ public class CreatorHotkeyCallbacks implements IHotkeyCallback
         else if (key == Hotkeys.DISCARD_DRAFT.getKeybind())
         {
             CreatorManager.getInstance().discardCurrentDraft();
+        }
+        else if (key == Hotkeys.OPEN_FOCUS_SWITCHER.getKeybind())
+        {
+            if (CreatorManager.getInstance().isCreatorModeEnabled())
+            {
+                GuiFocusSwitcher.open();
+            }
+        }
+        else if (key == Hotkeys.NEW_BLANK.getKeybind())
+        {
+            if (CreatorManager.getInstance().isCreatorModeEnabled() && CreatorCameraCompat.getCameraEntity() != null)
+            {
+                CreatorManager.getInstance().createBlank(CreatorCameraCompat.getCameraEntity().blockPosition());
+            }
         }
         else
         {

@@ -7,6 +7,8 @@
 		"LitematicaSchematicAccessor",
 		"MinecraftClientMixin",
 		"MultiPlayerGameModeMixin",
+		"OverlayRendererMixin",
+		"SchematicPlacementMixin",
 		"SchematicPlacementAccessor"
 	],
 	"injectors": {

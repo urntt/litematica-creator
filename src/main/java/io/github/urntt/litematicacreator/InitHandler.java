@@ -3,6 +3,7 @@ package io.github.urntt.litematicacreator;
 import fi.dy.masa.malilib.config.ConfigManager;
 import fi.dy.masa.malilib.event.InputEventHandler;
 import fi.dy.masa.malilib.event.TickHandler;
+import fi.dy.masa.malilib.event.WorldLoadHandler;
 import fi.dy.masa.litematica.render.infohud.InfoHud;
 import fi.dy.masa.malilib.interfaces.IInitializationHandler;
 import fi.dy.masa.malilib.registry.Registry;
@@ -14,6 +15,7 @@ import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.creator.CreatorPlacementIndex;
 import io.github.urntt.litematicacreator.event.CreatorClientTickHandler;
 import io.github.urntt.litematicacreator.event.CreatorHotkeyCallbacks;
+import io.github.urntt.litematicacreator.event.CreatorWorldLoadListener;
 import io.github.urntt.litematicacreator.event.InputHandler;
 import io.github.urntt.litematicacreator.gui.GuiConfigs;
 import io.github.urntt.litematicacreator.render.CreatorStatusHud;
@@ -51,6 +53,8 @@ public class InitHandler implements IInitializationHandler
 
         CreatorHotkeyCallbacks.register();
         CreatorPlacementIndex.INSTANCE.register();
+        WorldLoadHandler.getInstance().registerWorldLoadPreHandler(CreatorWorldLoadListener.INSTANCE);
+        WorldLoadHandler.getInstance().registerWorldLoadPostHandler(CreatorWorldLoadListener.INSTANCE);
         InputEventHandler.getKeybindManager().registerKeybindProvider(InputHandler.getInstance());
         InputEventHandler.getInputManager().registerKeyboardInputHandler(InputHandler.getInstance());
         InputEventHandler.getInputManager().registerMouseInputHandler(InputHandler.getInstance());

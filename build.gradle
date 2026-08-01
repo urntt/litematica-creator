@@ -4,6 +4,7 @@ plugins {
 }
 
 repositories {
+	mavenCentral()
 	mavenLocal()
 	maven {
 		url = 'https://masa.dy.fi/maven/sakura-ryoko'
@@ -32,6 +33,12 @@ dependencies {
 	implementation "fi.dy.masa.litematica:litematica-fabric-${project.minecraft_version_out}:${project.litematica_version}"
 
 	compileOnly "com.terraformersmc:modmenu:${project.mod_menu_version}"
+	testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.4"
+}
+
+tasks.test {
+	useJUnitPlatform()
 }
 
 base {

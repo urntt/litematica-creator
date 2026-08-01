@@ -40,6 +40,9 @@ public class Configs implements IConfigHandler
         public static final ConfigBoolean SELECT_NEW_DRAFT_PLACEMENT = new ConfigBoolean(
                 "selectNewDraftPlacement", false
         ).apply(GENERIC_KEY);
+        public static final ConfigBoolean HIDE_SUBREGION_BOXES_IN_CREATOR_MODE = new ConfigBoolean(
+                "hideSubregionBoxesInCreatorMode", true
+        ).apply(GENERIC_KEY);
         public static final ConfigOptionList TRANSLATION_LANGUAGE = new ConfigOptionList(
                 "translationLanguage", new CreatorI18nConfig(LANG.orElseThrow())
         ).apply(GENERIC_KEY);
@@ -51,6 +54,7 @@ public class Configs implements IConfigHandler
                 ENABLE_CREATOR_MODE,
                 DEBUG_LOGGING,
                 SELECT_NEW_DRAFT_PLACEMENT,
+                HIDE_SUBREGION_BOXES_IN_CREATOR_MODE,
                 TRANSLATION_LANGUAGE,
                 TRANSLATION_MODE
         );

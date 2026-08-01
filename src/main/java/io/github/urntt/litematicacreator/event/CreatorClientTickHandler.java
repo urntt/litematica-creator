@@ -65,4 +65,13 @@ public class CreatorClientTickHandler implements IClientTickHandler
             this.changedFreeCameraPlayerInputs = false;
         }
     }
+
+    public void resetCompatibilityState()
+    {
+        if (this.changedFreeCameraPlayerInputs)
+        {
+            CreatorCameraCompat.setTweakerooFreeCameraPlayerInputs(true);
+            this.changedFreeCameraPlayerInputs = false;
+        }
+    }
 }

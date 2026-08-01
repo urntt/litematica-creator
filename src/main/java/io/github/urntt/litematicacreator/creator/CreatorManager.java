@@ -62,6 +62,12 @@ public class CreatorManager
                     enabled ? "litematica-creator.message.creator_mode.enabled" : "litematica-creator.message.creator_mode.disabled"
             );
         }
+
+        if (!enabled)
+        {
+            CreatorPlacementVisibility.restoreAll();
+            this.pendingFocusChoices = List.of();
+        }
     }
 
     @Nullable
@@ -72,12 +78,18 @@ public class CreatorManager
 
     public void focusPlacement(SchematicPlacement placement)
     {
+        if (this.focus == null || this.focus.placement() != placement)
+        {
+            CreatorPlacementVisibility.restoreAll();
+        }
+
         this.focus = new CreatorFocus(placement);
         this.pendingFocusChoices = List.of();
     }
 
     public void clearFocus()
     {
+        CreatorPlacementVisibility.restoreAll();
         this.focus = null;
         this.pendingFocusChoices = List.of();
     }
@@ -98,6 +110,18 @@ public class CreatorManager
     public void requestFocusChoice(List<SchematicPlacement> placements)
     {
         this.pendingFocusChoices = List.copyOf(placements);
+    }
+
+    public void cancelFocusChoice()
+    {
+        this.pendingFocusChoices = List.of();
+    }
+
+    public void focusPlacementFromOverlap(SchematicPlacement placement, List<SchematicPlacement> candidates)
+    {
+        this.focus = new CreatorFocus(placement);
+        this.pendingFocusChoices = List.of();
+        CreatorPlacementVisibility.suppressOverlapAlternatives(placement, candidates);
     }
 
     public SchematicPlacement createBlank(BlockPos origin)

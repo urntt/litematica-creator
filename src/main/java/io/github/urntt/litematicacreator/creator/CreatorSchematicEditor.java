@@ -19,7 +19,6 @@ import fi.dy.masa.litematica.schematic.placement.SchematicPlacementEventHandler;
 import fi.dy.masa.litematica.schematic.placement.SubRegionPlacement;
 import fi.dy.masa.litematica.schematic.placement.SubRegionPlacement.RequiredEnabled;
 import fi.dy.masa.litematica.selection.Box;
-import fi.dy.masa.litematica.util.PositionUtils;
 import fi.dy.masa.litematica.util.SchematicUtils;
 import io.github.urntt.litematicacreator.mixin.LitematicaSchematicAccessor;
 import io.github.urntt.litematicacreator.mixin.SchematicPlacementAccessor;
@@ -112,14 +111,24 @@ public final class CreatorSchematicEditor
     {
         LitematicaSchematic schematic = editedPlacement.getSchematic();
         LitematicaSchematicAccessor schematicAccessor = (LitematicaSchematicAccessor) schematic;
-        BlockPos relativePos = PositionUtils.getReverseTransformedBlockPos(
-                worldPos.subtract(editedPlacement.getOrigin()),
+        BlockPos relativePos = CreatorCoordinateTransforms.toSchematicRelative(
+                worldPos,
+                editedPlacement.getOrigin(),
                 editedPlacement.getMirror(),
                 editedPlacement.getRotation()
         );
         String regionName = uniqueCellRegionName(schematic, relativePos);
         LitematicaBlockStateContainer container = new LitematicaBlockStateContainer(1, 1, 1);
-        List<SchematicPlacement> placements = List.copyOf(DataManager.getSchematicPlacementManager().getAllPlacementsOfSchematic(schematic));
+        List<SchematicPlacement> placements = new ArrayList<>();
+        placements.add(editedPlacement);
+
+        for (SchematicPlacement placement : DataManager.getSchematicPlacementManager().getAllPlacementsOfSchematic(schematic))
+        {
+            if (placement != editedPlacement)
+            {
+                placements.add(placement);
+            }
+        }
 
         schematicAccessor.litematicacreator$getBlockContainers().put(regionName, container);
         schematicAccessor.litematicacreator$getTileEntities().put(regionName, new HashMap<>());
@@ -135,10 +144,15 @@ public final class CreatorSchematicEditor
             SchematicPlacementAccessor placementAccessor = (SchematicPlacementAccessor) placement;
             placementAccessor.litematicacreator$getRelativeSubRegionPlacements().put(regionName, new SubRegionPlacement(relativePos, regionName));
             placementAccessor.litematicacreator$setSubRegionCount(schematic.getSubRegionCount());
+
+            if (placement == editedPlacement)
+            {
+                container.set(0, 0, 0, SchematicUtils.getUntransformedBlockState(worldState, editedPlacement, regionName));
+            }
+
             SchematicPlacementEventHandler.getInstance().invokePlacementModified(CreatorPlacementIndex.INSTANCE, placement);
         }
 
-        container.set(0, 0, 0, SchematicUtils.getUntransformedBlockState(worldState, editedPlacement, regionName));
         schematic.getMetadata().setTotalBlocks(Math.max(0, schematic.getMetadata().getTotalBlocks()) + 1);
         refreshGeometryMetadata(schematic);
         markModified(schematic);
@@ -231,8 +245,7 @@ public final class CreatorSchematicEditor
     private static boolean isRemovableCellRegion(LitematicaSchematic schematic, String regionName)
     {
         BlockPos size = schematic.getAreaSize(regionName);
-        return regionName.startsWith(CELL_REGION_PREFIX) && size != null &&
-               Math.abs(size.getX()) == 1 && Math.abs(size.getY()) == 1 && Math.abs(size.getZ()) == 1;
+        return CreatorSparseRegionPolicy.isRemovableCell(regionName, size);
     }
 
     private static String uniqueCellRegionName(LitematicaSchematic schematic, BlockPos relativePos)

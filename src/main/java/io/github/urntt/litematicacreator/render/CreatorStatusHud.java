@@ -62,6 +62,7 @@ public class CreatorStatusHud implements IInfoHudRenderer
         {
             String dirty = focus.isDirty() ? red + StringUtils.translate("litematica-creator.hud.dirty") + reset : green + StringUtils.translate("litematica-creator.hud.saved") + reset;
             lines.add(StringUtils.translate("litematica-creator.hud.draft_name", green + focus.placement().getName() + reset));
+            lines.add(StringUtils.translate("litematica-creator.hud.schematic_name", green + focus.schematic().getMetadata().getName() + reset));
             lines.add(StringUtils.translate("litematica-creator.hud.draft_state", dirty));
             lines.add(StringUtils.translate("litematica-creator.hud.draft_counts", green + focus.schematic().getMetadata().getRegionCount() + reset, green + focus.schematic().getMetadata().getTotalBlocks() + reset));
         }

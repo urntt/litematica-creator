@@ -26,6 +26,7 @@ import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
 import io.github.urntt.litematicacreator.event.CreatorClientTickHandler;
+import io.github.urntt.litematicacreator.gui.GuiFocusSwitcher;
 
 public class CreatorEditService
 {
@@ -44,6 +45,12 @@ public class CreatorEditService
     public static CreatorEditService getInstance()
     {
         return INSTANCE;
+    }
+
+    public void resetTransientState()
+    {
+        this.nextPlaceTick = 0L;
+        this.lastNoTargetWarning = 0L;
     }
 
     public boolean placeProjectionBlock()
@@ -114,7 +121,7 @@ public class CreatorEditService
 
             if (candidates.size() > 1)
             {
-                CreatorManager.getInstance().requestFocusChoice(candidates.stream().map(CreatorPlacementTarget::placement).toList());
+                GuiFocusSwitcher.openForOverlap(candidates.stream().map(CreatorPlacementTarget::placement).toList());
             }
             else if (candidates.size() == 1)
             {
@@ -284,7 +291,7 @@ public class CreatorEditService
             case CREATE_NEW -> manager.createBlank(target.blockPos());
             case CHOOSE_OVERLAP ->
             {
-                manager.requestFocusChoice(resolution.candidates());
+                GuiFocusSwitcher.openForOverlap(resolution.candidates());
                 yield null;
             }
         };
