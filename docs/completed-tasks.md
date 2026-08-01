@@ -100,6 +100,7 @@
 - Region 会从 schematic 的全部数据映射及同一 schematic 的所有 placements 中移除。
 - Litematica placement pre/post change 流程负责旧、新 touched chunks、渲染缓存和 Creator placement index；最后一个 region 被删除时也会清空旧 enclosing box。
 - 几何 metadata、region count、volume、enclosing size、修改时间和 recovery dirty 调度会同步更新。
+- Creator 模式会阻止 Litematica Rebuild 抢先处理同一次左右键；即使其他编辑入口已经先把目标写成空气，Creator 删除仍会检查并清理彻底为空的 region，且不会重复扣减方块数。
 
 ## 投影放置占用预检（#36）
 

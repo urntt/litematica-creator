@@ -41,6 +41,16 @@ class CreatorRegionEmptinessTest
     }
 
     @Test
+    void recognizesContainerAlreadyClearedByAnotherEditor()
+    {
+        LitematicaBlockStateContainer container = new LitematicaBlockStateContainer(1, 1, 1);
+        container.set(0, 0, 0, Blocks.STONE.defaultBlockState());
+        container.set(0, 0, 0, Blocks.AIR.defaultBlockState());
+
+        assertTrue(CreatorRegionEmptiness.isCompletelyEmpty(container, Map.of(), List.of(), Map.of(), Map.of()));
+    }
+
+    @Test
     void requiresEveryAttachedDataCollectionToBeEmpty()
     {
         LitematicaBlockStateContainer container = new LitematicaBlockStateContainer(1, 1, 1);

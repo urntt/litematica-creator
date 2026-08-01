@@ -77,17 +77,21 @@ public final class CreatorSchematicEditor
         BlockState oldState = container.get(containerPos.getX(), containerPos.getY(), containerPos.getZ());
         BlockState newState = SchematicUtils.getUntransformedBlockState(worldState, placement, regionName);
 
-        if (oldState.equals(newState))
-        {
-            return false;
-        }
+        boolean stateChanged = !oldState.equals(newState);
 
-        container.set(containerPos.getX(), containerPos.getY(), containerPos.getZ(), newState);
-        updateBlockCount(schematic.getMetadata(), oldState, newState);
+        if (stateChanged)
+        {
+            container.set(containerPos.getX(), containerPos.getY(), containerPos.getZ(), newState);
+            updateBlockCount(schematic.getMetadata(), oldState, newState);
+        }
 
         if (newState.isAir() && isRegionCompletelyEmpty(schematic, regionName, container))
         {
             removeRegion(schematic, regionName);
+        }
+        else if (!stateChanged)
+        {
+            return false;
         }
         else
         {

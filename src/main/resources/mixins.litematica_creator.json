@@ -4,6 +4,7 @@
 	"package": "io.github.urntt.litematicacreator.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
+		"LitematicaInputHandlerMixin",
 		"LitematicaSchematicAccessor",
 		"MinecraftClientMixin",
 		"MultiPlayerGameModeMixin",
