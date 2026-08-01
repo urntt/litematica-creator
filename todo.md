@@ -122,11 +122,13 @@
 
 ## 放置控制
 
-- [ ] #21 增加 AccurateBlockPlacement-like 连续放置模式
+- [ ] #21 连续放置与长按持续破坏控制
   - 保留固定 tick 间隔模式。
   - 参考 AccurateBlockPlacement-Reborn 的 fresh press、目标变化、鼠标移动和 backfill 行为增加 accurate repeat 模式。
-  - 增加 repeat mode 和 fixed interval ticks 配置。
-  - 验收：长按放置速度可控，准星移动到新目标时能够可预测地补放。
+  - 按住攻击键时，以受控间隔持续 trace 并删除投影方块，不向服务器发送攻击包。
+  - 避免反复处理同一个已变为空气的目标；实现 #30 后再将连续手势组织为合适的历史事务。
+  - 增加 placement repeat mode、fixed interval ticks 和连续破坏间隔配置。
+  - 验收：长按放置速度可控，准星移动到新目标时能够可预测地补放；长按攻击可以持续删除新命中的投影方块。
 
 - [ ] #26 在空中放置投影方块
   - 第一阶段支持固定距离放置。
@@ -140,13 +142,11 @@
 
 ## 方块状态、NBT 与交互
 
-- [ ] #22 投影方块状态/NBT 编辑与长按连续破坏
+- [ ] #22 投影方块状态/NBT 编辑
   - 支持朝向、半砖、楼梯、含水等常见 BlockState 属性循环切换。
   - 为容器、告示牌、命令方块等 block entity 提供专用 NBT 编辑。
   - 将 block entity NBT 持久化到 schematic tile-entity 数据。
-  - 按住攻击键时，以受控间隔持续 trace 并删除投影方块，不向服务器发送攻击包。
-  - 避免反复处理同一个已变为空气的目标；实现 #30 后再将连续手势组织为合适的历史事务。
-  - 验收：常见 BlockState 属性和 NBT 保存重载后保持一致；长按攻击可以持续删除新命中的投影方块。
+  - 验收：常见 BlockState 属性和 NBT 保存重载后保持一致。
 
 - [ ] #29 与投影方块交互
   - 区分右键交互和相邻放置。
