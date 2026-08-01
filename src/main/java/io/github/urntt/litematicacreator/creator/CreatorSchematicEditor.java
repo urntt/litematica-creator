@@ -82,14 +82,15 @@ public final class CreatorSchematicEditor
             return false;
         }
 
-        if (newState.isAir() && isRemovableCellRegion(schematic, regionName))
+        container.set(containerPos.getX(), containerPos.getY(), containerPos.getZ(), newState);
+        updateBlockCount(schematic.getMetadata(), oldState, newState);
+
+        if (newState.isAir() && isRegionCompletelyEmpty(schematic, regionName, container))
         {
-            removeCellRegion(schematic, regionName);
+            removeRegion(schematic, regionName);
         }
         else
         {
-            container.set(containerPos.getX(), containerPos.getY(), containerPos.getZ(), newState);
-            updateBlockCount(schematic.getMetadata(), oldState, newState);
             markModified(schematic);
             rebuildAllPlacements(schematic);
         }
@@ -202,17 +203,24 @@ public final class CreatorSchematicEditor
         markModified(schematic);
     }
 
-    private static void removeCellRegion(LitematicaSchematic schematic, String regionName)
+    private static void removeRegion(LitematicaSchematic schematic, String regionName)
     {
         LitematicaSchematicAccessor schematicAccessor = (LitematicaSchematicAccessor) schematic;
         List<SchematicPlacement> placements = List.copyOf(DataManager.getSchematicPlacementManager().getAllPlacementsOfSchematic(schematic));
+        int remainingRegionCount = Math.max(0, schematic.getSubRegionCount() - 1);
 
         for (SchematicPlacement placement : placements)
         {
             SchematicPlacementEventHandler.getInstance().invokePrePlacementChange(CreatorPlacementIndex.INSTANCE, placement);
             SchematicPlacementAccessor placementAccessor = (SchematicPlacementAccessor) placement;
             placementAccessor.litematicacreator$getRelativeSubRegionPlacements().remove(regionName);
-            placementAccessor.litematicacreator$setSubRegionCount(schematic.getSubRegionCount() - 1);
+            placementAccessor.litematicacreator$setSubRegionCount(remainingRegionCount);
+
+            if (remainingRegionCount == 0)
+            {
+                placementAccessor.litematicacreator$setEnclosingBox(null);
+            }
+
             SchematicPlacementEventHandler.getInstance().invokePlacementModified(CreatorPlacementIndex.INSTANCE, placement);
         }
 
@@ -224,7 +232,6 @@ public final class CreatorSchematicEditor
         schematicAccessor.litematicacreator$getSubRegionPositions().remove(regionName);
         schematicAccessor.litematicacreator$getSubRegionSizes().remove(regionName);
 
-        schematic.getMetadata().setTotalBlocks(Math.max(0, schematic.getMetadata().getTotalBlocks() - 1));
         refreshGeometryMetadata(schematic);
         markModified(schematic);
     }
@@ -287,10 +294,19 @@ public final class CreatorSchematicEditor
         CreatorRecoveryManager.getInstance().onSchematicChanged(schematic);
     }
 
-    private static boolean isRemovableCellRegion(LitematicaSchematic schematic, String regionName)
+    private static boolean isRegionCompletelyEmpty(
+            LitematicaSchematic schematic,
+            String regionName,
+            LitematicaBlockStateContainer container)
     {
-        BlockPos size = schematic.getAreaSize(regionName);
-        return CreatorSparseRegionPolicy.isRemovableCell(regionName, size);
+        LitematicaSchematicAccessor accessor = (LitematicaSchematicAccessor) schematic;
+        return CreatorRegionEmptiness.isCompletelyEmpty(
+                container,
+                accessor.litematicacreator$getTileEntities().get(regionName),
+                accessor.litematicacreator$getEntities().get(regionName),
+                accessor.litematicacreator$getPendingBlockTicks().get(regionName),
+                accessor.litematicacreator$getPendingFluidTicks().get(regionName)
+        );
     }
 
     private static BlockState toWorldBlockState(

@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
 import fi.dy.masa.litematica.schematic.placement.SubRegionPlacement;
+import fi.dy.masa.litematica.selection.Box;
 
 @Mixin(SchematicPlacement.class)
 public interface SchematicPlacementAccessor
@@ -24,4 +25,8 @@ public interface SchematicPlacementAccessor
     @Mutable
     @Accessor("subRegionCount")
     void litematicacreator$setSubRegionCount(int subRegionCount);
+
+    @Mutable
+    @Accessor("enclosingBox")
+    void litematicacreator$setEnclosingBox(@Nullable Box enclosingBox);
 }
