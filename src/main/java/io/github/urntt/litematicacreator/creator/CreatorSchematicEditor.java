@@ -8,6 +8,9 @@ import javax.annotation.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import fi.dy.masa.litematica.data.DataManager;
@@ -92,6 +95,46 @@ public final class CreatorSchematicEditor
         }
 
         return true;
+    }
+
+    public static BlockState getBlockState(SchematicPlacement placement, BlockPos worldPos)
+    {
+        @Nullable CreatorPlacementTarget target = findRegionAt(placement, worldPos);
+
+        if (target == null)
+        {
+            return Blocks.AIR.defaultBlockState();
+        }
+
+        LitematicaSchematic schematic = placement.getSchematic();
+        String regionName = target.regionName();
+        LitematicaBlockStateContainer container = schematic.getSubRegionContainer(regionName);
+        SubRegionPlacement regionPlacement = placement.getRelativeSubRegionPlacement(regionName);
+
+        if (container == null || regionPlacement == null)
+        {
+            return Blocks.AIR.defaultBlockState();
+        }
+
+        BlockPos containerPos = SchematicUtils.getSchematicContainerPositionFromWorldPosition(
+                worldPos,
+                schematic,
+                regionName,
+                placement,
+                regionPlacement,
+                container
+        );
+
+        if (containerPos == null)
+        {
+            return Blocks.AIR.defaultBlockState();
+        }
+
+        return toWorldBlockState(
+                container.get(containerPos.getX(), containerPos.getY(), containerPos.getZ()),
+                placement,
+                regionPlacement
+        );
     }
 
     @Nullable
@@ -248,6 +291,40 @@ public final class CreatorSchematicEditor
     {
         BlockPos size = schematic.getAreaSize(regionName);
         return CreatorSparseRegionPolicy.isRemovableCell(regionName, size);
+    }
+
+    private static BlockState toWorldBlockState(
+            BlockState state,
+            SchematicPlacement placement,
+            SubRegionPlacement regionPlacement)
+    {
+        Rotation rotation = placement.getRotation().getRotated(regionPlacement.getRotation());
+        Mirror mainMirror = placement.getMirror();
+        Mirror regionMirror = regionPlacement.getMirror();
+
+        if (regionMirror != Mirror.NONE &&
+            (placement.getRotation() == Rotation.CLOCKWISE_90 ||
+             placement.getRotation() == Rotation.COUNTERCLOCKWISE_90))
+        {
+            regionMirror = regionMirror == Mirror.FRONT_BACK ? Mirror.LEFT_RIGHT : Mirror.FRONT_BACK;
+        }
+
+        if (mainMirror != Mirror.NONE)
+        {
+            state = state.mirror(mainMirror);
+        }
+
+        if (regionMirror != Mirror.NONE)
+        {
+            state = state.mirror(regionMirror);
+        }
+
+        if (rotation != Rotation.NONE)
+        {
+            state = state.rotate(rotation);
+        }
+
+        return state;
     }
 
     private static String uniqueCellRegionName(LitematicaSchematic schematic, BlockPos relativePos)

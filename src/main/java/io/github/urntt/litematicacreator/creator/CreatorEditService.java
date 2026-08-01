@@ -85,22 +85,41 @@ public class CreatorEditService
             return true;
         }
 
-        @Nullable SchematicPlacement placement = this.resolvePlacementForWrite(target);
+        CreatorTargetResolver.Resolution resolution = this.resolvePlacementTarget(target);
 
-        if (placement == null)
+        if (resolution.action() == CreatorTargetResolver.Action.CHOOSE_OVERLAP)
         {
+            GuiFocusSwitcher.openForOverlap(resolution.candidates());
             return true;
         }
 
-        BlockState state = this.getPlacementState(mc, blockItem, stack, target);
+        PlacementPreflight preflight = this.preflightPlacement(mc, blockItem, stack, target, resolution.placement());
 
-        if (state == null || state.isAir())
+        if (preflight.outcome() == PreflightOutcome.INVALID_STATE)
         {
             InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_place_state");
             return true;
         }
 
-        CreatorSchematicEditor.setBlockState(placement, target.blockPos(), state);
+        if (preflight.outcome() == PreflightOutcome.BLOCKED)
+        {
+            return true;
+        }
+
+        CreatorManager manager = CreatorManager.getInstance();
+        SchematicPlacement placement;
+
+        if (resolution.action() == CreatorTargetResolver.Action.EDIT)
+        {
+            placement = resolution.placement();
+            manager.focusPlacement(placement);
+        }
+        else
+        {
+            placement = manager.createBlank(target.blockPos());
+        }
+
+        CreatorSchematicEditor.setBlockState(placement, target.blockPos(), preflight.state());
         return true;
     }
 
@@ -169,14 +188,20 @@ public class CreatorEditService
         return true;
     }
 
-    @Nullable
-    private BlockState getPlacementState(Minecraft mc, BlockItem blockItem, ItemStack stack, CreatorTarget target)
+    private PlacementPreflight preflightPlacement(
+            Minecraft mc,
+            BlockItem blockItem,
+            ItemStack stack,
+            CreatorTarget target,
+            @Nullable SchematicPlacement placement)
     {
         Level schematicWorld = SchematicWorldHandler.getSchematicWorld();
 
         if (schematicWorld == null || mc.player == null)
         {
-            return blockItem.getBlock().defaultBlockState();
+            BlockState state = blockItem.getBlock().defaultBlockState();
+            return placement == null || CreatorSchematicEditor.getBlockState(placement, target.blockPos()).isAir() ?
+                    PlacementPreflight.success(state) : PlacementPreflight.blocked();
         }
 
         Level oldWorld = mc.player.level();
@@ -195,7 +220,41 @@ public class CreatorEditService
             }
 
             BlockPlaceContext context = new BlockPlaceContext(mc.player, InteractionHand.MAIN_HAND, stack, hit);
-            return blockItem.getBlock().getStateForPlacement(context);
+            BlockState state = blockItem.getBlock().getStateForPlacement(context);
+
+            if (state == null || state.isAir())
+            {
+                return PlacementPreflight.invalidState();
+            }
+
+            if (placement != null)
+            {
+                BlockState targetState = CreatorSchematicEditor.getBlockState(placement, target.blockPos());
+
+                if (!targetState.isAir())
+                {
+                    BlockHitResult targetHit = new BlockHitResult(
+                            target.hitVec(),
+                            target.side(),
+                            target.blockPos(),
+                            false
+                    );
+                    CreatorTargetPlaceContext targetContext = new CreatorTargetPlaceContext(
+                            mc.player,
+                            InteractionHand.MAIN_HAND,
+                            stack,
+                            targetHit
+                    );
+                    boolean replaceable = targetContext.canReplace(targetState);
+
+                    if (!CreatorPlacementPolicy.canWrite(false, replaceable))
+                    {
+                        return PlacementPreflight.blocked();
+                    }
+                }
+            }
+
+            return PlacementPreflight.success(state);
         }
         finally
         {
@@ -273,28 +332,12 @@ public class CreatorEditService
         return camera != null && mc.level != null ? RayTraceUtils.getGenericTrace(mc.level, camera, EDIT_RANGE, true, false, false) : null;
     }
 
-    @Nullable
-    private SchematicPlacement resolvePlacementForWrite(CreatorTarget target)
+    private CreatorTargetResolver.Resolution resolvePlacementTarget(CreatorTarget target)
     {
         CreatorManager manager = CreatorManager.getInstance();
         List<CreatorPlacementTarget> hitCandidates = target.schematicBlock() ? CreatorPlacementIndex.INSTANCE.findAt(target.clickedBlockPos()) : List.of();
         List<CreatorPlacementTarget> writeCandidates = CreatorPlacementIndex.INSTANCE.findAt(target.blockPos());
-        CreatorTargetResolver.Resolution resolution = CreatorTargetResolver.resolve(hitCandidates, writeCandidates, manager.getFocus());
-
-        return switch (resolution.action())
-        {
-            case EDIT ->
-            {
-                manager.focusPlacement(resolution.placement());
-                yield resolution.placement();
-            }
-            case CREATE_NEW -> manager.createBlank(target.blockPos());
-            case CHOOSE_OVERLAP ->
-            {
-                GuiFocusSwitcher.openForOverlap(resolution.candidates());
-                yield null;
-            }
-        };
+        return CreatorTargetResolver.resolve(hitCandidates, writeCandidates, manager.getFocus());
     }
 
     private boolean canEdit(Minecraft mc)
@@ -327,5 +370,50 @@ public class CreatorEditService
 
     private record CreatorTarget(BlockPos blockPos, BlockPos clickedBlockPos, Direction side, Vec3 hitVec, boolean schematicBlock)
     {
+    }
+
+    private enum PreflightOutcome
+    {
+        SUCCESS,
+        INVALID_STATE,
+        BLOCKED
+    }
+
+    private record PlacementPreflight(PreflightOutcome outcome, @Nullable BlockState state)
+    {
+        private static PlacementPreflight success(BlockState state)
+        {
+            return new PlacementPreflight(PreflightOutcome.SUCCESS, state);
+        }
+
+        private static PlacementPreflight invalidState()
+        {
+            return new PlacementPreflight(PreflightOutcome.INVALID_STATE, null);
+        }
+
+        private static PlacementPreflight blocked()
+        {
+            return new PlacementPreflight(PreflightOutcome.BLOCKED, null);
+        }
+    }
+
+    private static class CreatorTargetPlaceContext extends BlockPlaceContext
+    {
+        private CreatorTargetPlaceContext(
+                net.minecraft.world.entity.player.Player player,
+                InteractionHand hand,
+                ItemStack stack,
+                BlockHitResult hit)
+        {
+            super(player, hand, stack, hit);
+        }
+
+        private boolean canReplace(BlockState targetState)
+        {
+            this.replaceClicked = true;
+            boolean replaceable = targetState.canBeReplaced(this);
+            this.replaceClicked = replaceable;
+            return replaceable;
+        }
     }
 }
