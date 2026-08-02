@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import io.github.urntt.litematicacreator.creator.CreatorManager;
+import io.github.urntt.litematicacreator.camera.CreatorCameraController;
 import io.github.urntt.litematicacreator.recovery.CreatorRecoveryManager;
 
 @Mixin(Minecraft.class)
@@ -16,6 +17,7 @@ public abstract class MinecraftClientMixin
     @Inject(method = "close", at = @At("HEAD"))
     private void litematicacreator$flushRecoveryOnClose(CallbackInfo ci)
     {
+        CreatorCameraController.getInstance().deactivate((Minecraft) (Object) this);
         CreatorRecoveryManager.getInstance().onClientShutdown();
     }
 

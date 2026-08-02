@@ -18,6 +18,7 @@ import fi.dy.masa.litematica.util.FileType;
 import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
 import io.github.urntt.litematicacreator.config.Configs;
+import io.github.urntt.litematicacreator.camera.CreatorCameraController;
 import io.github.urntt.litematicacreator.mixin.LitematicaSchematicAccessor;
 import io.github.urntt.litematicacreator.recovery.CreatorRecoveryManager;
 
@@ -54,6 +55,27 @@ public class CreatorManager
         if (Configs.Generic.ENABLE_CREATOR_MODE.getBooleanValue() != enabled)
         {
             Configs.Generic.ENABLE_CREATOR_MODE.setBooleanValue(enabled);
+
+            if (Configs.Generic.ENABLE_CREATOR_MODE.getBooleanValue() != enabled)
+            {
+                return;
+            }
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+
+        if (enabled && !CreatorCameraController.getInstance().activate(minecraft))
+        {
+            if (Configs.Generic.ENABLE_CREATOR_MODE.getBooleanValue())
+            {
+                Configs.Generic.ENABLE_CREATOR_MODE.setBooleanValue(false);
+            }
+
+            return;
+        }
+        else if (!enabled)
+        {
+            CreatorCameraController.getInstance().deactivate(minecraft);
         }
 
         if (notify)

@@ -10,6 +10,7 @@ import fi.dy.masa.malilib.config.ConfigUtils;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigHandler;
 import fi.dy.masa.malilib.config.options.ConfigBoolean;
+import fi.dy.masa.malilib.config.options.ConfigDouble;
 import fi.dy.masa.malilib.config.options.ConfigInteger;
 import fi.dy.masa.malilib.util.FileUtils;
 import fi.dy.masa.malilib.util.data.json.JsonUtils;
@@ -63,6 +64,20 @@ public class Configs implements IConfigHandler
                 CreatorConfigDefaults.CONTINUOUS_BREAK_INTERVAL_TICKS_MIN,
                 CreatorConfigDefaults.CONTINUOUS_BREAK_INTERVAL_TICKS_MAX
         ).apply(GENERIC_KEY);
+        public static final ConfigDouble CREATOR_CAMERA_GROUND_SPEED_MULTIPLIER = new ConfigDouble(
+                "creatorCameraGroundSpeedMultiplier",
+                CreatorConfigDefaults.CREATOR_CAMERA_GROUND_SPEED_MULTIPLIER,
+                CreatorConfigDefaults.CREATOR_CAMERA_SPEED_MULTIPLIER_MIN,
+                CreatorConfigDefaults.CREATOR_CAMERA_SPEED_MULTIPLIER_MAX,
+                true
+        ).apply(GENERIC_KEY);
+        public static final ConfigDouble CREATOR_CAMERA_FLIGHT_SPEED_MULTIPLIER = new ConfigDouble(
+                "creatorCameraFlightSpeedMultiplier",
+                CreatorConfigDefaults.CREATOR_CAMERA_FLIGHT_SPEED_MULTIPLIER,
+                CreatorConfigDefaults.CREATOR_CAMERA_SPEED_MULTIPLIER_MIN,
+                CreatorConfigDefaults.CREATOR_CAMERA_SPEED_MULTIPLIER_MAX,
+                true
+        ).apply(GENERIC_KEY);
 
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 ENABLE_CREATOR_MODE,
@@ -73,7 +88,9 @@ public class Configs implements IConfigHandler
                 CREATOR_EDIT_RANGE,
                 AIR_PLACEMENT_DISTANCE,
                 CONTINUOUS_PLACE_INTERVAL_TICKS,
-                CONTINUOUS_BREAK_INTERVAL_TICKS
+                CONTINUOUS_BREAK_INTERVAL_TICKS,
+                CREATOR_CAMERA_GROUND_SPEED_MULTIPLIER,
+                CREATOR_CAMERA_FLIGHT_SPEED_MULTIPLIER
         );
     }
 

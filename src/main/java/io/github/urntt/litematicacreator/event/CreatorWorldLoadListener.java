@@ -7,6 +7,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 
 import fi.dy.masa.malilib.interfaces.IWorldLoadListener;
 import io.github.urntt.litematicacreator.creator.CreatorEditService;
+import io.github.urntt.litematicacreator.camera.CreatorCameraController;
 import io.github.urntt.litematicacreator.creator.CreatorEditGestureController;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.creator.CreatorPlacementIndex;
@@ -25,6 +26,7 @@ public class CreatorWorldLoadListener implements IWorldLoadListener
     {
         if (worldBefore != null)
         {
+            CreatorCameraController.getInstance().deactivate(mc);
             CreatorRecoveryManager.getInstance().beforeWorldChange(worldBefore);
 
             if (worldAfter == null)

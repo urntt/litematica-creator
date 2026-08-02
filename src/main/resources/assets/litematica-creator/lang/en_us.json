@@ -4,6 +4,8 @@
 	"litematica-creator.config.generic.comment.airPlacementDistance": "Fixed camera distance for placing a projection when no real or projection block is hit. Limited by Creator Edit Range.",
 	"litematica-creator.config.generic.comment.continuousPlaceIntervalTicks": "Interval between repeated projection placements while the use key is held, in client ticks.",
 	"litematica-creator.config.generic.comment.continuousBreakIntervalTicks": "Interval between repeated projection deletions while the attack key is held, in client ticks.",
+	"litematica-creator.config.generic.comment.creatorCameraGroundSpeedMultiplier": "Movement speed multiplier for the Creator Camera while using ground physics.",
+	"litematica-creator.config.generic.comment.creatorCameraFlightSpeedMultiplier": "Movement speed multiplier for the Creator Camera while flying.",
 	"litematica-creator.config.generic.comment.debugLogging": "Writes extra Litematica Creator diagnostics to the game log.",
 	"litematica-creator.config.generic.comment.hideSubregionBoxesInCreatorMode": "Hides Litematica placement subregion boxes while Creator mode is active.",
 	"litematica-creator.config.generic.comment.openCreatorInventoryWithInventoryKey": "Opens the virtual Creator inventory instead of the real inventory when the inventory key is pressed in Creator mode.",
@@ -13,6 +15,8 @@
 	"litematica-creator.config.generic.name.airPlacementDistance": "Air Projection Placement Distance",
 	"litematica-creator.config.generic.name.continuousPlaceIntervalTicks": "Continuous Projection Place Interval",
 	"litematica-creator.config.generic.name.continuousBreakIntervalTicks": "Continuous Projection Break Interval",
+	"litematica-creator.config.generic.name.creatorCameraGroundSpeedMultiplier": "Creator Camera Ground Speed",
+	"litematica-creator.config.generic.name.creatorCameraFlightSpeedMultiplier": "Creator Camera Flight Speed",
 	"litematica-creator.config.generic.name.enableCreatorMode": "Creator Mode",
 	"litematica-creator.config.generic.name.hideSubregionBoxesInCreatorMode": "Hide Subregion Boxes in Creator Mode",
 	"litematica-creator.config.generic.name.openCreatorInventoryWithInventoryKey": "Use Inventory Key for Creator Inventory",
@@ -22,6 +26,8 @@
 	"litematica-creator.config.generic.prettyName.airPlacementDistance": "Air Projection Placement Distance",
 	"litematica-creator.config.generic.prettyName.continuousPlaceIntervalTicks": "Continuous Projection Place Interval",
 	"litematica-creator.config.generic.prettyName.continuousBreakIntervalTicks": "Continuous Projection Break Interval",
+	"litematica-creator.config.generic.prettyName.creatorCameraGroundSpeedMultiplier": "Creator Camera Ground Speed",
+	"litematica-creator.config.generic.prettyName.creatorCameraFlightSpeedMultiplier": "Creator Camera Flight Speed",
 	"litematica-creator.config.generic.prettyName.enableCreatorMode": "Creator Mode",
 	"litematica-creator.config.generic.prettyName.hideSubregionBoxesInCreatorMode": "Hide Subregion Boxes in Creator Mode",
 	"litematica-creator.config.generic.prettyName.openCreatorInventoryWithInventoryKey": "Use Inventory Key for Creator Inventory",
@@ -68,6 +74,9 @@
 	"litematica-creator.gui.title.focus_switcher": "Creator Focus",
 	"litematica-creator.gui.title.configs": "Litematica Creator Settings",
 	"litematica-creator.hud.dirty": "unsaved",
+	"litematica-creator.hud.camera_mode": "Camera: %s",
+	"litematica-creator.hud.camera_ground": "ground",
+	"litematica-creator.hud.camera_flying": "flying",
 	"litematica-creator.hud.draft_counts": "Regions: %s, Blocks: %s",
 	"litematica-creator.hud.draft_missing": "Focus: %s",
 	"litematica-creator.hud.draft_name": "Focus: %s",
@@ -97,4 +106,6 @@
 	"litematica-creator.message.recovery.restored": "Recovered %s unsaved schematic(s) with %s placement(s)",
 	"litematica-creator.message.creator_mode.disabled": "Litematica Creator mode disabled",
 	"litematica-creator.message.creator_mode.enabled": "Litematica Creator mode enabled"
+	,"litematica-creator.message.camera.initialization_failed": "Creator Camera could not be initialized; Creator mode was disabled"
+	,"litematica-creator.message.camera.player_replaced": "Creator mode was disabled because the local player died or respawned"
 }

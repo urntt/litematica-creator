@@ -15,6 +15,10 @@ final class CreatorConfigDefaults
     static final int CONTINUOUS_BREAK_INTERVAL_TICKS = 4;
     static final int CONTINUOUS_BREAK_INTERVAL_TICKS_MIN = 1;
     static final int CONTINUOUS_BREAK_INTERVAL_TICKS_MAX = 20;
+    static final double CREATOR_CAMERA_GROUND_SPEED_MULTIPLIER = 1.0;
+    static final double CREATOR_CAMERA_FLIGHT_SPEED_MULTIPLIER = 1.0;
+    static final double CREATOR_CAMERA_SPEED_MULTIPLIER_MIN = 0.1;
+    static final double CREATOR_CAMERA_SPEED_MULTIPLIER_MAX = 5.0;
 
     static final String TOGGLE_CREATOR_MODE = "Y";
     static final String OPEN_CREATOR_INVENTORY = "M,E";

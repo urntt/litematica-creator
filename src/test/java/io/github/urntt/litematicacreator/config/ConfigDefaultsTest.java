@@ -46,6 +46,15 @@ class ConfigDefaultsTest
     }
 
     @Test
+    void creatorCameraSpeedsUseTheExpectedDefaultsAndBounds()
+    {
+        assertEquals(1.0, CreatorConfigDefaults.CREATOR_CAMERA_GROUND_SPEED_MULTIPLIER);
+        assertEquals(1.0, CreatorConfigDefaults.CREATOR_CAMERA_FLIGHT_SPEED_MULTIPLIER);
+        assertEquals(0.1, CreatorConfigDefaults.CREATOR_CAMERA_SPEED_MULTIPLIER_MIN);
+        assertEquals(5.0, CreatorConfigDefaults.CREATOR_CAMERA_SPEED_MULTIPLIER_MAX);
+    }
+
+    @Test
     void creatorHotkeysUseTheExpectedDefaults()
     {
         assertEquals("Y", CreatorConfigDefaults.TOGGLE_CREATOR_MODE);
