@@ -123,6 +123,7 @@
 	"litematica-creator.message.creator_mode.enabled": "Litematica Creator 模式已开启",
 	"litematica-creator.message.camera.initialization_failed": "Creator 相机初始化失败",
 	"litematica-creator.message.camera.player_replaced": "本地玩家死亡或重生，Creator 模式和相机已关闭",
+	"litematica-creator.message.camera.player_replaced_camera_only": "本地玩家死亡或重生，Creator 相机已关闭",
 	"litematica-creator.message.camera.enabled": "Creator 相机已开启",
 	"litematica-creator.message.camera.disabled": "Creator 相机已关闭"
 }

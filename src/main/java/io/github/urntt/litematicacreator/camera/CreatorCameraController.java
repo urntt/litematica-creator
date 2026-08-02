@@ -238,8 +238,20 @@ public final class CreatorCameraController
 
             try
             {
-                CreatorManager.getInstance().setCreatorModeEnabled(false, false);
-                InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.camera.player_replaced");
+                CreatorManager manager = CreatorManager.getInstance();
+                boolean creatorModeEnabled = manager.isCreatorModeEnabled();
+
+                if (creatorModeEnabled)
+                {
+                    manager.setCreatorModeEnabled(false, false);
+                }
+
+                InfoUtils.showGuiOrInGameMessage(
+                        MessageType.WARNING,
+                        creatorModeEnabled ?
+                                "litematica-creator.message.camera.player_replaced" :
+                                "litematica-creator.message.camera.player_replaced_camera_only"
+                );
             }
             finally
             {

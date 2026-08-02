@@ -123,6 +123,7 @@
 	"litematica-creator.message.creator_mode.enabled": "Litematica Creator mode enabled",
 	"litematica-creator.message.camera.initialization_failed": "Creator Camera could not be initialized",
 	"litematica-creator.message.camera.player_replaced": "Creator mode and its camera were disabled because the local player died or respawned",
+	"litematica-creator.message.camera.player_replaced_camera_only": "Creator Camera was disabled because the local player died or respawned",
 	"litematica-creator.message.camera.enabled": "Creator Camera enabled",
 	"litematica-creator.message.camera.disabled": "Creator Camera disabled"
 }
