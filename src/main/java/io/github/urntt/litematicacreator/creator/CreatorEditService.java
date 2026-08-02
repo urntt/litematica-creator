@@ -48,16 +48,27 @@ public class CreatorEditService
         this.lastNoTargetWarning = 0L;
     }
 
-    public boolean placeProjectionBlock(boolean showWarnings)
+    @Nullable
+    CreatorEditTarget tracePlacementTarget()
     {
         Minecraft mc = Minecraft.getInstance();
 
         if (!this.canEdit(mc))
         {
-            return false;
+            return null;
         }
 
-        @Nullable CreatorTarget target = this.getPlacementTarget(mc);
+        return this.getPlacementTarget(mc);
+    }
+
+    CreatorEditOutcome placeProjectionBlock(@Nullable CreatorEditTarget target, boolean showWarnings)
+    {
+        Minecraft mc = Minecraft.getInstance();
+
+        if (!this.canEdit(mc))
+        {
+            return CreatorEditOutcome.NO_CHANGE;
+        }
 
         if (target == null)
         {
@@ -66,7 +77,7 @@ public class CreatorEditService
                 this.showNoTargetWarningThrottled();
             }
 
-            return true;
+            return CreatorEditOutcome.NO_CHANGE;
         }
 
         CreatorInventory inventory = CreatorInventory.getInstance();
@@ -82,7 +93,7 @@ public class CreatorEditService
                 InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_block_selected");
             }
 
-            return true;
+            return CreatorEditOutcome.NO_CHANGE;
         }
 
         CreatorTargetResolver.Resolution resolution = this.resolvePlacementTarget(target);
@@ -90,7 +101,7 @@ public class CreatorEditService
         if (resolution.action() == CreatorTargetResolver.Action.CHOOSE_OVERLAP)
         {
             GuiFocusSwitcher.openForOverlap(resolution.candidates());
-            return true;
+            return CreatorEditOutcome.OVERLAP;
         }
 
         PlacementPreflight preflight = this.preflightPlacement(
@@ -109,12 +120,12 @@ public class CreatorEditService
                 InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_place_state");
             }
 
-            return true;
+            return CreatorEditOutcome.NO_CHANGE;
         }
 
         if (preflight.outcome() == PreflightOutcome.BLOCKED)
         {
-            return true;
+            return CreatorEditOutcome.NO_CHANGE;
         }
 
         CreatorManager manager = CreatorManager.getInstance();
@@ -130,11 +141,11 @@ public class CreatorEditService
             placement = manager.createBlank(target.blockPos());
         }
 
-        CreatorEditFeedback.afterSuccessfulEdit(
+        boolean edited = CreatorEditFeedback.afterSuccessfulEdit(
                 CreatorSchematicEditor.setBlockState(placement, target.blockPos(), preflight.state()),
                 () -> mc.player.swing(heldItem.hand(), false)
         );
-        return true;
+        return edited ? CreatorEditOutcome.EDITED : CreatorEditOutcome.NO_CHANGE;
     }
 
     public boolean deleteProjectionBlock()
@@ -146,7 +157,7 @@ public class CreatorEditService
             return false;
         }
 
-        @Nullable CreatorTarget target = this.getExistingCreatorTarget(mc);
+        @Nullable CreatorEditTarget target = this.getExistingCreatorTarget(mc);
 
         if (target != null)
         {
@@ -179,7 +190,7 @@ public class CreatorEditService
             return false;
         }
 
-        @Nullable CreatorTarget target = this.getPickTarget(mc);
+        @Nullable CreatorEditTarget target = this.getPickTarget(mc);
 
         if (target == null)
         {
@@ -210,7 +221,7 @@ public class CreatorEditService
             BlockItem blockItem,
             ItemStack stack,
             InteractionHand hand,
-            CreatorTarget target,
+            CreatorEditTarget target,
             @Nullable SchematicPlacement placement)
     {
         Level schematicWorld = SchematicWorldHandler.getSchematicWorld();
@@ -282,7 +293,7 @@ public class CreatorEditService
     }
 
     @Nullable
-    private CreatorTarget getPlacementTarget(Minecraft mc)
+    private CreatorEditTarget getPlacementTarget(Minecraft mc)
     {
         RayTraceWrapper trace = this.trace(mc);
 
@@ -295,18 +306,18 @@ public class CreatorEditService
 
         if (trace.getHitType() == RayTraceWrapper.HitType.SCHEMATIC_BLOCK)
         {
-            return new CreatorTarget(hit.getBlockPos().relative(hit.getDirection()), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true);
+            return new CreatorEditTarget(hit.getBlockPos().relative(hit.getDirection()), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true);
         }
         else if (trace.getHitType() == RayTraceWrapper.HitType.VANILLA_BLOCK)
         {
-            return new CreatorTarget(hit.getBlockPos().relative(hit.getDirection()), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), false);
+            return new CreatorEditTarget(hit.getBlockPos().relative(hit.getDirection()), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), false);
         }
 
         return null;
     }
 
     @Nullable
-    private CreatorTarget getExistingCreatorTarget(Minecraft mc)
+    private CreatorEditTarget getExistingCreatorTarget(Minecraft mc)
     {
         RayTraceWrapper trace = this.trace(mc);
 
@@ -316,11 +327,11 @@ public class CreatorEditService
         }
 
         BlockHitResult hit = trace.getBlockHitResult();
-        return new CreatorTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true);
+        return new CreatorEditTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true);
     }
 
     @Nullable
-    private CreatorTarget getPickTarget(Minecraft mc)
+    private CreatorEditTarget getPickTarget(Minecraft mc)
     {
         RayTraceWrapper trace = this.trace(mc);
 
@@ -333,11 +344,11 @@ public class CreatorEditService
 
         if (trace.getHitType() == RayTraceWrapper.HitType.SCHEMATIC_BLOCK)
         {
-            return new CreatorTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true);
+            return new CreatorEditTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true);
         }
         else if (trace.getHitType() == RayTraceWrapper.HitType.VANILLA_BLOCK)
         {
-            return new CreatorTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), false);
+            return new CreatorEditTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), false);
         }
 
         return null;
@@ -349,7 +360,7 @@ public class CreatorEditService
         return CreatorTargeting.trace(mc);
     }
 
-    private CreatorTargetResolver.Resolution resolvePlacementTarget(CreatorTarget target)
+    private CreatorTargetResolver.Resolution resolvePlacementTarget(CreatorEditTarget target)
     {
         CreatorManager manager = CreatorManager.getInstance();
         List<CreatorPlacementTarget> hitCandidates = target.schematicBlock() ? CreatorPlacementIndex.INSTANCE.findAt(target.clickedBlockPos()) : List.of();
@@ -378,10 +389,6 @@ public class CreatorEditService
             this.lastNoTargetWarning = now;
             InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_target");
         }
-    }
-
-    private record CreatorTarget(BlockPos blockPos, BlockPos clickedBlockPos, Direction side, Vec3 hitVec, boolean schematicBlock)
-    {
     }
 
     private enum PreflightOutcome

@@ -3,16 +3,17 @@ package io.github.urntt.litematicacreator.creator;
 import net.minecraft.client.Minecraft;
 
 import fi.dy.masa.malilib.util.GuiUtils;
+import io.github.urntt.litematicacreator.config.Configs;
+import io.github.urntt.litematicacreator.config.CreatorPlacementRepeatMode;
 
 public final class CreatorEditGestureController
 {
     public static final CreatorEditGestureController INSTANCE = new CreatorEditGestureController();
 
-    private static final int PLACE_INTERVAL_TICKS = 4;
-
     private final InputLatch placeInput = new InputLatch();
     private final InputLatch breakInput = new InputLatch();
-    private long nextPlaceTick;
+    private final CreatorPlacementRepeatState<CreatorEditTarget.CreatorEditTargetKey, CreatorEditTarget> placementRepeat =
+            new CreatorPlacementRepeatState<>();
 
     private CreatorEditGestureController()
     {
@@ -47,6 +48,14 @@ public final class CreatorEditGestureController
         }
 
         CreatorEditService edits = CreatorEditService.getInstance();
+        CreatorPlacementRepeatMode repeatMode = (CreatorPlacementRepeatMode) Configs.Generic.PLACEMENT_REPEAT_MODE.getOptionListValue();
+        int placementInterval = Configs.Generic.PLACEMENT_REPEAT_INTERVAL_TICKS.getIntegerValue();
+
+        if (this.placeInput.isHeld() && this.placementRepeat.isActive() && this.placementRepeat.mode() != repeatMode)
+        {
+            this.placeInput.suspend(placeDown);
+            this.placementRepeat.reset();
+        }
 
         while (this.breakInput.consumePress())
         {
@@ -64,8 +73,19 @@ public final class CreatorEditGestureController
         while (this.placeInput.consumePress())
         {
             freshPlace = true;
-            edits.placeProjectionBlock(true);
-            this.nextPlaceTick = tick + PLACE_INTERVAL_TICKS;
+            CreatorEditTarget target = edits.tracePlacementTarget();
+            CreatorPlacementRepeatState.RepeatPlan<CreatorEditTarget> plan = this.placementRepeat.press(
+                    tick,
+                    observed(target),
+                    repeatMode,
+                    placementInterval
+            );
+
+            if (this.executePlacementPlan(edits, plan))
+            {
+                this.suspend(placeDown, breakDown);
+                return;
+            }
 
             if (GuiUtils.getCurrentScreen() != null)
             {
@@ -74,15 +94,30 @@ public final class CreatorEditGestureController
             }
         }
 
-        if (!freshPlace && this.placeInput.isHeld() && tick >= this.nextPlaceTick)
+        if (!freshPlace && this.placeInput.isHeld() && this.placementRepeat.shouldObserveHeld(tick))
         {
-            edits.placeProjectionBlock(false);
-            this.nextPlaceTick = tick + PLACE_INTERVAL_TICKS;
+            CreatorEditTarget target = edits.tracePlacementTarget();
+            CreatorPlacementRepeatState.RepeatPlan<CreatorEditTarget> plan = this.placementRepeat.hold(
+                    tick,
+                    observed(target),
+                    placementInterval
+            );
+
+            if (this.executePlacementPlan(edits, plan))
+            {
+                this.suspend(placeDown, breakDown);
+                return;
+            }
 
             if (GuiUtils.getCurrentScreen() != null)
             {
                 this.suspend(placeDown, breakDown);
             }
+        }
+
+        if (!this.placeInput.isHeld())
+        {
+            this.placementRepeat.reset();
         }
     }
 
@@ -90,13 +125,42 @@ public final class CreatorEditGestureController
     {
         Minecraft mc = Minecraft.getInstance();
         this.suspend(mc.options.keyUse.isDown(), mc.options.keyAttack.isDown());
-        this.nextPlaceTick = 0L;
     }
 
     private void suspend(boolean placeDown, boolean breakDown)
     {
         this.placeInput.suspend(placeDown);
         this.breakInput.suspend(breakDown);
+        this.placementRepeat.reset();
+    }
+
+    private boolean executePlacementPlan(
+            CreatorEditService edits,
+            CreatorPlacementRepeatState.RepeatPlan<CreatorEditTarget> plan)
+    {
+        if (plan.freshPress() && plan.targets().isEmpty())
+        {
+            return edits.placeProjectionBlock(null, true) == CreatorEditOutcome.OVERLAP;
+        }
+
+        for (CreatorEditTarget target : plan.targets())
+        {
+            CreatorEditOutcome outcome = edits.placeProjectionBlock(target, plan.freshPress());
+
+            if (outcome == CreatorEditOutcome.OVERLAP)
+            {
+                this.placementRepeat.reset();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static CreatorPlacementRepeatState.ObservedTarget<CreatorEditTarget.CreatorEditTargetKey, CreatorEditTarget> observed(
+            CreatorEditTarget target)
+    {
+        return target != null ? new CreatorPlacementRepeatState.ObservedTarget<>(target.key(), target) : null;
     }
 
     private static final class InputLatch
