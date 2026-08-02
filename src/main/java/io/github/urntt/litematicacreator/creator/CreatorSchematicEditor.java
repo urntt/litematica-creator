@@ -463,7 +463,7 @@ public final class CreatorSchematicEditor
         );
     }
 
-    private static BlockState toWorldBlockState(
+    static BlockState toWorldBlockState(
             BlockState state,
             SchematicPlacement placement,
             SubRegionPlacement regionPlacement)
