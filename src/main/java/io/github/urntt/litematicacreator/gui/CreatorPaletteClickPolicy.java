@@ -1,10 +1,6 @@
 package io.github.urntt.litematicacreator.gui;
 
-import java.util.function.IntPredicate;
-
 import net.minecraft.world.item.ItemStack;
-
-import io.github.urntt.litematicacreator.creator.CreatorInventory;
 
 final class CreatorPaletteClickPolicy
 {
@@ -12,7 +8,7 @@ final class CreatorPaletteClickPolicy
     {
     }
 
-    static ItemStack applyNormalClick(ItemStack carried, ItemStack clicked, int button)
+    static ItemStack applyClick(ItemStack carried, ItemStack clicked, int button, boolean quickMove)
     {
         ItemStack result = carried.copy();
 
@@ -20,7 +16,11 @@ final class CreatorPaletteClickPolicy
         {
             if (button == 0)
             {
-                if (result.getCount() < result.getMaxStackSize())
+                if (quickMove)
+                {
+                    result.setCount(result.getMaxStackSize());
+                }
+                else if (result.getCount() < result.getMaxStackSize())
                 {
                     result.grow(1);
                 }
@@ -32,7 +32,8 @@ final class CreatorPaletteClickPolicy
         }
         else if (!clicked.isEmpty() && result.isEmpty())
         {
-            result = clicked.copy();
+            int count = quickMove ? clicked.getMaxStackSize() : clicked.getCount();
+            result = clicked.copyWithCount(count);
         }
         else if (button == 0)
         {
@@ -44,22 +45,5 @@ final class CreatorPaletteClickPolicy
         }
 
         return result.isEmpty() ? ItemStack.EMPTY : result;
-    }
-
-    static int findFirstEmptyHotbarSlot(int selectedHotbarSlot, IntPredicate isEmpty)
-    {
-        int selected = Math.floorMod(selectedHotbarSlot, CreatorInventory.HOTBAR_SIZE);
-
-        for (int offset = 0; offset < CreatorInventory.HOTBAR_SIZE; ++offset)
-        {
-            int slot = (selected + offset) % CreatorInventory.HOTBAR_SIZE;
-
-            if (isEmpty.test(slot))
-            {
-                return slot;
-            }
-        }
-
-        return -1;
     }
 }

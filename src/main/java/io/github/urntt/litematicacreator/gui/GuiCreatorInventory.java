@@ -247,18 +247,17 @@ public class GuiCreatorInventory extends AbstractContainerScreen<CreatorInventor
             return;
         }
 
-        if (input == ContainerInput.QUICK_MOVE)
-        {
-            this.menu.copyPaletteToFirstEmptyHotbar(slot);
-            return;
-        }
-
         if (input == ContainerInput.THROW || input == ContainerInput.QUICK_CRAFT || input == ContainerInput.PICKUP_ALL)
         {
             return;
         }
 
-        this.menu.setCarried(CreatorPaletteClickPolicy.applyNormalClick(this.menu.getCarried(), clicked, buttonNum));
+        this.menu.setCarried(CreatorPaletteClickPolicy.applyClick(
+                this.menu.getCarried(),
+                clicked,
+                buttonNum,
+                input == ContainerInput.QUICK_MOVE
+        ));
     }
 
     private void clearCarried(boolean all)

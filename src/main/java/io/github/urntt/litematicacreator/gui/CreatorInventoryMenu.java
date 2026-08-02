@@ -147,26 +147,6 @@ final class CreatorInventoryMenu extends AbstractContainerMenu
         this.inventory.setStack(hotbarSlot, copy);
     }
 
-    void copyPaletteToFirstEmptyHotbar(Slot source)
-    {
-        ItemStack stack = source.getItem();
-
-        if (stack.isEmpty())
-        {
-            return;
-        }
-
-        int targetSlot = CreatorPaletteClickPolicy.findFirstEmptyHotbarSlot(
-                this.inventory.getSelectedHotbarSlot(),
-                slot -> this.inventory.getStack(slot).isEmpty()
-        );
-
-        if (targetSlot >= 0)
-        {
-            this.inventory.setStack(targetSlot, stack.copyWithCount(stack.getMaxStackSize()));
-        }
-    }
-
     void swapVirtualSlot(Slot source, int targetInventorySlot)
     {
         if (targetInventorySlot < 0 || targetInventorySlot >= CreatorInventory.DISCARD_SLOT || source.container != this.inventoryContainer)
