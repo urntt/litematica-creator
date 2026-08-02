@@ -59,7 +59,7 @@ public class GuiCreatorInventory extends AbstractContainerScreen<CreatorInventor
 
     private final boolean suppressOpeningChar;
     private final Set<TagKey<Item>> visibleTags = new HashSet<>();
-    private CreativeModeTab selectedTab = CreativeModeTabs.getDefaultTab();
+    private static CreativeModeTab selectedTab = CreativeModeTabs.getDefaultTab();
     private CreatorItemSearch searchIndex;
     private EditBox searchBox;
     private float scrollOffset;
@@ -314,12 +314,6 @@ public class GuiCreatorInventory extends AbstractContainerScreen<CreatorInventor
     public boolean keyPressed(KeyEvent event)
     {
         this.ignoreTextInput = false;
-
-        if (this.minecraft.options.keyInventory.matches(event))
-        {
-            this.onClose();
-            return true;
-        }
 
         if (this.selectedTab.getType() != CreativeModeTab.Type.SEARCH)
         {
