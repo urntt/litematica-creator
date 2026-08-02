@@ -90,7 +90,6 @@
 	"litematica-creator.hud.selected_slot": "虚拟槽位：%s",
 	"litematica-creator.hud.title": "Creator 模式：%s",
 	"litematica-creator.hotkeys.category.generic_hotkeys": "通用快捷键",
-	"litematica-creator.message.compat.tweakeroo_free_camera_player_inputs": "Tweakeroo Free Camera 已开启且 freeCameraPlayerInputs=true；Creator 已临时将其设为 false 以使用相机视角编辑。",
 	"litematica-creator.message.draft.created": "已新建并聚焦 Placement：%s（原理图：%s）",
 	"litematica-creator.message.draft.discarded": "已卸载 focus 原理图及其全部 placement",
 	"litematica-creator.message.draft.missing": "没有当前 Creator focus",

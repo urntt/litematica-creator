@@ -59,6 +59,5 @@ public class CreatorWorldLoadListener implements IWorldLoadListener
         manager.clearFocusSilently();
         CreatorEditGestureController.INSTANCE.resetTransientState();
         CreatorEditService.getInstance().resetTransientState();
-        CreatorClientTickHandler.INSTANCE.resetCompatibilityState();
     }
 }

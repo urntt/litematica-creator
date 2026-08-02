@@ -90,7 +90,6 @@
 	"litematica-creator.hud.selected_slot": "Virtual Slot: %s",
 	"litematica-creator.hud.title": "Creator Mode: %s",
 	"litematica-creator.hotkeys.category.generic_hotkeys": "Generic Hotkeys",
-	"litematica-creator.message.compat.tweakeroo_free_camera_player_inputs": "Tweakeroo Free Camera is active with freeCameraPlayerInputs=true; Creator temporarily set it to false for camera-based editing.",
 	"litematica-creator.message.draft.created": "Created and focused placement: %s (schematic: %s)",
 	"litematica-creator.message.draft.discarded": "Unloaded the focused schematic and all placements",
 	"litematica-creator.message.draft.missing": "No active Creator focus",

@@ -9,6 +9,8 @@ import net.minecraft.world.entity.Entity;
 import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
 import io.github.urntt.litematicacreator.LitematicaCreator;
+import io.github.urntt.litematicacreator.creator.CreatorCameraCompat;
+import io.github.urntt.litematicacreator.creator.CreatorCameraCompat.TweakerooConfigSnapshot;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 
 public final class CreatorCameraController
@@ -23,6 +25,11 @@ public final class CreatorCameraController
     private LocalPlayer sessionPlayer;
     private boolean originalSmartCull;
     private boolean changingCreatorMode;
+    private boolean originalCameraIsTweakeroo;
+    private boolean tweakerooActiveLastTick;
+    private boolean tweakerooActivatedDuringSession;
+    @Nullable
+    private TweakerooConfigSnapshot tweakerooSnapshot;
 
     private CreatorCameraController()
     {
@@ -53,12 +60,17 @@ public final class CreatorCameraController
         }
 
         boolean sourceIsPlayer = source == minecraft.player;
+        boolean tweakerooActive = CreatorCameraCompat.isTweakerooFreeCameraActive();
 
         try
         {
             this.originalCamera = source;
             this.sessionPlayer = minecraft.player;
             this.originalSmartCull = minecraft.smartCull;
+            this.originalCameraIsTweakeroo = tweakerooActive && !sourceIsPlayer;
+            this.tweakerooActiveLastTick = tweakerooActive;
+            this.tweakerooActivatedDuringSession = false;
+            this.tweakerooSnapshot = CreatorCameraCompat.captureAndSuspendTweakeroo();
             this.camera = new CreatorCameraEntity(
                     minecraft,
                     minecraft.level,
@@ -142,6 +154,8 @@ public final class CreatorCameraController
             return;
         }
 
+        this.reconcileTweakeroo(minecraft);
+
         if (minecraft.getCameraEntity() != this.camera)
         {
             minecraft.setCameraEntity(this.camera);
@@ -170,6 +184,15 @@ public final class CreatorCameraController
         return entity == this.camera;
     }
 
+    public boolean shouldIsolatePlayer(LocalPlayer player, Minecraft minecraft)
+    {
+        return CreatorPlayerIsolationPolicy.shouldIsolate(
+                this.camera != null,
+                player == this.sessionPlayer,
+                player == minecraft.player
+        );
+    }
+
     @Nullable
     public CreatorCameraEntity getCamera()
     {
@@ -189,8 +212,15 @@ public final class CreatorCameraController
         if (!this.changingCreatorMode)
         {
             this.changingCreatorMode = true;
-            CreatorManager.getInstance().setCreatorModeEnabled(false, false);
-            this.changingCreatorMode = false;
+
+            try
+            {
+                CreatorManager.getInstance().setCreatorModeEnabled(false, false);
+            }
+            finally
+            {
+                this.changingCreatorMode = false;
+            }
         }
     }
 
@@ -199,15 +229,30 @@ public final class CreatorCameraController
         if (!this.changingCreatorMode)
         {
             this.changingCreatorMode = true;
-            CreatorManager.getInstance().setCreatorModeEnabled(false, false);
-            InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.camera.player_replaced");
-            this.changingCreatorMode = false;
+
+            try
+            {
+                CreatorManager.getInstance().setCreatorModeEnabled(false, false);
+                InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.camera.player_replaced");
+            }
+            finally
+            {
+                this.changingCreatorMode = false;
+            }
         }
     }
 
     private void restoreState(Minecraft minecraft)
     {
+        CreatorCameraEntity oldCamera = this.camera;
         Entity restoreCamera = this.getValidRestoreCamera(minecraft);
+
+        if (this.tweakerooActivatedDuringSession &&
+            CreatorCameraCompat.isTweakerooFreeCameraActive() &&
+            minecraft.player != null)
+        {
+            CreatorCameraCompat.rebaseTweakerooOriginalCamera(minecraft.player);
+        }
 
         if (restoreCamera != null)
         {
@@ -215,22 +260,72 @@ public final class CreatorCameraController
         }
 
         minecraft.smartCull = this.originalSmartCull;
+        CreatorCameraCompat.restoreTweakeroo(this.tweakerooSnapshot);
+
+        if (oldCamera != null && restoreCamera != null)
+        {
+            CreatorCameraChunkRefresh.markTransition(
+                    minecraft,
+                    restoreCamera.chunkPosition().x(),
+                    restoreCamera.chunkPosition().z(),
+                    oldCamera.chunkPosition().x(),
+                    oldCamera.chunkPosition().z()
+            );
+        }
+
         this.camera = null;
         this.originalCamera = null;
         this.sessionPlayer = null;
+        this.originalCameraIsTweakeroo = false;
+        this.tweakerooActiveLastTick = false;
+        this.tweakerooActivatedDuringSession = false;
+        this.tweakerooSnapshot = null;
     }
 
     @Nullable
     private Entity getValidRestoreCamera(Minecraft minecraft)
     {
+        boolean tweakerooActive = CreatorCameraCompat.isTweakerooFreeCameraActive();
+
         if (this.originalCamera != null &&
             !this.originalCamera.isRemoved() &&
             this.originalCamera.level() == minecraft.level &&
+            CreatorExternalCameraPolicy.canRestoreCapturedCamera(this.originalCameraIsTweakeroo, tweakerooActive) &&
             (this.originalCamera != this.sessionPlayer || this.sessionPlayer == minecraft.player))
         {
             return this.originalCamera;
         }
 
         return minecraft.player;
+    }
+
+    private void reconcileTweakeroo(Minecraft minecraft)
+    {
+        boolean activeNow = CreatorCameraCompat.isTweakerooFreeCameraActive();
+        Entity currentCamera = minecraft.getCameraEntity();
+        boolean externalCameraPresent = currentCamera != null && currentCamera != this.camera;
+
+        if (CreatorExternalCameraPolicy.shouldCaptureNewTweakerooCamera(
+                this.tweakerooActiveLastTick,
+                activeNow,
+                externalCameraPresent
+        ))
+        {
+            this.originalCamera = currentCamera;
+            this.originalCameraIsTweakeroo = currentCamera != minecraft.player;
+            this.tweakerooActivatedDuringSession = true;
+
+            if (this.tweakerooSnapshot == null)
+            {
+                this.tweakerooSnapshot = CreatorCameraCompat.captureAndSuspendTweakeroo();
+            }
+        }
+
+        if (activeNow)
+        {
+            CreatorCameraCompat.enforceTweakerooCreatorState();
+        }
+
+        this.tweakerooActiveLastTick = activeNow;
     }
 }

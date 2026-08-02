@@ -22,7 +22,6 @@ import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
 import io.github.urntt.litematicacreator.config.Configs;
-import io.github.urntt.litematicacreator.event.CreatorClientTickHandler;
 import io.github.urntt.litematicacreator.gui.GuiFocusSwitcher;
 
 public class CreatorEditService
@@ -407,11 +406,6 @@ public class CreatorEditService
     private boolean canEdit(Minecraft mc)
     {
         boolean canEdit = CreatorManager.getInstance().isCreatorModeEnabled() && mc.level != null && mc.player != null;
-
-        if (canEdit)
-        {
-            CreatorClientTickHandler.INSTANCE.updateTweakerooFreeCameraCompatibility(mc);
-        }
 
         return canEdit;
     }
