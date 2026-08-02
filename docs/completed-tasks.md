@@ -110,6 +110,16 @@
 - 放置状态无效或目标不可替换时，不会切换 focus、创建草稿/subregion、标记 dirty 或调度 recovery；占用阻断保持静默。
 - 只有预检成功后才提交 focus、新草稿和 schematic 写入；重叠 placement 仍先打开 Focus Switcher，不执行本次放置。
 
+## 投影区块重建竞态（#37）
+
+- Creator 的结构编辑会先保存各 placement 的旧 touched chunks，再完整修改 schematic container、附属数据、subregion placement 和 metadata；所有对象一致后才逐个发布 placement change。
+- 发布每个 placement change 前，通过最小 accessor 把对应的旧区块快照交给 Litematica pre/post 流程；新增或删除 subregion 使用 old/new touched chunks 并集完成卸载与重建。
+- 普通方块编辑不再调用全量 `rebuildAllPlacements()`；同一 container 坐标会按每个 placement 和 subregion 的 origin、rotation、mirror 映射到世界坐标，只刷新实际受影响的区块。
+- 全局公平读写锁把 `PlacementManagerTaskRebuild.run()` 包装为读事务，把 Creator schematic 编辑包装为写事务。普通重建仍可并行，编辑会等待旧状态读取结束，后续重建只能看到完整提交后的状态；异常路径均保证释放锁。
+- `debugLogging` 会记录事务编号、锁等待时间、编辑坐标、region 删除状态、placement hash、old/new touched chunks 和最终刷新区块。
+- 单元测试覆盖并行读、读写互斥、异常释放、全部 placement/subregion 旋转镜像组合的坐标往返、普通编辑最小区块刷新及结构编辑 old/new 区块合并去重。
+- 游戏内回归矩阵包括 Creator cell/普通 region、同区块/跨区块、远距离和快速连续删除、单 placement/同 schematic 多 placement，以及 `loadEntireSchematics` 开关。
+
 ## 虚拟创造物品栏（#8）
 
 - 虚拟物品栏配置升级为 v2，使用 `ItemStack.CODEC` 保存数量和完整 data components；旧 item-id 配置会迁移为对应物品的最大堆叠数。

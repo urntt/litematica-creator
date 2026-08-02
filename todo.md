@@ -32,6 +32,7 @@
 - [x] #34 切换 Creator focus 时提示当前编辑目标
 - [x] #35 删除彻底为空的 subregion
 - [x] #36 普通放置不覆盖已有投影方块
+- [x] #37 修复删除投影方块时的区块重建竞态
 - [x] #38 Creator pick block 使用原版式选槽与单个物品
 - [x] #39 Creator 模式下用原版物品栏键打开 Creator 物品栏
 - [x] #40 修正虚拟创造栏的 palette 点击语义
@@ -52,18 +53,6 @@
 - [ ] 未开始
 - [~] 进行中或已部分实现
 - [!] 需要设计决策
-
-## 编辑正确性
-
-- [~] #37 删除单个投影方块后，整个投影区块偶发暂时不可见
-  - 已确认这更像 schematic world/render chunk 的失效刷新问题，而不是投影数据丢失：再次放置方块会触发重建并恢复原有内容。
-  - Creator 新建的 `1x1x1` cell 删除唯一方块时必然进入 `removeRegion()`；当前实现会先对 placement 发布 post-change 并调度后台 rebuild，之后才从 schematic 的各个 region 数据映射中移除该 region。Litematica worker 因此可能读到 placement 与 schematic 暂时不一致的状态。
-  - 普通 region 内删块则会调用 `rebuildAllPlacements()`，为该 schematic 的每个 placement 重建全部 touched chunks，刷新范围远大于实际变更范围。
-  - Litematica 的 rebuild task 会先卸载已有 schematic chunk，再重建并替换；同区块的新任务只会移除仍在队列中的旧任务，已经运行的任务不会被取消。全量重复调度与结构变更期间的异步读取共同构成目前最可信的竞态来源。
-  - 修复方向：先在客户端线程完整提交 schematic 与所有 placement 的结构变更，再统一发布 placement 更新；分别保存每个 placement 的 old/new touched chunks，只对并集调度一次刷新。普通方块状态变化只刷新该 schematic 坐标映射到各 placement 后实际受影响的区块。
-  - 诊断：debug 模式记录编辑坐标、是否删除 region、placement hash、old/new touched chunks、目标区块是否已加载及 rebuild 提交序号，用提交序号确认是否存在旧任务晚于新任务完成。
-  - 复现矩阵：Creator cell/普通多方块 region、同区块/跨区块、玩家与目标位于同一/相邻区块、单 placement/同 schematic 多 placement、单击/快速连续删除、`loadEntireSchematics` 开启/关闭。
-  - 验收：上述组合中删除只更新实际受影响的投影内容，不会令区块内其他投影暂时消失；跨区块和多 placement 变换后也不遗留旧渲染。
 
 ## 虚拟物品栏与输入
 
