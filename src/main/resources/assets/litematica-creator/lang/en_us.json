@@ -1,6 +1,7 @@
 {
 	"litematica-creator.config.generic.comment.enableCreatorMode": "Allows Litematica Creator to consume edit inputs and maintain a client-side schematic draft.",
 	"litematica-creator.config.generic.comment.creatorEditRange": "Maximum distance in blocks for Creator projection targeting and editing.",
+	"litematica-creator.config.generic.comment.continuousBreakIntervalTicks": "Interval between repeated projection deletions while the attack key is held, in client ticks.",
 	"litematica-creator.config.generic.comment.placementRepeatIntervalTicks": "Fixed-mode placement interval and Accurate-mode initial cooldown, in client ticks.",
 	"litematica-creator.config.generic.comment.placementRepeatMode": "Controls whether held projection placement repeats at a fixed interval or when Accurate mode observes a new target.",
 	"litematica-creator.config.generic.comment.debugLogging": "Writes extra Litematica Creator diagnostics to the game log.",
@@ -9,6 +10,7 @@
 	"litematica-creator.config.generic.comment.selectNewDraftPlacement": "Also selects a newly created blank placement in Litematica's native placement manager.",
 	"litematica-creator.config.generic.name.debugLogging": "Debug Logging",
 	"litematica-creator.config.generic.name.creatorEditRange": "Creator Edit Range",
+	"litematica-creator.config.generic.name.continuousBreakIntervalTicks": "Continuous Projection Break Interval",
 	"litematica-creator.config.generic.name.placementRepeatIntervalTicks": "Projection Placement Repeat Interval",
 	"litematica-creator.config.generic.name.placementRepeatMode": "Projection Placement Repeat Mode",
 	"litematica-creator.config.generic.name.enableCreatorMode": "Creator Mode",
@@ -17,6 +19,7 @@
 	"litematica-creator.config.generic.name.selectNewDraftPlacement": "Select New Blank Placement",
 	"litematica-creator.config.generic.prettyName.debugLogging": "Debug Logging",
 	"litematica-creator.config.generic.prettyName.creatorEditRange": "Creator Edit Range",
+	"litematica-creator.config.generic.prettyName.continuousBreakIntervalTicks": "Continuous Projection Break Interval",
 	"litematica-creator.config.generic.prettyName.placementRepeatIntervalTicks": "Projection Placement Repeat Interval",
 	"litematica-creator.config.generic.prettyName.placementRepeatMode": "Projection Placement Repeat Mode",
 	"litematica-creator.config.generic.prettyName.enableCreatorMode": "Creator Mode",

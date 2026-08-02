@@ -14,6 +14,8 @@ public final class CreatorEditGestureController
     private final InputLatch breakInput = new InputLatch();
     private final CreatorPlacementRepeatState<CreatorEditTarget.CreatorEditTargetKey, CreatorEditTarget> placementRepeat =
             new CreatorPlacementRepeatState<>();
+    private final CreatorBreakRepeatState<CreatorEditTarget.CreatorEditTargetKey, CreatorEditTarget> breakRepeat =
+            new CreatorBreakRepeatState<>();
 
     private CreatorEditGestureController()
     {
@@ -50,6 +52,7 @@ public final class CreatorEditGestureController
         CreatorEditService edits = CreatorEditService.getInstance();
         CreatorPlacementRepeatMode repeatMode = (CreatorPlacementRepeatMode) Configs.Generic.PLACEMENT_REPEAT_MODE.getOptionListValue();
         int placementInterval = Configs.Generic.PLACEMENT_REPEAT_INTERVAL_TICKS.getIntegerValue();
+        int breakInterval = Configs.Generic.CONTINUOUS_BREAK_INTERVAL_TICKS.getIntegerValue();
 
         if (this.placeInput.isHeld() && this.placementRepeat.isActive() && this.placementRepeat.mode() != repeatMode)
         {
@@ -57,15 +60,56 @@ public final class CreatorEditGestureController
             this.placementRepeat.reset();
         }
 
+        boolean freshBreak = false;
+
         while (this.breakInput.consumePress())
         {
-            edits.deleteProjectionBlock();
+            freshBreak = true;
+            CreatorEditTarget target = edits.traceDeleteTarget();
+            CreatorBreakRepeatState.RepeatPlan<CreatorEditTarget> plan = this.breakRepeat.press(
+                    tick,
+                    observedBreak(target),
+                    breakInterval
+            );
+
+            if (this.executeBreakPlan(edits, plan))
+            {
+                this.suspend(placeDown, breakDown);
+                return;
+            }
 
             if (GuiUtils.getCurrentScreen() != null)
             {
                 this.suspend(placeDown, breakDown);
                 return;
             }
+        }
+
+        if (!freshBreak && this.breakInput.isHeld() && this.breakRepeat.shouldObserveHeld(tick))
+        {
+            CreatorEditTarget target = edits.traceDeleteTarget();
+            CreatorBreakRepeatState.RepeatPlan<CreatorEditTarget> plan = this.breakRepeat.hold(
+                    tick,
+                    observedBreak(target),
+                    breakInterval
+            );
+
+            if (this.executeBreakPlan(edits, plan))
+            {
+                this.suspend(placeDown, breakDown);
+                return;
+            }
+
+            if (GuiUtils.getCurrentScreen() != null)
+            {
+                this.suspend(placeDown, breakDown);
+                return;
+            }
+        }
+
+        if (!this.breakInput.isHeld())
+        {
+            this.breakRepeat.reset();
         }
 
         boolean freshPlace = false;
@@ -132,6 +176,7 @@ public final class CreatorEditGestureController
         this.placeInput.suspend(placeDown);
         this.breakInput.suspend(breakDown);
         this.placementRepeat.reset();
+        this.breakRepeat.reset();
     }
 
     private boolean executePlacementPlan(
@@ -157,10 +202,32 @@ public final class CreatorEditGestureController
         return false;
     }
 
+    private boolean executeBreakPlan(
+            CreatorEditService edits,
+            CreatorBreakRepeatState.RepeatPlan<CreatorEditTarget> plan)
+    {
+        for (CreatorEditTarget target : plan.targets())
+        {
+            if (edits.deleteProjectionBlock(target) == CreatorEditOutcome.OVERLAP)
+            {
+                this.breakRepeat.reset();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static CreatorPlacementRepeatState.ObservedTarget<CreatorEditTarget.CreatorEditTargetKey, CreatorEditTarget> observed(
             CreatorEditTarget target)
     {
         return target != null ? new CreatorPlacementRepeatState.ObservedTarget<>(target.key(), target) : null;
+    }
+
+    private static CreatorBreakRepeatState.ObservedTarget<CreatorEditTarget.CreatorEditTargetKey, CreatorEditTarget> observedBreak(
+            CreatorEditTarget target)
+    {
+        return target != null ? new CreatorBreakRepeatState.ObservedTarget<>(target.key(), target) : null;
     }
 
     private static final class InputLatch

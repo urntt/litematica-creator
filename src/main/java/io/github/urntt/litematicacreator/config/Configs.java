@@ -55,6 +55,12 @@ public class Configs implements IConfigHandler
                 CreatorConfigDefaults.PLACEMENT_REPEAT_INTERVAL_TICKS_MIN,
                 CreatorConfigDefaults.PLACEMENT_REPEAT_INTERVAL_TICKS_MAX
         ).apply(GENERIC_KEY);
+        public static final ConfigInteger CONTINUOUS_BREAK_INTERVAL_TICKS = new ConfigInteger(
+                "continuousBreakIntervalTicks",
+                CreatorConfigDefaults.CONTINUOUS_BREAK_INTERVAL_TICKS,
+                CreatorConfigDefaults.CONTINUOUS_BREAK_INTERVAL_TICKS_MIN,
+                CreatorConfigDefaults.CONTINUOUS_BREAK_INTERVAL_TICKS_MAX
+        ).apply(GENERIC_KEY);
 
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 ENABLE_CREATOR_MODE,
@@ -64,7 +70,8 @@ public class Configs implements IConfigHandler
                 OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY,
                 CREATOR_EDIT_RANGE,
                 PLACEMENT_REPEAT_MODE,
-                PLACEMENT_REPEAT_INTERVAL_TICKS
+                PLACEMENT_REPEAT_INTERVAL_TICKS,
+                CONTINUOUS_BREAK_INTERVAL_TICKS
         );
     }
 

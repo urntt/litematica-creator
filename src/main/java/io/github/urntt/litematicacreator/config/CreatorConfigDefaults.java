@@ -10,6 +10,9 @@ final class CreatorConfigDefaults
     static final int PLACEMENT_REPEAT_INTERVAL_TICKS = 4;
     static final int PLACEMENT_REPEAT_INTERVAL_TICKS_MIN = 1;
     static final int PLACEMENT_REPEAT_INTERVAL_TICKS_MAX = 20;
+    static final int CONTINUOUS_BREAK_INTERVAL_TICKS = 4;
+    static final int CONTINUOUS_BREAK_INTERVAL_TICKS_MIN = 1;
+    static final int CONTINUOUS_BREAK_INTERVAL_TICKS_MAX = 20;
 
     static final String TOGGLE_CREATOR_MODE = "Y";
     static final String OPEN_CREATOR_INVENTORY = "M,E";

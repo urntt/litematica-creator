@@ -148,37 +148,48 @@ public class CreatorEditService
         return edited ? CreatorEditOutcome.EDITED : CreatorEditOutcome.NO_CHANGE;
     }
 
-    public boolean deleteProjectionBlock()
+    @Nullable
+    CreatorEditTarget traceDeleteTarget()
     {
         Minecraft mc = Minecraft.getInstance();
 
         if (!this.canEdit(mc))
         {
-            return false;
+            return null;
         }
 
-        @Nullable CreatorEditTarget target = this.getExistingCreatorTarget(mc);
+        return this.getExistingCreatorTarget(mc);
+    }
 
-        if (target != null)
+    CreatorEditOutcome deleteProjectionBlock(@Nullable CreatorEditTarget target)
+    {
+        Minecraft mc = Minecraft.getInstance();
+
+        if (!this.canEdit(mc) || target == null)
         {
-            List<CreatorPlacementTarget> candidates = CreatorPlacementIndex.INSTANCE.findAt(target.blockPos());
-
-            if (candidates.size() > 1)
-            {
-                GuiFocusSwitcher.openForOverlap(candidates.stream().map(CreatorPlacementTarget::placement).toList());
-            }
-            else if (candidates.size() == 1)
-            {
-                SchematicPlacement placement = candidates.getFirst().placement();
-                CreatorManager.getInstance().focusPlacement(placement);
-                CreatorEditFeedback.afterSuccessfulEdit(
-                        CreatorSchematicEditor.setBlockState(placement, target.blockPos(), Blocks.AIR.defaultBlockState()),
-                        () -> mc.player.swing(InteractionHand.MAIN_HAND, false)
-                );
-            }
+            return CreatorEditOutcome.NO_CHANGE;
         }
 
-        return true;
+        List<CreatorPlacementTarget> candidates = CreatorPlacementIndex.INSTANCE.findAt(target.blockPos());
+
+        if (candidates.size() > 1)
+        {
+            GuiFocusSwitcher.openForOverlap(candidates.stream().map(CreatorPlacementTarget::placement).toList());
+            return CreatorEditOutcome.OVERLAP;
+        }
+
+        if (candidates.size() == 1)
+        {
+            SchematicPlacement placement = candidates.getFirst().placement();
+            CreatorManager.getInstance().focusPlacement(placement);
+            boolean edited = CreatorEditFeedback.afterSuccessfulEdit(
+                    CreatorSchematicEditor.setBlockState(placement, target.blockPos(), Blocks.AIR.defaultBlockState()),
+                    () -> mc.player.swing(InteractionHand.MAIN_HAND, false)
+            );
+            return edited ? CreatorEditOutcome.EDITED : CreatorEditOutcome.NO_CHANGE;
+        }
+
+        return CreatorEditOutcome.NO_CHANGE;
     }
 
     public boolean pickBlock()
