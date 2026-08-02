@@ -36,4 +36,15 @@ class CreatorProjectionCollisionPolicyTest
         assertEquals("stone", CreatorProjectionCollisionPolicy.applyContribution("stone", true, true, "void"));
         assertEquals("stone", CreatorProjectionCollisionPolicy.applyContribution("stone", false, false, "air"));
     }
+
+    @Test
+    void orderedContributionsKeepTheLastRealState()
+    {
+        String state = CreatorProjectionCollisionPolicy.applyContribution(null, true, false, "stone");
+        state = CreatorProjectionCollisionPolicy.applyContribution(state, true, true, "void");
+        state = CreatorProjectionCollisionPolicy.applyContribution(state, true, false, "air");
+        state = CreatorProjectionCollisionPolicy.applyContribution(state, true, false, "slab");
+
+        assertEquals("slab", state);
+    }
 }

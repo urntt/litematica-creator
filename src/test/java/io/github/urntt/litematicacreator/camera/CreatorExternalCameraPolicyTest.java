@@ -21,5 +21,7 @@ class CreatorExternalCameraPolicyTest
         assertTrue(CreatorExternalCameraPolicy.shouldCaptureNewTweakerooCamera(false, true, true));
         assertFalse(CreatorExternalCameraPolicy.shouldCaptureNewTweakerooCamera(true, true, true));
         assertFalse(CreatorExternalCameraPolicy.shouldCaptureNewTweakerooCamera(false, true, false));
+        assertFalse(CreatorExternalCameraPolicy.shouldCaptureNewTweakerooCamera(true, false, true));
+        assertFalse(CreatorExternalCameraPolicy.shouldCaptureNewTweakerooCamera(false, false, true));
     }
 }

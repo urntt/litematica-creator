@@ -25,5 +25,6 @@ class CreatorCameraSessionPolicyTest
         assertFalse(CreatorCameraSessionPolicy.mustStopForPlayer(true, true));
         assertTrue(CreatorCameraSessionPolicy.mustStopForPlayer(true, false));
         assertTrue(CreatorCameraSessionPolicy.mustStopForPlayer(false, true));
+        assertTrue(CreatorCameraSessionPolicy.mustStopForPlayer(false, false));
     }
 }
