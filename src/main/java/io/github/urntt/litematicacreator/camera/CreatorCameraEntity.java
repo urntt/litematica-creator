@@ -20,6 +20,7 @@ import io.github.urntt.litematicacreator.render.CreatorVirtualLoadout;
 
 public final class CreatorCameraEntity extends LocalPlayer
 {
+    static final int CLIENT_ENTITY_ID = Integer.MIN_VALUE;
     private static final double VANILLA_GROUND_SPEED = 0.1D;
     private static final float VANILLA_FLIGHT_SPEED = 0.05F;
 
@@ -38,6 +39,7 @@ public final class CreatorCameraEntity extends LocalPlayer
                 ChatAbilities.NO_RESTRICTIONS
         );
         this.minecraft = minecraft;
+        this.setId(CLIENT_ENTITY_ID);
         this.input = new CreatorCameraInput(minecraft);
         this.setPosRaw(source.getX(), source.getY(), source.getZ());
         this.setYRot(source.getYRot());
