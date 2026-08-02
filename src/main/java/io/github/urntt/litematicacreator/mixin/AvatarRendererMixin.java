@@ -23,6 +23,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import io.github.urntt.litematicacreator.creator.CreatorManager;
+import io.github.urntt.litematicacreator.camera.CreatorCameraController;
 import io.github.urntt.litematicacreator.render.CreatorVirtualLoadout;
 
 @Mixin(AvatarRenderer.class)
@@ -34,7 +35,13 @@ public abstract class AvatarRendererMixin
     )
     private void litematicacreator$applyVirtualLocalLoadout(Avatar entity, AvatarRenderState state, float partialTicks, CallbackInfo ci)
     {
-        if (!CreatorManager.getInstance().isCreatorModeEnabled() || entity != Minecraft.getInstance().player)
+        Minecraft minecraft = Minecraft.getInstance();
+        CreatorCameraController cameraController = CreatorCameraController.getInstance();
+        boolean creatorCameraAvatar = cameraController.isCamera(entity);
+        boolean localPlayerWithoutCamera = CreatorManager.getInstance().isCreatorModeEnabled() &&
+                !cameraController.isActive() && entity == minecraft.player;
+
+        if (!creatorCameraAvatar && !localPlayerWithoutCamera)
         {
             return;
         }

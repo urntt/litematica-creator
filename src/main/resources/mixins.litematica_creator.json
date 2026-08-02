@@ -10,6 +10,7 @@
 		"HudMixin",
 		"ItemInHandRendererMixin",
 		"LevelExtractorMixin",
+		"LevelExtractorAccessor",
 		"LevelRendererMixin",
 		"LitematicaInputHandlerMixin",
 		"LocalPlayerMixin",

@@ -216,6 +216,12 @@ public final class CreatorCameraController
         return this.camera;
     }
 
+    @Nullable
+    public LocalPlayer getSessionPlayer()
+    {
+        return this.sessionPlayer;
+    }
+
     public void turnCamera(double yawChange, double pitchChange)
     {
         if (this.camera != null)
