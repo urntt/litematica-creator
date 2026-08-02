@@ -77,9 +77,13 @@ public class CreatorEditService
             return true;
         }
 
-        ItemStack stack = CreatorInventory.getInstance().getSelectedStack();
+        CreatorInventory inventory = CreatorInventory.getInstance();
+        @Nullable CreatorPlacementHandResolver.Selection heldItem = CreatorPlacementHandResolver.resolve(
+                inventory.getSelectedStack(),
+                inventory.getStack(CreatorInventory.OFFHAND_SLOT)
+        );
 
-        if (!(stack.getItem() instanceof BlockItem blockItem))
+        if (heldItem == null)
         {
             InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_block_selected");
             return true;
@@ -93,7 +97,14 @@ public class CreatorEditService
             return true;
         }
 
-        PlacementPreflight preflight = this.preflightPlacement(mc, blockItem, stack, target, resolution.placement());
+        PlacementPreflight preflight = this.preflightPlacement(
+                mc,
+                heldItem.blockItem(),
+                heldItem.stack(),
+                heldItem.hand(),
+                target,
+                resolution.placement()
+        );
 
         if (preflight.outcome() == PreflightOutcome.INVALID_STATE)
         {
@@ -121,7 +132,7 @@ public class CreatorEditService
 
         CreatorEditFeedback.afterSuccessfulEdit(
                 CreatorSchematicEditor.setBlockState(placement, target.blockPos(), preflight.state()),
-                () -> mc.player.swing(InteractionHand.MAIN_HAND, false)
+                () -> mc.player.swing(heldItem.hand(), false)
         );
         return true;
     }
@@ -198,6 +209,7 @@ public class CreatorEditService
             Minecraft mc,
             BlockItem blockItem,
             ItemStack stack,
+            InteractionHand hand,
             CreatorTarget target,
             @Nullable SchematicPlacement placement)
     {
@@ -225,7 +237,7 @@ public class CreatorEditService
                 EntityUtils.setEntityRotations(mc.player, camera.getYRot(), camera.getXRot());
             }
 
-            BlockPlaceContext context = new BlockPlaceContext(mc.player, InteractionHand.MAIN_HAND, stack, hit);
+            BlockPlaceContext context = new BlockPlaceContext(mc.player, hand, stack, hit);
             BlockState state = blockItem.getBlock().getStateForPlacement(context);
 
             if (state == null || state.isAir())
@@ -247,7 +259,7 @@ public class CreatorEditService
                     );
                     CreatorTargetPlaceContext targetContext = new CreatorTargetPlaceContext(
                             mc.player,
-                            InteractionHand.MAIN_HAND,
+                            hand,
                             stack,
                             targetHit
                     );
