@@ -117,8 +117,19 @@
 - 原版和已注册创造分类均由当前 feature flags 重建，OP 分类固定按有权限状态生成；搜索页合并创造栏变体与所有已启用注册物品，不再局限于 `BlockItem`。
 - 搜索支持本地化名称、注册 ID、tooltip 与 `#tag`；原版保存快捷栏只读加载，Creator 不过滤或覆写其中物品。
 - Inventory 页提供虚拟 9 格快捷栏、27 格主栏、副手、四个受装备位限制的盔甲槽和丢弃槽，不提供合成栏。
-- 左右键拿取/放入/拆分/交换、拖拽、数字键、shift-click、clone 和本地丢弃均只修改虚拟状态；物品网格和中键 clone 使用最大堆叠数，投影放置不消耗数量。
+- 左右键拿取/放入/拆分/交换、拖拽、数字键、shift-click、clone 和本地丢弃均只修改虚拟状态；中键 clone 使用最大堆叠数，投影放置不消耗数量。
 - 每次 GUI 事务只保存一次，配置先写临时文件再原子替换；损坏栏位单独跳过，丢弃槽不持久化。
+
+## 虚拟物品栏小修复（#38、#39、#40、#43）
+
+- Creator pick block 按 `ItemStack.isSameItemSameComponents()` 搜索虚拟快捷栏和 27 格主物品栏：快捷栏命中只切槽，主物品栏命中按原版 suitable-hotbar 规则交换，完全不存在时才新建数量为 1 的 stack。
+- Suitable-hotbar 从当前槽开始循环，依次选择空槽、未附魔槽和当前槽；覆盖前会优先把原 stack 移到空虚拟主物品栏槽。整个 pick 使用单个虚拟库存 transaction，不修改真实背包或发送 pick item 包。
+- Palette 普通点击复制条目的显示数量；同种 carried 左键增加 1、右键减少 1，不同种 carried 左键清空、右键减少 1。所有计算都基于副本，不修改创造分类共享 stack。
+- Palette Shift+单击将最大堆叠写入从当前选中槽开始找到的第一个空虚拟快捷栏槽，不修改 carried 或当前选中槽；快捷栏全满时静默不执行。
+- `openCreatorInventoryWithInventoryKey` 默认开启。Creator 模式会在原版处理前消费当前物品栏键并打开虚拟物品栏；关闭设置后保留真实物品栏行为，独立 Creator 物品栏热键不受影响。
+- Creator 物品栏优先使用当前原版物品栏键关闭，即使搜索框已聚焦也不会输入该按键字符。
+- 新默认键位为 `Y`、`M,E`、`M,K`、`M,LEFT_SHIFT,S`、`M,LEFT_SHIFT,D`、`M,F` 和 `M,N`；只影响全新配置和重置默认值，不迁移或覆盖已有玩家绑定。
+- 单元测试覆盖 pick 选槽、components 匹配、全满覆盖、palette 左右键数量边界、Shift 快移和配置默认值。
 
 ## 虚拟快捷栏与玩家渲染（#9、#24）
 

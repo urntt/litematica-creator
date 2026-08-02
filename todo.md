@@ -29,6 +29,10 @@
 - [x] #34 切换 Creator focus 时提示当前编辑目标
 - [x] #35 删除彻底为空的 subregion
 - [x] #36 普通放置不覆盖已有投影方块
+- [x] #38 Creator pick block 使用原版式选槽与单个物品
+- [x] #39 Creator 模式下用原版物品栏键打开 Creator 物品栏
+- [x] #40 修正虚拟创造栏的 palette 点击语义
+- [x] #43 更新默认快捷键
 - [x] Creator 与 Litematica 的完成编辑/卸载命令边界
 - [x] 坐标、目标解析和稀疏 region 核心单元测试
 - [x] Focus、稀疏 subregion 和生命周期设计文档同步
@@ -66,45 +70,11 @@
 
 ## 虚拟物品栏与输入
 
-- [ ] #38 Creator pick block 使用原版式选槽与单个物品
-  - 当前原因：`CreatorInventory.pickBlock()` 直接把新 stack 设为最大堆叠数，并无条件覆盖当前选中的虚拟快捷栏槽位。
-  - 按原版 pick item 次序处理：相同 item/components 已在虚拟快捷栏时只选中对应槽；若只在虚拟主物品栏中存在，则像原版 `pickSlot()` 一样换入合适的快捷栏槽；完全不存在时才新建数量为 1 的 stack。
-  - 合适槽位遵循原版 `getSuitableHotbarSlot()` 的搜索顺序，且所有操作只发生在虚拟物品栏，不触碰真实背包或发送 pick item 包。
-  - 验收：重复 pick 同一方块不会复制或覆盖 stack；首次 pick 得到 1 个；带 components 的物品按 `ItemStack.isSameItemSameComponents()` 区分。
-
-- [ ] #39 Creator 模式下用原版物品栏键打开 Creator 物品栏
-  - 当前原因：输入处理器只拦截数字键、中键和滚轮，没有匹配 `Minecraft.options.keyInventory`，也没有对应配置项。
-  - 新增默认开启的通用设置；Creator 模式开启且无其他界面时，在原版处理前消费物品栏键并打开 Creator 物品栏。
-  - 关闭该设置时保留原版真实物品栏行为；原有“打开 Creator 物品栏”独立热键保持不变。
-  - 复用快捷键打开时的首字符抑制，避免自定义物品栏键被写入搜索框。
-  - 验收：设置开/关、重新绑定原版物品栏键和组合键时均按配置打开正确界面，且一次按键只打开一个界面。
-
-- [ ] #40 修正虚拟创造栏的 palette 点击语义
-  - 当前原因：palette 左键在 carried 为空时显式复制最大堆叠数；carried 与点击物品不同时直接用新物品替换。两处都偏离原版创造栏。
-  - 普通单击在 carried 为空时只拿取 palette stack 的原始数量（当前为 1）。
-  - carried 已有不同物品时，左键清空 carried、右键减少 1；相同物品时保留原版左键增加 1、右键减少 1 的行为，不直接替换物品。
-  - Shift+单击采用 Creator 专用语义：将点击物品的最大堆叠直接放入一个空的虚拟快捷栏槽，不改变 carried；9 格都非空时不执行任何操作，也不覆盖已有槽位。
-  - 虚拟生存栏继续走现有 menu 点击逻辑，不随本项修改。
-  - 验收：普通单击、不同/相同 carried、左右键、Shift+单击和快捷栏已满分别覆盖测试，数量上限使用物品自身的最大堆叠数。
-
 - [!] #41 后期兼容或模仿 Inventory Profiles Next / ItemScroller
   - Creator 物品栏使用本地虚拟 container；第三方模组通常针对原版 screen、`inventoryMenu` 和服务端 slot packet 工作，不能直接允许其操作真实菜单或发送同步包。
   - 先按目标版本调查两者可用的公开接口、screen/menu 识别方式和 mixin 注入点，再决定采用显式兼容适配器还是只复刻高价值行为。
   - 候选行为包括排序、同类物品移动、滚轮搬运、拖拽搬运和快捷栏补充；所有结果必须只写虚拟物品栏。
   - 验收：兼容功能不修改真实背包、不发送 container packet，并在未安装第三方模组时保持当前行为。
-
-## 设置与默认键位
-
-- [ ] #43 更新默认快捷键
-  - `Y`：切换 Creator 模式。
-  - `M,E`：打开 Creator 物品栏。
-  - `M,K`：打开 Creator 设置。
-  - `M,LEFT_SHIFT,S`：结束编辑。
-  - `M,LEFT_SHIFT,D`：卸载当前原理图。
-  - `M,F`：打开 focus 切换器。
-  - `M,N`：新建空白原理图。
-  - 只修改默认值和“重置为默认”结果，不覆盖玩家已经保存的自定义绑定；不改变结束编辑和卸载命令现有语义。
-  - 验收：全新配置及重置配置得到上述组合键，已有配置升级后仍保留玩家绑定，所有组合键只触发一次。
 
 ## 本地化
 
