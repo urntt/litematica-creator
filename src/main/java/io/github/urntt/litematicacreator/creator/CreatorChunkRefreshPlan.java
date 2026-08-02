@@ -1,5 +1,7 @@
 package io.github.urntt.litematicacreator.creator;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +28,7 @@ final class CreatorChunkRefreshPlan
             BlockPos containerPos,
             List<SchematicPlacement> placements)
     {
-        Set<ChunkPos> chunks = new LinkedHashSet<>();
+        List<BlockPos> worldPositions = new ArrayList<>();
 
         for (SchematicPlacement placement : placements)
         {
@@ -48,8 +50,20 @@ final class CreatorChunkRefreshPlan
 
             if (worldPos != null)
             {
-                chunks.add(new ChunkPos(worldPos.getX() >> 4, worldPos.getZ() >> 4));
+                worldPositions.add(worldPos);
             }
+        }
+
+        return forWorldPositions(worldPositions);
+    }
+
+    static Set<ChunkPos> forWorldPositions(Iterable<BlockPos> worldPositions)
+    {
+        Set<ChunkPos> chunks = new LinkedHashSet<>();
+
+        for (BlockPos worldPos : worldPositions)
+        {
+            chunks.add(new ChunkPos(worldPos.getX() >> 4, worldPos.getZ() >> 4));
         }
 
         return Set.copyOf(chunks);
@@ -59,9 +73,16 @@ final class CreatorChunkRefreshPlan
             Map<SchematicPlacement, Set<ChunkPos>> oldChunks,
             Map<SchematicPlacement, Set<ChunkPos>> newChunks)
     {
+        return unionChunkSets(oldChunks.values(), newChunks.values());
+    }
+
+    static Set<ChunkPos> unionChunkSets(
+            Collection<? extends Set<ChunkPos>> oldChunks,
+            Collection<? extends Set<ChunkPos>> newChunks)
+    {
         Set<ChunkPos> chunks = new LinkedHashSet<>();
-        oldChunks.values().forEach(chunks::addAll);
-        newChunks.values().forEach(chunks::addAll);
+        oldChunks.forEach(chunks::addAll);
+        newChunks.forEach(chunks::addAll);
         return Set.copyOf(chunks);
     }
 }

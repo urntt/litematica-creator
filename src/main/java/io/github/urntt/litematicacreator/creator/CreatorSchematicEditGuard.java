@@ -37,6 +37,16 @@ public final class CreatorSchematicEditGuard
         }
     }
 
+    static int activeRebuildCount()
+    {
+        return LOCK.getReadLockCount();
+    }
+
+    static boolean isEditActive()
+    {
+        return LOCK.isWriteLocked();
+    }
+
     public static final class EditTransaction implements AutoCloseable
     {
         private final long transactionId;
