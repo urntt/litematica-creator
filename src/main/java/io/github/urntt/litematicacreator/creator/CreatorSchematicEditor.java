@@ -27,6 +27,7 @@ import fi.dy.masa.litematica.schematic.placement.SubRegionPlacement;
 import fi.dy.masa.litematica.schematic.placement.SubRegionPlacement.RequiredEnabled;
 import fi.dy.masa.litematica.selection.Box;
 import fi.dy.masa.litematica.util.SchematicUtils;
+import io.github.urntt.litematicacreator.LitematicaCreator;
 import io.github.urntt.litematicacreator.mixin.LitematicaSchematicAccessor;
 import io.github.urntt.litematicacreator.mixin.SchematicPlacementAccessor;
 import io.github.urntt.litematicacreator.mixin.SchematicPlacementManagerAccessor;
@@ -42,6 +43,18 @@ public final class CreatorSchematicEditor
 
     public static boolean setBlockState(SchematicPlacement placement, BlockPos worldPos, BlockState worldState)
     {
+        try (CreatorSchematicEditGuard.EditTransaction transaction = CreatorSchematicEditGuard.beginEdit())
+        {
+            return setBlockStateLocked(placement, worldPos, worldState, transaction);
+        }
+    }
+
+    private static boolean setBlockStateLocked(
+            SchematicPlacement placement,
+            BlockPos worldPos,
+            BlockState worldState,
+            CreatorSchematicEditGuard.EditTransaction transaction)
+    {
         @Nullable CreatorPlacementTarget target = findRegionAt(placement, worldPos);
 
         if (target == null)
@@ -51,7 +64,7 @@ public final class CreatorSchematicEditor
                 return false;
             }
 
-            addCellRegion(placement, worldPos, worldState);
+            addCellRegion(placement, worldPos, worldState, transaction);
             return true;
         }
 
@@ -92,7 +105,7 @@ public final class CreatorSchematicEditor
 
         if (newState.isAir() && isRegionCompletelyEmpty(schematic, regionName, container))
         {
-            removeRegion(schematic, regionName);
+            removeRegion(schematic, regionName, worldPos, containerPos, transaction);
         }
         else if (!stateChanged)
         {
@@ -100,8 +113,23 @@ public final class CreatorSchematicEditor
         }
         else
         {
+            List<SchematicPlacement> placements = placementsFor(schematic, placement);
+            Map<SchematicPlacement, Set<ChunkPos>> touchedChunks = snapshotTouchedChunks(placements);
             markModified(schematic);
-            rebuildChangedBlock(schematic, regionName, containerPos, placementsFor(schematic, placement));
+            Set<ChunkPos> refreshChunks = rebuildChangedBlock(schematic, regionName, containerPos, placements);
+            debugTransaction(
+                    transaction,
+                    "set-block",
+                    schematic,
+                    regionName,
+                    worldPos,
+                    containerPos,
+                    false,
+                    placements,
+                    touchedChunks,
+                    touchedChunks,
+                    refreshChunks
+            );
         }
 
         return true;
@@ -161,7 +189,11 @@ public final class CreatorSchematicEditor
         return null;
     }
 
-    private static void addCellRegion(SchematicPlacement editedPlacement, BlockPos worldPos, BlockState worldState)
+    private static void addCellRegion(
+            SchematicPlacement editedPlacement,
+            BlockPos worldPos,
+            BlockState worldState,
+            CreatorSchematicEditGuard.EditTransaction transaction)
     {
         LitematicaSchematic schematic = editedPlacement.getSchematic();
         LitematicaSchematicAccessor schematicAccessor = (LitematicaSchematicAccessor) schematic;
@@ -194,11 +226,29 @@ public final class CreatorSchematicEditor
         container.set(0, 0, 0, SchematicUtils.getUntransformedBlockState(worldState, editedPlacement, regionName));
         schematic.getMetadata().setTotalBlocks(Math.max(0, schematic.getMetadata().getTotalBlocks()) + 1);
         refreshGeometryMetadata(schematic);
-        publishPlacementChanges(placements, oldChunks);
+        Map<SchematicPlacement, Set<ChunkPos>> newChunks = publishPlacementChanges(placements, oldChunks);
         markModified(schematic);
+        debugTransaction(
+                transaction,
+                "add-region",
+                schematic,
+                regionName,
+                worldPos,
+                BlockPos.ZERO,
+                false,
+                placements,
+                oldChunks,
+                newChunks,
+                CreatorChunkRefreshPlan.unionTouchedChunks(oldChunks, newChunks)
+        );
     }
 
-    private static void removeRegion(LitematicaSchematic schematic, String regionName)
+    private static void removeRegion(
+            LitematicaSchematic schematic,
+            String regionName,
+            BlockPos worldPos,
+            BlockPos containerPos,
+            CreatorSchematicEditGuard.EditTransaction transaction)
     {
         LitematicaSchematicAccessor schematicAccessor = (LitematicaSchematicAccessor) schematic;
         List<SchematicPlacement> placements = List.copyOf(DataManager.getSchematicPlacementManager().getAllPlacementsOfSchematic(schematic));
@@ -226,8 +276,21 @@ public final class CreatorSchematicEditor
         }
 
         refreshGeometryMetadata(schematic);
-        publishPlacementChanges(placements, oldChunks);
+        Map<SchematicPlacement, Set<ChunkPos>> newChunks = publishPlacementChanges(placements, oldChunks);
         markModified(schematic);
+        debugTransaction(
+                transaction,
+                "remove-region",
+                schematic,
+                regionName,
+                worldPos,
+                containerPos,
+                true,
+                placements,
+                oldChunks,
+                newChunks,
+                CreatorChunkRefreshPlan.unionTouchedChunks(oldChunks, newChunks)
+        );
     }
 
     private static List<SchematicPlacement> placementsFor(
@@ -289,6 +352,50 @@ public final class CreatorSchematicEditor
         SchematicPlacementManager manager = DataManager.getSchematicPlacementManager();
         chunks.forEach(manager::markChunkForRebuild);
         return chunks;
+    }
+
+    private static void debugTransaction(
+            CreatorSchematicEditGuard.EditTransaction transaction,
+            String operation,
+            LitematicaSchematic schematic,
+            String regionName,
+            BlockPos worldPos,
+            BlockPos containerPos,
+            boolean removedRegion,
+            List<SchematicPlacement> placements,
+            Map<SchematicPlacement, Set<ChunkPos>> oldChunks,
+            Map<SchematicPlacement, Set<ChunkPos>> newChunks,
+            Set<ChunkPos> refreshChunks)
+    {
+        LitematicaCreator.debugLog(
+                "Schematic edit tx={} op={} waitMs={} schematic='{}' region='{}' worldPos={} containerPos={} removedRegion={} placementHashes={} oldChunks={} newChunks={} refreshChunks={}",
+                transaction.transactionId(),
+                operation,
+                transaction.waitNanos() / 1_000_000.0D,
+                schematic.getMetadata().getName(),
+                regionName,
+                worldPos,
+                containerPos,
+                removedRegion,
+                placements.stream().map(SchematicPlacement::getHashId).toList(),
+                describeTouchedChunks(placements, oldChunks),
+                describeTouchedChunks(placements, newChunks),
+                refreshChunks
+        );
+    }
+
+    private static Map<java.util.UUID, Set<ChunkPos>> describeTouchedChunks(
+            List<SchematicPlacement> placements,
+            Map<SchematicPlacement, Set<ChunkPos>> chunks)
+    {
+        Map<java.util.UUID, Set<ChunkPos>> described = new java.util.LinkedHashMap<>();
+
+        for (SchematicPlacement placement : placements)
+        {
+            described.put(placement.getHashId(), chunks.getOrDefault(placement, Set.of()));
+        }
+
+        return described;
     }
 
     private static void refreshGeometryMetadata(LitematicaSchematic schematic)
