@@ -247,30 +247,18 @@ public class GuiCreatorInventory extends AbstractContainerScreen<CreatorInventor
             return;
         }
 
+        if (input == ContainerInput.QUICK_MOVE)
+        {
+            this.menu.copyPaletteToFirstEmptyHotbar(slot);
+            return;
+        }
+
         if (input == ContainerInput.THROW || input == ContainerInput.QUICK_CRAFT || input == ContainerInput.PICKUP_ALL)
         {
             return;
         }
 
-        ItemStack carried = this.menu.getCarried();
-
-        if (clicked.isEmpty())
-        {
-            this.clearCarried(buttonNum == 0);
-        }
-        else if (carried.isEmpty() || !ItemStack.isSameItemSameComponents(carried, clicked))
-        {
-            int count = buttonNum == 0 ? clicked.getMaxStackSize() : 1;
-            this.menu.setCarried(clicked.copyWithCount(count));
-        }
-        else if (buttonNum == 0)
-        {
-            carried.setCount(carried.getMaxStackSize());
-        }
-        else
-        {
-            carried.shrink(1);
-        }
+        this.menu.setCarried(CreatorPaletteClickPolicy.applyNormalClick(this.menu.getCarried(), clicked, buttonNum));
     }
 
     private void clearCarried(boolean all)
