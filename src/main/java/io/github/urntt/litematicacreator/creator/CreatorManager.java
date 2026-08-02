@@ -19,6 +19,7 @@ import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
 import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.camera.CreatorCameraController;
+import io.github.urntt.litematicacreator.camera.CreatorCameraSessionPolicy;
 import io.github.urntt.litematicacreator.mixin.LitematicaSchematicAccessor;
 import io.github.urntt.litematicacreator.recovery.CreatorRecoveryManager;
 
@@ -63,8 +64,13 @@ public class CreatorManager
         }
 
         Minecraft minecraft = Minecraft.getInstance();
+        CreatorCameraController cameraController = CreatorCameraController.getInstance();
 
-        if (enabled && !CreatorCameraController.getInstance().activate(minecraft))
+        if (CreatorCameraSessionPolicy.shouldActivateForCreatorMode(
+                enabled,
+                Configs.Generic.ENABLE_CREATOR_CAMERA_WITH_CREATOR_MODE.getBooleanValue(),
+                cameraController.isActive()
+        ) && !cameraController.activate(minecraft))
         {
             if (Configs.Generic.ENABLE_CREATOR_MODE.getBooleanValue())
             {
@@ -73,9 +79,13 @@ public class CreatorManager
 
             return;
         }
-        else if (!enabled)
+        else if (CreatorCameraSessionPolicy.shouldDeactivateForCreatorMode(
+                enabled,
+                Configs.Generic.DISABLE_CREATOR_CAMERA_WITH_CREATOR_MODE.getBooleanValue(),
+                cameraController.isActive()
+        ))
         {
-            CreatorCameraController.getInstance().deactivate(minecraft);
+            cameraController.deactivate(minecraft);
         }
 
         if (notify)

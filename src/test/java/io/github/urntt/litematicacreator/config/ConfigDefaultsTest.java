@@ -52,12 +52,16 @@ class ConfigDefaultsTest
         assertEquals(1.0, CreatorConfigDefaults.CREATOR_CAMERA_FLIGHT_SPEED_MULTIPLIER);
         assertEquals(0.1, CreatorConfigDefaults.CREATOR_CAMERA_SPEED_MULTIPLIER_MIN);
         assertEquals(5.0, CreatorConfigDefaults.CREATOR_CAMERA_SPEED_MULTIPLIER_MAX);
+        assertTrue(CreatorConfigDefaults.ENABLE_CREATOR_CAMERA_WITH_CREATOR_MODE);
+        assertTrue(CreatorConfigDefaults.DISABLE_CREATOR_CAMERA_WITH_CREATOR_MODE);
+        assertTrue(CreatorConfigDefaults.CREATOR_CAMERA_PROJECTION_COLLISION);
     }
 
     @Test
     void creatorHotkeysUseTheExpectedDefaults()
     {
         assertEquals("Y", CreatorConfigDefaults.TOGGLE_CREATOR_MODE);
+        assertEquals("M,B", CreatorConfigDefaults.TOGGLE_CREATOR_CAMERA);
         assertEquals("M,E", CreatorConfigDefaults.OPEN_CREATOR_INVENTORY);
         assertEquals("M,K", CreatorConfigDefaults.OPEN_CONFIG_GUI);
         assertEquals("M,LEFT_SHIFT,S", CreatorConfigDefaults.SAVE_DRAFT);

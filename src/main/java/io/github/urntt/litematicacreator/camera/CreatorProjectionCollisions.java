@@ -13,6 +13,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import fi.dy.masa.litematica.world.WorldSchematic;
+import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.creator.CreatorProjectionStateResolver;
 
 public final class CreatorProjectionCollisions
@@ -25,7 +26,7 @@ public final class CreatorProjectionCollisions
 
     public static List<VoxelShape> collect(CreatorCameraEntity camera, ClientLevel level, AABB bounds)
     {
-        if (camera.isCreatorFlying())
+        if (camera.isCreatorFlying() || !Configs.Generic.CREATOR_CAMERA_PROJECTION_COLLISION.getBooleanValue())
         {
             return List.of();
         }

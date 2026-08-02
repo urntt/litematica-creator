@@ -1,10 +1,13 @@
 package io.github.urntt.litematicacreator.event;
 
+import net.minecraft.client.Minecraft;
+
 import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.hotkeys.IHotkeyCallback;
 import fi.dy.masa.malilib.hotkeys.IKeybind;
 import fi.dy.masa.malilib.hotkeys.KeyAction;
 import io.github.urntt.litematicacreator.config.Hotkeys;
+import io.github.urntt.litematicacreator.camera.CreatorCameraController;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.creator.CreatorCameraCompat;
 import io.github.urntt.litematicacreator.data.DataManager;
@@ -23,6 +26,7 @@ public class CreatorHotkeyCallbacks implements IHotkeyCallback
     public static void register()
     {
         Hotkeys.TOGGLE_CREATOR_MODE.getKeybind().setCallback(INSTANCE);
+        Hotkeys.TOGGLE_CREATOR_CAMERA.getKeybind().setCallback(INSTANCE);
         Hotkeys.OPEN_CREATOR_INVENTORY.getKeybind().setCallback(INSTANCE);
         Hotkeys.OPEN_CONFIG_GUI.getKeybind().setCallback(INSTANCE);
         Hotkeys.SAVE_DRAFT.getKeybind().setCallback(INSTANCE);
@@ -37,6 +41,10 @@ public class CreatorHotkeyCallbacks implements IHotkeyCallback
         if (key == Hotkeys.TOGGLE_CREATOR_MODE.getKeybind())
         {
             CreatorManager.getInstance().toggleCreatorMode();
+        }
+        else if (key == Hotkeys.TOGGLE_CREATOR_CAMERA.getKeybind())
+        {
+            CreatorCameraController.getInstance().toggle(Minecraft.getInstance(), true);
         }
         else if (key == Hotkeys.OPEN_CREATOR_INVENTORY.getKeybind())
         {

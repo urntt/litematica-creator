@@ -19,8 +19,12 @@ final class CreatorConfigDefaults
     static final double CREATOR_CAMERA_FLIGHT_SPEED_MULTIPLIER = 1.0;
     static final double CREATOR_CAMERA_SPEED_MULTIPLIER_MIN = 0.1;
     static final double CREATOR_CAMERA_SPEED_MULTIPLIER_MAX = 5.0;
+    static final boolean ENABLE_CREATOR_CAMERA_WITH_CREATOR_MODE = true;
+    static final boolean DISABLE_CREATOR_CAMERA_WITH_CREATOR_MODE = true;
+    static final boolean CREATOR_CAMERA_PROJECTION_COLLISION = true;
 
     static final String TOGGLE_CREATOR_MODE = "Y";
+    static final String TOGGLE_CREATOR_CAMERA = "M,B";
     static final String OPEN_CREATOR_INVENTORY = "M,E";
     static final String OPEN_CONFIG_GUI = "M,K";
     static final String SAVE_DRAFT = "M,LEFT_SHIFT,S";

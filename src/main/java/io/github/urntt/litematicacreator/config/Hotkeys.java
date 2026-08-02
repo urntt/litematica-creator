@@ -14,6 +14,9 @@ public class Hotkeys
     public static final ConfigHotkey TOGGLE_CREATOR_MODE = new ConfigHotkey(
             "toggleCreatorMode", CreatorConfigDefaults.TOGGLE_CREATOR_MODE, KeybindSettings.PRESS_ALLOWEXTRA
     ).apply(HOTKEYS_KEY);
+    public static final ConfigHotkey TOGGLE_CREATOR_CAMERA = new ConfigHotkey(
+            "toggleCreatorCamera", CreatorConfigDefaults.TOGGLE_CREATOR_CAMERA, KeybindSettings.PRESS_ALLOWEXTRA
+    ).apply(HOTKEYS_KEY);
     public static final ConfigHotkey OPEN_CREATOR_INVENTORY = new ConfigHotkey(
             "openCreatorInventory", CreatorConfigDefaults.OPEN_CREATOR_INVENTORY, KeybindSettings.PRESS_ALLOWEXTRA
     ).apply(HOTKEYS_KEY);
@@ -35,6 +38,7 @@ public class Hotkeys
 
     public static final List<ConfigHotkey> HOTKEY_LIST = ImmutableList.of(
             TOGGLE_CREATOR_MODE,
+            TOGGLE_CREATOR_CAMERA,
             OPEN_CREATOR_INVENTORY,
             OPEN_CONFIG_GUI,
             SAVE_DRAFT,

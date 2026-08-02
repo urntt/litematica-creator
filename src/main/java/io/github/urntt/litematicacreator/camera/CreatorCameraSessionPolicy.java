@@ -1,6 +1,6 @@
 package io.github.urntt.litematicacreator.camera;
 
-final class CreatorCameraSessionPolicy
+public final class CreatorCameraSessionPolicy
 {
     private CreatorCameraSessionPolicy()
     {
@@ -14,5 +14,15 @@ final class CreatorCameraSessionPolicy
     static boolean mustStopForPlayer(boolean samePlayerInstance, boolean playerAlive)
     {
         return !samePlayerInstance || !playerAlive;
+    }
+
+    public static boolean shouldActivateForCreatorMode(boolean creatorModeEnabled, boolean configured, boolean cameraActive)
+    {
+        return creatorModeEnabled && configured && !cameraActive;
+    }
+
+    public static boolean shouldDeactivateForCreatorMode(boolean creatorModeEnabled, boolean configured, boolean cameraActive)
+    {
+        return !creatorModeEnabled && configured && cameraActive;
     }
 }

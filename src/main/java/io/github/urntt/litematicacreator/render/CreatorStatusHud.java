@@ -50,12 +50,14 @@ public class CreatorStatusHud implements IInfoHudRenderer
         String blockName = selectedStack.isEmpty() ?
                 StringUtils.translate("litematica-creator.hud.empty") :
                 BuiltInRegistries.ITEM.getKey(selectedStack.getItem()).toString();
+        CreatorCameraController cameraController = CreatorCameraController.getInstance();
 
         lines.add(StringUtils.translate("litematica-creator.hud.title", green + StringUtils.translate("litematica-creator.hud.enabled") + reset));
         lines.add(StringUtils.translate(
                 "litematica-creator.hud.camera_mode",
-                green + StringUtils.translate(CreatorCameraController.getInstance().isFlying() ?
-                        "litematica-creator.hud.camera_flying" :
+                (cameraController.isActive() ? green : red) + StringUtils.translate(!cameraController.isActive() ?
+                        "litematica-creator.hud.camera_disabled" :
+                        cameraController.isFlying() ? "litematica-creator.hud.camera_flying" :
                         "litematica-creator.hud.camera_ground") + reset
         ));
         lines.add(StringUtils.translate("litematica-creator.hud.selected_slot", green + (inventory.getSelectedHotbarSlot() + 1) + reset));

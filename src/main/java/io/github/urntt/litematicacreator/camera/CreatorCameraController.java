@@ -119,23 +119,40 @@ public final class CreatorCameraController
         }
     }
 
-    public void onClientTick(Minecraft minecraft)
+    public boolean toggle(Minecraft minecraft, boolean notify)
     {
-        if (!CreatorManager.getInstance().isCreatorModeEnabled())
+        if (this.isActive())
         {
             this.deactivate(minecraft);
-            return;
+
+            if (notify)
+            {
+                InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.camera.disabled");
+            }
+
+            return true;
         }
 
         if (minecraft.level == null || minecraft.player == null)
         {
-            this.deactivate(minecraft);
-            return;
+            return false;
         }
 
-        if (!this.activate(minecraft))
+        boolean activated = this.activate(minecraft) && this.isActive();
+
+        if (activated && notify)
         {
-            this.disableCreatorModeAfterFailure();
+            InfoUtils.showGuiOrInGameMessage(MessageType.SUCCESS, "litematica-creator.message.camera.enabled");
+        }
+
+        return activated;
+    }
+
+    public void onClientTick(Minecraft minecraft)
+    {
+        if (minecraft.level == null || minecraft.player == null)
+        {
+            this.deactivate(minecraft);
             return;
         }
 
@@ -204,23 +221,6 @@ public final class CreatorCameraController
         if (this.camera != null)
         {
             this.camera.turnCamera(yawChange, pitchChange);
-        }
-    }
-
-    private void disableCreatorModeAfterFailure()
-    {
-        if (!this.changingCreatorMode)
-        {
-            this.changingCreatorMode = true;
-
-            try
-            {
-                CreatorManager.getInstance().setCreatorModeEnabled(false, false);
-            }
-            finally
-            {
-                this.changingCreatorMode = false;
-            }
         }
     }
 

@@ -78,6 +78,18 @@ public class Configs implements IConfigHandler
                 CreatorConfigDefaults.CREATOR_CAMERA_SPEED_MULTIPLIER_MAX,
                 true
         ).apply(GENERIC_KEY);
+        public static final ConfigBoolean ENABLE_CREATOR_CAMERA_WITH_CREATOR_MODE = new ConfigBoolean(
+                "enableCreatorCameraWithCreatorMode",
+                CreatorConfigDefaults.ENABLE_CREATOR_CAMERA_WITH_CREATOR_MODE
+        ).apply(GENERIC_KEY);
+        public static final ConfigBoolean DISABLE_CREATOR_CAMERA_WITH_CREATOR_MODE = new ConfigBoolean(
+                "disableCreatorCameraWithCreatorMode",
+                CreatorConfigDefaults.DISABLE_CREATOR_CAMERA_WITH_CREATOR_MODE
+        ).apply(GENERIC_KEY);
+        public static final ConfigBoolean CREATOR_CAMERA_PROJECTION_COLLISION = new ConfigBoolean(
+                "creatorCameraProjectionCollision",
+                CreatorConfigDefaults.CREATOR_CAMERA_PROJECTION_COLLISION
+        ).apply(GENERIC_KEY);
 
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 ENABLE_CREATOR_MODE,
@@ -89,6 +101,9 @@ public class Configs implements IConfigHandler
                 AIR_PLACEMENT_DISTANCE,
                 CONTINUOUS_PLACE_INTERVAL_TICKS,
                 CONTINUOUS_BREAK_INTERVAL_TICKS,
+                ENABLE_CREATOR_CAMERA_WITH_CREATOR_MODE,
+                DISABLE_CREATOR_CAMERA_WITH_CREATOR_MODE,
+                CREATOR_CAMERA_PROJECTION_COLLISION,
                 CREATOR_CAMERA_GROUND_SPEED_MULTIPLIER,
                 CREATOR_CAMERA_FLIGHT_SPEED_MULTIPLIER
         );
