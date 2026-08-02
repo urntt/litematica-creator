@@ -315,6 +315,12 @@ public class GuiCreatorInventory extends AbstractContainerScreen<CreatorInventor
     {
         this.ignoreTextInput = false;
 
+        if (this.minecraft.options.keyInventory.matches(event))
+        {
+            this.onClose();
+            return true;
+        }
+
         if (this.selectedTab.getType() != CreativeModeTab.Type.SEARCH)
         {
             if (this.minecraft.options.keyChat.matches(event))

@@ -7,10 +7,12 @@ import fi.dy.masa.malilib.hotkeys.IKeyboardInputHandler;
 import fi.dy.masa.malilib.hotkeys.IMouseInputHandler;
 import fi.dy.masa.malilib.util.GuiUtils;
 import io.github.urntt.litematicacreator.Reference;
+import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.config.Hotkeys;
 import io.github.urntt.litematicacreator.creator.CreatorEditService;
 import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
+import io.github.urntt.litematicacreator.gui.GuiCreatorInventory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -54,6 +56,13 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
 
         if (eventKeyState && CreatorManager.getInstance().isCreatorModeEnabled() && GuiUtils.getCurrentScreen() == null)
         {
+            if (Configs.Generic.OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY.getBooleanValue() &&
+                mc.options.keyInventory.matches(input))
+            {
+                GuiCreatorInventory.openFromHotkey();
+                return true;
+            }
+
             for (int i = 0; i < mc.options.keyHotbarSlots.length; ++i)
             {
                 if (mc.options.keyHotbarSlots[i].matches(input))

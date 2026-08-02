@@ -43,6 +43,9 @@ public class Configs implements IConfigHandler
         public static final ConfigBoolean HIDE_SUBREGION_BOXES_IN_CREATOR_MODE = new ConfigBoolean(
                 "hideSubregionBoxesInCreatorMode", true
         ).apply(GENERIC_KEY);
+        public static final ConfigBoolean OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY = new ConfigBoolean(
+                "openCreatorInventoryWithInventoryKey", true
+        ).apply(GENERIC_KEY);
         public static final ConfigOptionList TRANSLATION_LANGUAGE = new ConfigOptionList(
                 "translationLanguage", new CreatorI18nConfig(LANG.orElseThrow())
         ).apply(GENERIC_KEY);
@@ -55,6 +58,7 @@ public class Configs implements IConfigHandler
                 DEBUG_LOGGING,
                 SELECT_NEW_DRAFT_PLACEMENT,
                 HIDE_SUBREGION_BOXES_IN_CREATOR_MODE,
+                OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY,
                 TRANSLATION_LANGUAGE,
                 TRANSLATION_MODE
         );
