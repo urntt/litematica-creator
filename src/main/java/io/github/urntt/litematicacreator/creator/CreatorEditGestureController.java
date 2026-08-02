@@ -10,8 +10,8 @@ public final class CreatorEditGestureController
 {
     public static final CreatorEditGestureController INSTANCE = new CreatorEditGestureController();
 
-    private final InputLatch placeInput = new InputLatch();
-    private final InputLatch breakInput = new InputLatch();
+    private final CreatorInputLatch placeInput = new CreatorInputLatch();
+    private final CreatorInputLatch breakInput = new CreatorInputLatch();
     private final CreatorPlacementRepeatState<CreatorEditTarget.CreatorEditTargetKey, CreatorEditTarget> placementRepeat =
             new CreatorPlacementRepeatState<>();
     private final CreatorBreakRepeatState<CreatorEditTarget.CreatorEditTargetKey, CreatorEditTarget> breakRepeat =
@@ -188,34 +188,22 @@ public final class CreatorEditGestureController
             return edits.placeProjectionBlock(null, true) == CreatorEditOutcome.OVERLAP;
         }
 
-        for (CreatorEditTarget target : plan.targets())
-        {
-            CreatorEditOutcome outcome = edits.placeProjectionBlock(target, plan.freshPress());
-
-            if (outcome == CreatorEditOutcome.OVERLAP)
-            {
-                this.placementRepeat.reset();
-                return true;
-            }
-        }
-
-        return false;
+        return CreatorEditBatchExecutor.execute(
+                plan.targets(),
+                target -> edits.placeProjectionBlock(target, plan.freshPress()),
+                this.placementRepeat::reset
+        );
     }
 
     private boolean executeBreakPlan(
             CreatorEditService edits,
             CreatorBreakRepeatState.RepeatPlan<CreatorEditTarget> plan)
     {
-        for (CreatorEditTarget target : plan.targets())
-        {
-            if (edits.deleteProjectionBlock(target) == CreatorEditOutcome.OVERLAP)
-            {
-                this.breakRepeat.reset();
-                return true;
-            }
-        }
-
-        return false;
+        return CreatorEditBatchExecutor.execute(
+                plan.targets(),
+                edits::deleteProjectionBlock,
+                this.breakRepeat::reset
+        );
     }
 
     private static CreatorPlacementRepeatState.ObservedTarget<CreatorEditTarget.CreatorEditTargetKey, CreatorEditTarget> observed(
@@ -230,72 +218,4 @@ public final class CreatorEditGestureController
         return target != null ? new CreatorBreakRepeatState.ObservedTarget<>(target.key(), target) : null;
     }
 
-    private static final class InputLatch
-    {
-        private boolean down;
-        private boolean armed;
-        private boolean blockedUntilRelease;
-        private int pendingPresses;
-
-        private void update(boolean pressed, boolean acceptsCreatorEdits)
-        {
-            if (!pressed)
-            {
-                this.down = false;
-                this.armed = false;
-                this.blockedUntilRelease = false;
-                return;
-            }
-
-            if (this.down)
-            {
-                return;
-            }
-
-            this.down = true;
-
-            if (acceptsCreatorEdits && !this.blockedUntilRelease)
-            {
-                ++this.pendingPresses;
-                this.armed = true;
-            }
-            else
-            {
-                this.armed = false;
-                this.blockedUntilRelease = true;
-            }
-        }
-
-        private void sync(boolean currentlyDown, boolean acceptsCreatorEdits)
-        {
-            if (currentlyDown != this.down)
-            {
-                this.update(currentlyDown, acceptsCreatorEdits);
-            }
-        }
-
-        private boolean consumePress()
-        {
-            if (this.pendingPresses <= 0)
-            {
-                return false;
-            }
-
-            --this.pendingPresses;
-            return true;
-        }
-
-        private boolean isHeld()
-        {
-            return this.down && this.armed && !this.blockedUntilRelease;
-        }
-
-        private void suspend(boolean currentlyDown)
-        {
-            this.down = currentlyDown;
-            this.armed = false;
-            this.blockedUntilRelease = currentlyDown;
-            this.pendingPresses = 0;
-        }
-    }
 }
