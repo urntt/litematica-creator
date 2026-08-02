@@ -1,6 +1,7 @@
 {
 	"litematica-creator.config.generic.comment.enableCreatorMode": "允许 Litematica Creator 消费编辑输入，并维护仅存在于客户端的投影草稿。",
 	"litematica-creator.config.generic.comment.creatorEditRange": "Creator 投影选取和编辑的最大距离，单位为方块。",
+	"litematica-creator.config.generic.comment.continuousPlaceIntervalTicks": "按住使用键时连续放置投影方块的间隔，单位为客户端 tick。",
 	"litematica-creator.config.generic.comment.continuousBreakIntervalTicks": "按住攻击键时连续删除投影方块的间隔，单位为客户端 tick。",
 	"litematica-creator.config.generic.comment.debugLogging": "向游戏日志写入额外的 Litematica Creator 诊断信息。",
 	"litematica-creator.config.generic.comment.hideSubregionBoxesInCreatorMode": "在 Creator 模式开启时隐藏 Litematica 的放置子区域框。",
@@ -8,6 +9,7 @@
 	"litematica-creator.config.generic.comment.selectNewDraftPlacement": "新建空白投影时，同时在 Litematica 原生放置管理器中选中它。",
 	"litematica-creator.config.generic.name.debugLogging": "调试日志",
 	"litematica-creator.config.generic.name.creatorEditRange": "Creator 编辑距离",
+	"litematica-creator.config.generic.name.continuousPlaceIntervalTicks": "持续放置投影间隔",
 	"litematica-creator.config.generic.name.continuousBreakIntervalTicks": "持续删除投影间隔",
 	"litematica-creator.config.generic.name.enableCreatorMode": "Creator 模式",
 	"litematica-creator.config.generic.name.hideSubregionBoxesInCreatorMode": "Creator 模式下隐藏子区域框",
@@ -15,6 +17,7 @@
 	"litematica-creator.config.generic.name.selectNewDraftPlacement": "选中新建空白投影",
 	"litematica-creator.config.generic.prettyName.debugLogging": "调试日志",
 	"litematica-creator.config.generic.prettyName.creatorEditRange": "Creator 编辑距离",
+	"litematica-creator.config.generic.prettyName.continuousPlaceIntervalTicks": "持续放置投影间隔",
 	"litematica-creator.config.generic.prettyName.continuousBreakIntervalTicks": "持续删除投影间隔",
 	"litematica-creator.config.generic.prettyName.enableCreatorMode": "Creator 模式",
 	"litematica-creator.config.generic.prettyName.hideSubregionBoxesInCreatorMode": "Creator 模式下隐藏子区域框",

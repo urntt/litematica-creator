@@ -30,6 +30,14 @@ class ConfigDefaultsTest
     }
 
     @Test
+    void continuousPlaceUsesTheExpectedDefaultAndBounds()
+    {
+        assertEquals(4, CreatorConfigDefaults.CONTINUOUS_PLACE_INTERVAL_TICKS);
+        assertEquals(1, CreatorConfigDefaults.CONTINUOUS_PLACE_INTERVAL_TICKS_MIN);
+        assertEquals(20, CreatorConfigDefaults.CONTINUOUS_PLACE_INTERVAL_TICKS_MAX);
+    }
+
+    @Test
     void creatorHotkeysUseTheExpectedDefaults()
     {
         assertEquals("Y", CreatorConfigDefaults.TOGGLE_CREATOR_MODE);

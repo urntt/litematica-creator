@@ -45,6 +45,12 @@ public class Configs implements IConfigHandler
                 CreatorConfigDefaults.CREATOR_EDIT_RANGE_MIN,
                 CreatorConfigDefaults.CREATOR_EDIT_RANGE_MAX
         ).apply(GENERIC_KEY);
+        public static final ConfigInteger CONTINUOUS_PLACE_INTERVAL_TICKS = new ConfigInteger(
+                "continuousPlaceIntervalTicks",
+                CreatorConfigDefaults.CONTINUOUS_PLACE_INTERVAL_TICKS,
+                CreatorConfigDefaults.CONTINUOUS_PLACE_INTERVAL_TICKS_MIN,
+                CreatorConfigDefaults.CONTINUOUS_PLACE_INTERVAL_TICKS_MAX
+        ).apply(GENERIC_KEY);
         public static final ConfigInteger CONTINUOUS_BREAK_INTERVAL_TICKS = new ConfigInteger(
                 "continuousBreakIntervalTicks",
                 CreatorConfigDefaults.CONTINUOUS_BREAK_INTERVAL_TICKS,
@@ -59,6 +65,7 @@ public class Configs implements IConfigHandler
                 HIDE_SUBREGION_BOXES_IN_CREATOR_MODE,
                 OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY,
                 CREATOR_EDIT_RANGE,
+                CONTINUOUS_PLACE_INTERVAL_TICKS,
                 CONTINUOUS_BREAK_INTERVAL_TICKS
         );
     }

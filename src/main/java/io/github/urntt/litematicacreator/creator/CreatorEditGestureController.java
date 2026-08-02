@@ -8,7 +8,6 @@ import io.github.urntt.litematicacreator.config.Configs;
 public final class CreatorEditGestureController
 {
     public static final CreatorEditGestureController INSTANCE = new CreatorEditGestureController();
-    private static final int PLACE_INTERVAL_TICKS = 4;
 
     private final CreatorInputLatch placeInput = new CreatorInputLatch();
     private final CreatorInputLatch breakInput = new CreatorInputLatch();
@@ -49,6 +48,7 @@ public final class CreatorEditGestureController
         }
 
         CreatorEditService edits = CreatorEditService.getInstance();
+        int placeInterval = Configs.Generic.CONTINUOUS_PLACE_INTERVAL_TICKS.getIntegerValue();
         int breakInterval = Configs.Generic.CONTINUOUS_BREAK_INTERVAL_TICKS.getIntegerValue();
 
         boolean freshBreak = false;
@@ -110,7 +110,7 @@ public final class CreatorEditGestureController
             freshPlace = true;
             CreatorEditTarget target = edits.tracePlacementTarget();
             CreatorEditOutcome outcome = edits.placeProjectionBlock(target, true);
-            this.nextPlaceTick = tick + PLACE_INTERVAL_TICKS;
+            this.nextPlaceTick = tick + placeInterval;
 
             if (outcome == CreatorEditOutcome.OVERLAP)
             {
@@ -129,7 +129,7 @@ public final class CreatorEditGestureController
         {
             CreatorEditTarget target = edits.tracePlacementTarget();
             CreatorEditOutcome outcome = edits.placeProjectionBlock(target, false);
-            this.nextPlaceTick = tick + PLACE_INTERVAL_TICKS;
+            this.nextPlaceTick = tick + placeInterval;
 
             if (outcome == CreatorEditOutcome.OVERLAP)
             {
