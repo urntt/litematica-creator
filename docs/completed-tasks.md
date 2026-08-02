@@ -125,11 +125,19 @@
 - Creator pick block 按 `ItemStack.isSameItemSameComponents()` 搜索虚拟快捷栏和 27 格主物品栏：快捷栏命中只切槽，主物品栏命中按原版 suitable-hotbar 规则交换，完全不存在时才新建数量为 1 的 stack。
 - Suitable-hotbar 从当前槽开始循环，依次选择空槽、未附魔槽和当前槽；覆盖前会优先把原 stack 移到空虚拟主物品栏槽。整个 pick 使用单个虚拟库存 transaction，不修改真实背包或发送 pick item 包。
 - Palette 普通点击复制条目的显示数量；同种 carried 左键增加 1、右键减少 1，不同种 carried 左键清空、右键减少 1。所有计算都基于副本，不修改创造分类共享 stack。
-- Palette Shift+单击将最大堆叠写入从当前选中槽开始找到的第一个空虚拟快捷栏槽，不修改 carried 或当前选中槽；快捷栏全满时静默不执行。
+- Palette Shift+单击按原版规则把最大堆叠复制到 carried，不直接修改虚拟快捷栏；同种 carried 左键补到最大，其他左右键分支继续使用原版清空或减一规则。
 - `openCreatorInventoryWithInventoryKey` 默认开启。Creator 模式会在原版处理前消费当前物品栏键并打开虚拟物品栏；关闭设置后保留真实物品栏行为，独立 Creator 物品栏热键不受影响。
-- Creator 物品栏优先使用当前原版物品栏键关闭，即使搜索框已聚焦也不会输入该按键字符。
+- Creator 物品栏在非搜索标签页使用当前原版物品栏键关闭；搜索框聚焦时该键作为普通搜索字符输入，`Escape` 仍可关闭界面。
 - 新默认键位为 `Y`、`M,E`、`M,K`、`M,LEFT_SHIFT,S`、`M,LEFT_SHIFT,D`、`M,F` 和 `M,N`；只影响全新配置和重置默认值，不迁移或覆盖已有玩家绑定。
 - 单元测试覆盖 pick 选槽、components 匹配、全满覆盖、palette 左右键数量边界、Shift 快移和配置默认值。
+
+## 虚拟物品栏回归修复（#44、#45、#46、#47）
+
+- #44 删除了 Creator GUI 对物品栏键的提前消费；输入交由 26.2 原版创造栏式搜索分支处理，因此默认 `E` 可进入搜索文本，非搜索标签页仍由基础界面关闭。
+- #45 与原版一致，将当前创造标签页保存在静态 GUI 状态中；关闭并重新打开时保留标签页，注册表重建令标签失效时才回退到默认标签。
+- #46 投影放置按原版顺序解析虚拟双手：虚拟主手是 `BlockItem` 时优先使用，否则回退到虚拟副手；选定的手同时用于 `BlockPlaceContext`、replaceable 检查和本地挥手动画。
+- #47 移除了 Shift+单击写入第一个空快捷栏的自定义行为，改为原版 carried 最大堆叠逻辑，且继续基于 stack 副本计算，不修改 palette 共享条目。
+- 单元测试覆盖虚拟主手优先、副手回退、双手均不可放置，以及 palette Shift 点击的最大堆叠、同种补满和其他移除分支。
 
 ## 虚拟快捷栏与玩家渲染（#9、#24）
 
@@ -140,7 +148,7 @@
 
 ## 本地编辑动作反馈（#25）
 
-- 只有 `CreatorSchematicEditor.setBlockState()` 确认实际修改成功后，放置或删除才调用 `swing(InteractionHand.MAIN_HAND, false)`。
+- 只有 `CreatorSchematicEditor.setBlockState()` 确认实际修改成功后才挥手；放置使用本次解析到的虚拟主手或副手，删除使用主手。
 - 被占用、无目标、重叠待选择、重复状态和其他失败路径不播放动画；中键 pick block 按原版行为不挥手。
 - 两参数非广播 swing 只更新本地动画，不调用 `LocalPlayer.swing(hand)` 的发包路径；投影交互动画留待 #29。
 - 单元测试覆盖配置迁移与完整 ItemStack 往返、搜索合并和文本匹配、左右主手及盔甲位映射，以及成功/失败编辑的反馈决策。

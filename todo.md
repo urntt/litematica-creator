@@ -33,6 +33,10 @@
 - [x] #39 Creator 模式下用原版物品栏键打开 Creator 物品栏
 - [x] #40 修正虚拟创造栏的 palette 点击语义
 - [x] #43 更新默认快捷键
+- [x] #44 搜索栏无法输入原版物品栏键对应字符
+- [x] #45 Creator 物品栏重开后标签页被重置
+- [x] #46 虚拟主手为空时不能使用虚拟副手放置
+- [x] #47 Palette Shift+单击恢复原版 carried 行为
 - [x] Creator 与 Litematica 的完成编辑/卸载命令边界
 - [x] 坐标、目标解析和稀疏 region 核心单元测试
 - [x] Focus、稀疏 subregion 和生命周期设计文档同步
