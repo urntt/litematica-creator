@@ -115,9 +115,39 @@ public class CreatorInventory
             return false;
         }
 
-        ItemStack stack = new ItemStack(item);
-        stack.setCount(stack.getMaxStackSize());
-        this.setStack(this.selectedHotbarSlot, stack);
+        ItemStack picked = new ItemStack(item);
+
+        this.runTransaction(() ->
+        {
+            CreatorInventorySlotPolicy.PickPlan plan = CreatorInventorySlotPolicy.planPick(
+                    this.stacks,
+                    this.selectedHotbarSlot,
+                    picked
+            );
+
+            switch (plan.action())
+            {
+                case SELECT -> this.setSelectedHotbarSlot(plan.targetSlot());
+                case SWAP ->
+                {
+                    ItemStack targetStack = this.getStack(plan.targetSlot());
+                    this.setStack(plan.targetSlot(), this.getStack(plan.sourceSlot()));
+                    this.setStack(plan.sourceSlot(), targetStack);
+                    this.setSelectedHotbarSlot(plan.targetSlot());
+                }
+                case INSERT ->
+                {
+                    if (plan.displacedSlot() >= 0)
+                    {
+                        this.setStack(plan.displacedSlot(), this.getStack(plan.targetSlot()));
+                    }
+
+                    this.setStack(plan.targetSlot(), picked);
+                    this.setSelectedHotbarSlot(plan.targetSlot());
+                }
+            }
+        });
+
         return true;
     }
 
