@@ -6,10 +6,6 @@ final class CreatorConfigDefaults
     static final int CREATOR_EDIT_RANGE = 10;
     static final int CREATOR_EDIT_RANGE_MIN = 1;
     static final int CREATOR_EDIT_RANGE_MAX = 128;
-    static final CreatorPlacementRepeatMode PLACEMENT_REPEAT_MODE = CreatorPlacementRepeatMode.FIXED;
-    static final int PLACEMENT_REPEAT_INTERVAL_TICKS = 4;
-    static final int PLACEMENT_REPEAT_INTERVAL_TICKS_MIN = 1;
-    static final int PLACEMENT_REPEAT_INTERVAL_TICKS_MAX = 20;
     static final int CONTINUOUS_BREAK_INTERVAL_TICKS = 4;
     static final int CONTINUOUS_BREAK_INTERVAL_TICKS_MIN = 1;
     static final int CONTINUOUS_BREAK_INTERVAL_TICKS_MAX = 20;

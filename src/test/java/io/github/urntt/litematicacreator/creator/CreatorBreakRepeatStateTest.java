@@ -35,6 +35,18 @@ class CreatorBreakRepeatStateTest
     }
 
     @Test
+    void breakHonorsMinimumAndMaximumIntervals()
+    {
+        CreatorBreakRepeatState<String, String> state = new CreatorBreakRepeatState<>();
+        state.press(0L, target("A"), 1);
+        assertTrue(state.shouldObserveHeld(1L));
+
+        state.press(0L, target("A"), 20);
+        assertFalse(state.shouldObserveHeld(19L));
+        assertTrue(state.shouldObserveHeld(20L));
+    }
+
+    @Test
     void releaseStopsContinuousBreak()
     {
         CreatorBreakRepeatState<String, String> state = new CreatorBreakRepeatState<>();

@@ -22,24 +22,11 @@ class ConfigDefaultsTest
     }
 
     @Test
-    void creatorRepeatControlsUseTheExpectedDefaultsAndBounds()
+    void continuousBreakUsesTheExpectedDefaultAndBounds()
     {
-        assertEquals(CreatorPlacementRepeatMode.FIXED, CreatorConfigDefaults.PLACEMENT_REPEAT_MODE);
-        assertEquals(4, CreatorConfigDefaults.PLACEMENT_REPEAT_INTERVAL_TICKS);
-        assertEquals(1, CreatorConfigDefaults.PLACEMENT_REPEAT_INTERVAL_TICKS_MIN);
-        assertEquals(20, CreatorConfigDefaults.PLACEMENT_REPEAT_INTERVAL_TICKS_MAX);
         assertEquals(4, CreatorConfigDefaults.CONTINUOUS_BREAK_INTERVAL_TICKS);
         assertEquals(1, CreatorConfigDefaults.CONTINUOUS_BREAK_INTERVAL_TICKS_MIN);
         assertEquals(20, CreatorConfigDefaults.CONTINUOUS_BREAK_INTERVAL_TICKS_MAX);
-    }
-
-    @Test
-    void placementRepeatModeUsesStableSerializedValues()
-    {
-        assertEquals("fixed", CreatorPlacementRepeatMode.FIXED.getStringValue());
-        assertEquals("accurate", CreatorPlacementRepeatMode.ACCURATE.getStringValue());
-        assertEquals(CreatorPlacementRepeatMode.ACCURATE, CreatorPlacementRepeatMode.FIXED.fromString("accurate"));
-        assertEquals(CreatorPlacementRepeatMode.FIXED, CreatorPlacementRepeatMode.ACCURATE.fromString("unknown"));
     }
 
     @Test

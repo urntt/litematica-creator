@@ -23,7 +23,7 @@
 - [x] #17 退出 Creator 模式后的异常交互阻断
 - [x] #18 未保存 schematic 的 recovery cache
 - [x] #19 Creator 文本直接跟随游戏语言
-- [x] #21 连续放置与长按持续破坏控制
+- [x] #21 按住攻击键持续拆除投影方块
 - [x] #23 可配置的 Creator 投影编辑距离
 - [x] #24 第一/第三人称使用虚拟手持与虚拟装备渲染
 - [x] #25 成功编辑投影时播放本地手部动画
@@ -48,6 +48,10 @@
 - [x] Focus、稀疏 subregion 和生命周期设计文档同步
 
 实现细节和历史验收记录见 [`docs/completed-tasks.md`](docs/completed-tasks.md)。
+
+## 已取消
+
+- #21 Accurate 连续放置与 backfill：游戏内效果不符合预期，已回退；放置继续使用 #15 的固定 4 tick 间隔。
 
 ## 状态标记
 

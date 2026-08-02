@@ -11,7 +11,6 @@ import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigHandler;
 import fi.dy.masa.malilib.config.options.ConfigBoolean;
 import fi.dy.masa.malilib.config.options.ConfigInteger;
-import fi.dy.masa.malilib.config.options.ConfigOptionList;
 import fi.dy.masa.malilib.util.FileUtils;
 import fi.dy.masa.malilib.util.data.json.JsonUtils;
 import io.github.urntt.litematicacreator.LitematicaCreator;
@@ -46,15 +45,6 @@ public class Configs implements IConfigHandler
                 CreatorConfigDefaults.CREATOR_EDIT_RANGE_MIN,
                 CreatorConfigDefaults.CREATOR_EDIT_RANGE_MAX
         ).apply(GENERIC_KEY);
-        public static final ConfigOptionList PLACEMENT_REPEAT_MODE = new ConfigOptionList(
-                "placementRepeatMode", CreatorConfigDefaults.PLACEMENT_REPEAT_MODE
-        ).apply(GENERIC_KEY);
-        public static final ConfigInteger PLACEMENT_REPEAT_INTERVAL_TICKS = new ConfigInteger(
-                "placementRepeatIntervalTicks",
-                CreatorConfigDefaults.PLACEMENT_REPEAT_INTERVAL_TICKS,
-                CreatorConfigDefaults.PLACEMENT_REPEAT_INTERVAL_TICKS_MIN,
-                CreatorConfigDefaults.PLACEMENT_REPEAT_INTERVAL_TICKS_MAX
-        ).apply(GENERIC_KEY);
         public static final ConfigInteger CONTINUOUS_BREAK_INTERVAL_TICKS = new ConfigInteger(
                 "continuousBreakIntervalTicks",
                 CreatorConfigDefaults.CONTINUOUS_BREAK_INTERVAL_TICKS,
@@ -69,8 +59,6 @@ public class Configs implements IConfigHandler
                 HIDE_SUBREGION_BOXES_IN_CREATOR_MODE,
                 OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY,
                 CREATOR_EDIT_RANGE,
-                PLACEMENT_REPEAT_MODE,
-                PLACEMENT_REPEAT_INTERVAL_TICKS,
                 CONTINUOUS_BREAK_INTERVAL_TICKS
         );
     }

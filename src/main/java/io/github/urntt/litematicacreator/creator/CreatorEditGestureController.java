@@ -4,18 +4,17 @@ import net.minecraft.client.Minecraft;
 
 import fi.dy.masa.malilib.util.GuiUtils;
 import io.github.urntt.litematicacreator.config.Configs;
-import io.github.urntt.litematicacreator.config.CreatorPlacementRepeatMode;
 
 public final class CreatorEditGestureController
 {
     public static final CreatorEditGestureController INSTANCE = new CreatorEditGestureController();
+    private static final int PLACE_INTERVAL_TICKS = 4;
 
     private final CreatorInputLatch placeInput = new CreatorInputLatch();
     private final CreatorInputLatch breakInput = new CreatorInputLatch();
-    private final CreatorPlacementRepeatState<CreatorEditTarget.CreatorEditTargetKey, CreatorEditTarget> placementRepeat =
-            new CreatorPlacementRepeatState<>();
     private final CreatorBreakRepeatState<CreatorEditTarget.CreatorEditTargetKey, CreatorEditTarget> breakRepeat =
             new CreatorBreakRepeatState<>();
+    private long nextPlaceTick;
 
     private CreatorEditGestureController()
     {
@@ -50,15 +49,7 @@ public final class CreatorEditGestureController
         }
 
         CreatorEditService edits = CreatorEditService.getInstance();
-        CreatorPlacementRepeatMode repeatMode = (CreatorPlacementRepeatMode) Configs.Generic.PLACEMENT_REPEAT_MODE.getOptionListValue();
-        int placementInterval = Configs.Generic.PLACEMENT_REPEAT_INTERVAL_TICKS.getIntegerValue();
         int breakInterval = Configs.Generic.CONTINUOUS_BREAK_INTERVAL_TICKS.getIntegerValue();
-
-        if (this.placeInput.isHeld() && this.placementRepeat.isActive() && this.placementRepeat.mode() != repeatMode)
-        {
-            this.placeInput.suspend(placeDown);
-            this.placementRepeat.reset();
-        }
 
         boolean freshBreak = false;
 
@@ -118,14 +109,10 @@ public final class CreatorEditGestureController
         {
             freshPlace = true;
             CreatorEditTarget target = edits.tracePlacementTarget();
-            CreatorPlacementRepeatState.RepeatPlan<CreatorEditTarget> plan = this.placementRepeat.press(
-                    tick,
-                    observed(target),
-                    repeatMode,
-                    placementInterval
-            );
+            CreatorEditOutcome outcome = edits.placeProjectionBlock(target, true);
+            this.nextPlaceTick = tick + PLACE_INTERVAL_TICKS;
 
-            if (this.executePlacementPlan(edits, plan))
+            if (outcome == CreatorEditOutcome.OVERLAP)
             {
                 this.suspend(placeDown, breakDown);
                 return;
@@ -138,16 +125,13 @@ public final class CreatorEditGestureController
             }
         }
 
-        if (!freshPlace && this.placeInput.isHeld() && this.placementRepeat.shouldObserveHeld(tick))
+        if (!freshPlace && this.placeInput.isHeld() && tick >= this.nextPlaceTick)
         {
             CreatorEditTarget target = edits.tracePlacementTarget();
-            CreatorPlacementRepeatState.RepeatPlan<CreatorEditTarget> plan = this.placementRepeat.hold(
-                    tick,
-                    observed(target),
-                    placementInterval
-            );
+            CreatorEditOutcome outcome = edits.placeProjectionBlock(target, false);
+            this.nextPlaceTick = tick + PLACE_INTERVAL_TICKS;
 
-            if (this.executePlacementPlan(edits, plan))
+            if (outcome == CreatorEditOutcome.OVERLAP)
             {
                 this.suspend(placeDown, breakDown);
                 return;
@@ -157,11 +141,6 @@ public final class CreatorEditGestureController
             {
                 this.suspend(placeDown, breakDown);
             }
-        }
-
-        if (!this.placeInput.isHeld())
-        {
-            this.placementRepeat.reset();
         }
     }
 
@@ -175,41 +154,24 @@ public final class CreatorEditGestureController
     {
         this.placeInput.suspend(placeDown);
         this.breakInput.suspend(breakDown);
-        this.placementRepeat.reset();
         this.breakRepeat.reset();
-    }
-
-    private boolean executePlacementPlan(
-            CreatorEditService edits,
-            CreatorPlacementRepeatState.RepeatPlan<CreatorEditTarget> plan)
-    {
-        if (plan.freshPress() && plan.targets().isEmpty())
-        {
-            return edits.placeProjectionBlock(null, true) == CreatorEditOutcome.OVERLAP;
-        }
-
-        return CreatorEditBatchExecutor.execute(
-                plan.targets(),
-                target -> edits.placeProjectionBlock(target, plan.freshPress()),
-                this.placementRepeat::reset
-        );
+        this.nextPlaceTick = 0L;
     }
 
     private boolean executeBreakPlan(
             CreatorEditService edits,
             CreatorBreakRepeatState.RepeatPlan<CreatorEditTarget> plan)
     {
-        return CreatorEditBatchExecutor.execute(
-                plan.targets(),
-                edits::deleteProjectionBlock,
-                this.breakRepeat::reset
-        );
-    }
+        for (CreatorEditTarget target : plan.targets())
+        {
+            if (edits.deleteProjectionBlock(target) == CreatorEditOutcome.OVERLAP)
+            {
+                this.breakRepeat.reset();
+                return true;
+            }
+        }
 
-    private static CreatorPlacementRepeatState.ObservedTarget<CreatorEditTarget.CreatorEditTargetKey, CreatorEditTarget> observed(
-            CreatorEditTarget target)
-    {
-        return target != null ? new CreatorPlacementRepeatState.ObservedTarget<>(target.key(), target) : null;
+        return false;
     }
 
     private static CreatorBreakRepeatState.ObservedTarget<CreatorEditTarget.CreatorEditTargetKey, CreatorEditTarget> observedBreak(
