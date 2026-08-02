@@ -7,6 +7,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Input;
@@ -14,6 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
 import io.github.urntt.litematicacreator.config.Configs;
+import io.github.urntt.litematicacreator.mixin.LocalPlayerAccessor;
 import io.github.urntt.litematicacreator.render.CreatorVirtualLoadout;
 
 public final class CreatorCameraEntity extends LocalPlayer
@@ -21,7 +23,7 @@ public final class CreatorCameraEntity extends LocalPlayer
     private static final double VANILLA_GROUND_SPEED = 0.1D;
     private static final float VANILLA_FLIGHT_SPEED = 0.05F;
 
-    private final int sourceEntityId;
+    private final Minecraft minecraft;
 
     CreatorCameraEntity(Minecraft minecraft, ClientLevel level, LocalPlayer player, Entity source, boolean flying)
     {
@@ -35,15 +37,19 @@ public final class CreatorCameraEntity extends LocalPlayer
                 false,
                 ChatAbilities.NO_RESTRICTIONS
         );
-        this.sourceEntityId = source.getId();
+        this.minecraft = minecraft;
         this.input = new CreatorCameraInput(minecraft);
         this.setPosRaw(source.getX(), source.getY(), source.getZ());
         this.setYRot(source.getYRot());
         this.setXRot(source.getXRot());
         this.setYHeadRot(source.getYRot());
         this.setYBodyRot(source.getYRot());
-        this.setPose(source.getPose());
-        this.setOnGround(source.onGround());
+        this.setPose(Pose.STANDING);
+        this.setSwimming(false);
+        this.setShiftKeyDown(false);
+        this.setSprinting(false);
+        this.setJumping(false);
+        this.setOnGround(false);
         this.setDeltaMovement(Vec3.ZERO);
 
         this.getAbilities().invulnerable = true;
@@ -58,6 +64,9 @@ public final class CreatorCameraEntity extends LocalPlayer
     {
         this.updateOldPositionAndRotation();
         this.applyConfiguredSpeeds();
+        ((LocalPlayerAccessor) (Object) this).litematicacreator$setAutoJumpEnabled(
+                this.minecraft.options.autoJump().get()
+        );
         this.baseTick();
         this.aiStep();
         this.noPhysics = this.getAbilities().flying;
@@ -74,12 +83,6 @@ public final class CreatorCameraEntity extends LocalPlayer
         this.turn(yawChange, pitchChange);
         this.setYHeadRot(this.getYRot());
         this.setYBodyRot(this.getYRot());
-    }
-
-    @Override
-    public int getId()
-    {
-        return this.sourceEntityId;
     }
 
     @Override

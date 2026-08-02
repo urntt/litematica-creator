@@ -13,6 +13,7 @@
 		"LevelRendererMixin",
 		"LitematicaInputHandlerMixin",
 		"LocalPlayerMixin",
+		"LocalPlayerAccessor",
 		"LitematicaSchematicAccessor",
 		"LivingEntityRendererAccessor",
 		"MinecraftClientMixin",
