@@ -9,7 +9,7 @@
 依赖关系：
 
 - 硬依赖：MaLiLib、Litematica。
-- 软兼容：Tweakeroo Free Camera、Syncmatica。
+- 软兼容：Tweakeroo 外部相机状态协调、Syncmatica。
 - 第一版目标版本：Minecraft/Fabric `26.2`。
 
 ## 2. 26.2 开发基线
@@ -108,20 +108,13 @@ Creator 模式下的左右键由 `litematica-creator` 消费，不能落到真�
 - 让 placement manager 重新计算 touched chunks。
 - 触发相关 schematic chunks rebuild。
 
-### 3.5 Free Camera 行为
+### 3.5 Creator Camera 行为
 
-未安装 Tweakeroo：
-
-- 从玩家当前视角编辑。
-
-安装并开启 Tweakeroo Free Camera：
-
-- 从 freecam 相机视角编辑。
-- Creator 模式消费左右键，避免真实攻击或真实放置。
-- Creator 默认要求 `freeCameraPlayerInputs=false`，否则 Tweakeroo 会把点击射线切回真实玩家身体。
-- 放置朝向应基于 camera entity，而不是玩家身体朝向。
-
-Tweakeroo 作为软兼容处理：没有 Tweakeroo 时 Creator 不应崩溃，也不应要求硬依赖。
+- 开启 Creator 时从当前视角创建纯客户端相机，真实玩家本体保持不动且不发送相机移动或旋转。
+- 地面模式使用原版式移动、跳跃和真实世界/可见投影形状碰撞；双击空格进入可穿墙的飞行模式。
+- 编辑射线和放置朝向始终基于 Creator camera entity，而不是玩家身体。
+- Creator 模式消费编辑输入，避免真实攻击或真实放置。
+- Tweakeroo 只作为软兼容：接管已有 Free Camera 的位置并临时协调其输入配置，退出 Creator 后恢复，不作为核心相机依赖。
 
 ### 3.6 Syncmatica 行为
 
@@ -213,22 +206,12 @@ Creator 不再维护 `CreatorDraft` 或 Creator-owned schematic 集合。唯一�
 - 第一阶段先支持搜索 `BlockItem` 和 9 格虚拟快捷栏。
 - 第二阶段补齐 27 格背包、副手、盔甲、丢弃栏和分类页。
 
-### 4.5 Free Camera 兼容层
+### 4.5 Creator Camera 与外部相机兼容层
 
-新增 `CreatorCameraCompat`。
-
-职责：
-
-- 不硬依赖 Tweakeroo 类。
-- 检测 `tweakeroo` 是否加载。
-- 读取当前 camera entity。
-- 判断是否处于 Free Camera 编辑场景。
-- 在 Creator 模式下避免依赖 `mc.hitResult`，统一使用 camera entity 自己 ray trace。
-
-行为建议：
-
-- 不直接强行改 Tweakeroo 配置，第一版可以在状态不兼容时提示玩家关闭 `freeCameraPlayerInputs`。
-- 后续可增加“进入 Creator 时临时关闭，退出时恢复”的选项。
+- `CreatorCameraEntity` 复用客户端玩家移动物理，但不注册到世界实体列表，也不执行玩家网络 tick。
+- `CreatorCameraController` 负责接管和恢复 camera entity、玩家输入、`smartCull`、世界生命周期及跨区块渲染刷新。
+- `CreatorCameraCompat` 通过反射软检测 Tweakeroo，快照并临时协调 Free Camera 的 player movement/input 配置，不引入硬依赖。
+- Creator 编辑统一从当前 Creator camera 自行 ray trace，不依赖可能被其他模组改写的 `mc.hitResult`。
 
 ### 4.6 输入拦截
 
@@ -365,24 +348,23 @@ Creator 模式需要比真实交互更早消费左右键。
 - GUI 操作不影响真实 inventory。
 - 搜索和分类能覆盖常见 `BlockItem`。
 
-### 阶段 6：Tweakeroo Free Camera 兼容
+### 阶段 6：Creator Camera
 
-目标：安装并开启 Tweakeroo Free Camera 时，从 freecam 位置编辑投影。
+目标：提供不依赖 Tweakeroo 的纯客户端编辑相机，并兼容已有外部相机状态。
 
 任务：
 
-- 实现 `CreatorCameraCompat`。
-- 检测 Tweakeroo 是否加载。
-- 始终从 `mc.getCameraEntity()` 或 MaLiLib camera entity 取编辑视角。
-- 避免使用可能被 Tweakeroo 改写到玩家身体的 `mc.hitResult`。
-- 检测 `freeCameraPlayerInputs` 不兼容状态并提示。
-- 放置朝向基于 camera entity。
+- 实现客户端相机实体、地面移动、双击飞行和速度配置。
+- 隔离真实玩家输入、移动和转向，阻断相机玩家发包入口。
+- 合并真实世界与可见投影的碰撞形状。
+- 统一从 Creator camera 做编辑射线和放置朝向计算。
+- 快照、协调并恢复 Tweakeroo Free Camera 与渲染器状态。
 
 验收：
 
-- Free Camera 下右键从相机位置放置投影。
-- 真实玩家身体不攻击、不放置、不移动。
-- 方块朝向符合相机视角。
+- 地面和飞行模式移动正确，可站在非完整投影形状上并在飞行时穿墙。
+- 真实玩家身体不攻击、不放置、不移动、不随相机转向。
+- 退出、断线、切世界、死亡和外部相机组合下完整恢复状态。
 
 ### 阶段 7：完善放置语义
 
@@ -460,16 +442,16 @@ Creator 模式下如果右键没有被正确消费，玩家可能真实放置方
 - 增加调试命令或日志输出当前 touched chunks。
 - 保存/重载作为验证手段。
 
-### 6.5 Free Camera 软兼容
+### 6.5 外部相机软兼容
 
 Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会增加版本耦合。
 
 策略：
 
-- 默认软检测。
-- 尽量只依赖 Minecraft 的 `mc.getCameraEntity()`。
-- 不依赖 Tweakeroo 私有类来完成核心功能。
-- 需要读取具体配置时再考虑反射或可选编译依赖。
+- Creator Camera 核心不依赖 Tweakeroo 类或功能。
+- 默认通过反射软检测 Tweakeroo 配置，缺失或字段变化时安全跳过。
+- 会话开始时保存外部 camera entity 和配置值，会话期间维持兼容值，退出时精确恢复。
+- Tweakeroo 在 Creator 会话内切换时重新协调，Creator Camera 始终保持当前视角优先级。
 
 ## 7. 第一版范围
 
@@ -513,7 +495,7 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 
 这个顺序能尽早验证最关键风险：Litematica 的 schematic/placement 数据能否被外部 addon 稳定修改并实时渲染。
 
-## 9. 当前 MVP 实现状态（2026-08-02）
+## 9. 当前 MVP 实现状态（2026-08-03）
 
 截至当前工作树，已实现并通过本地编译闭环的内容：
 
@@ -530,9 +512,9 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 - 基础 HUD 状态显示：虚拟槽位/方块、focus placement、schematic、dirty、region 数和方块数。
 - Creator 编辑闭环：右键用虚拟 `BlockItem` 创建投影方块，左键删除当前 Creator 投影方块，中键 pick 真实方块或 Creator 投影方块。
 - 完成编辑入口只清空 focus；卸载入口按 focus schematic 卸载全部 placements；文件导出继续使用 Litematica 原生界面。
-- Free Camera 基本兼容路径：编辑 ray trace 始终从 MaLiLib/Minecraft camera entity 获取；未安装 Tweakeroo 时自然回退玩家视角。
-- 放置状态计算会在构造 `BlockPlaceContext` 时临时使用 camera entity 的 yaw/pitch，再立即恢复真实 player 旋转，让 Free Camera 下的朝向跟随相机。
-- Tweakeroo Free Camera 配置通过反射软检测；Creator 临时关闭不兼容的 `freeCameraPlayerInputs`，退出时恢复，不引入硬依赖。
+- Creator 自带纯客户端相机：地面模式复用原版玩家移动物理和真实/投影碰撞，双击空格切换可穿墙飞行，速度倍率可配置，HUD 显示当前状态。
+- 真实玩家输入、移动、转向和 controlled-camera 状态在会话中隔离；相机不执行网络玩家 tick，编辑射线及放置朝向全部来自 Creator camera。
+- Tweakeroo Free Camera 配置通过反射软检测并按会话快照恢复；跨区块渲染边缘刷新使用可选注入，不将 Tweakeroo 或 Sodium 变为硬依赖。
 - JUnit 回归测试覆盖旋转/镜像坐标往返、候选身份合并、放置占用策略、通用 region 空状态、focus 通知决策，以及 recovery eligibility、manifest、调度、原子 generation 和主动删除抑制。
 - 左右键拦截：在 Creator 模式下通过 Mixin 消费 `Minecraft.startUseItem` 与 `Minecraft.startAttack`，避免真实服务器交互透传。
 - Recovery cache：non-file-backed 和已修改的 file-backed schematics 使用标准 `.litematic` generation 与 manifest v1 自动缓存；世界恢复时保留 placement 变换、selected placement 和 Creator focus，但不自动开启 Creator 模式。

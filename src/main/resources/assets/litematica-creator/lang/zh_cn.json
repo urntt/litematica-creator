@@ -104,7 +104,7 @@
 	"litematica-creator.message.recovery.failed": "部分未保存原理图未能恢复；恢复文件已保留，详细信息已写入日志",
 	"litematica-creator.message.recovery.restored": "已恢复 %s 个未保存原理图及 %s 个 placement",
 	"litematica-creator.message.creator_mode.disabled": "Litematica Creator 模式已关闭",
-	"litematica-creator.message.creator_mode.enabled": "Litematica Creator 模式已开启"
-	,"litematica-creator.message.camera.initialization_failed": "Creator 相机初始化失败，Creator 模式已关闭"
-	,"litematica-creator.message.camera.player_replaced": "本地玩家死亡或重生，Creator 模式已关闭"
+	"litematica-creator.message.creator_mode.enabled": "Litematica Creator 模式已开启",
+	"litematica-creator.message.camera.initialization_failed": "Creator 相机初始化失败，Creator 模式已关闭",
+	"litematica-creator.message.camera.player_replaced": "本地玩家死亡或重生，Creator 模式已关闭"
 }

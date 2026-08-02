@@ -104,7 +104,7 @@
 	"litematica-creator.message.recovery.failed": "Some unsaved schematics could not be recovered; the recovery files were retained and details were written to the log",
 	"litematica-creator.message.recovery.restored": "Recovered %s unsaved schematic(s) with %s placement(s)",
 	"litematica-creator.message.creator_mode.disabled": "Litematica Creator mode disabled",
-	"litematica-creator.message.creator_mode.enabled": "Litematica Creator mode enabled"
-	,"litematica-creator.message.camera.initialization_failed": "Creator Camera could not be initialized; Creator mode was disabled"
-	,"litematica-creator.message.camera.player_replaced": "Creator mode was disabled because the local player died or respawned"
+	"litematica-creator.message.creator_mode.enabled": "Litematica Creator mode enabled",
+	"litematica-creator.message.camera.initialization_failed": "Creator Camera could not be initialized; Creator mode was disabled",
+	"litematica-creator.message.camera.player_replaced": "Creator mode was disabled because the local player died or respawned"
 }

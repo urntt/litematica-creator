@@ -23,6 +23,7 @@
 - [x] #17 退出 Creator 模式后的异常交互阻断
 - [x] #18 未保存 schematic 的 recovery cache
 - [x] #19 Creator 文本直接跟随游戏语言
+- [x] #20 Creator Camera
 - [x] #21 按住攻击键持续拆除投影方块
 - [x] #23 可配置的 Creator 投影编辑距离
 - [x] #24 第一/第三人称使用虚拟手持与虚拟装备渲染
@@ -70,13 +71,6 @@
   - 验收：兼容功能不修改真实背包、不发送 container packet，并在未安装第三方模组时保持当前行为。
 
 ## Creator Camera
-
-- [!] #20 用 Creator 自带相机替代或超越 Tweakeroo Free Camera
-  - 设计纯客户端 camera entity，真实玩家本体保持不动且不向服务器发送移动。
-  - 地面模式类似生存移动，支持跳跃、重力和可选碰撞。
-  - 飞行模式类似创造飞行，并可像旁观模式一样穿过方块。
-  - 处理相机输入、碰撞、其他玩家渲染、退出模式、断线和世界卸载。
-  - 验收：未安装 Tweakeroo 时 Creator camera 仍可用，退出后玩家和相机状态完整恢复。
 
 - [!] #42 Creator Camera 预览模式
   - 目标是把投影按普通世界方块的模型、纹理、流体和 block entity 方式不透明渲染，并隐藏缺失/错误方块的彩色 overlay 与轮廓。

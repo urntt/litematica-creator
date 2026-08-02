@@ -207,6 +207,17 @@
 - 空中放置只修改客户端 schematic，保持本地挥手反馈，不放置真实方块也不发送放置包。
 - 单元测试覆盖水平/垂直视线、非单位视线归一化、命中面方向、目标格中心和空中距离受编辑范围约束；平面锁定、网格锁定等高级辅助不属于本阶段。
 
+## Creator Camera（#20）
+
+- Creator 模式开启时会从当前 camera entity 的位置、朝向、姿态和落地状态创建未注册到世界实体列表的纯客户端 `CreatorCameraEntity`；从真实玩家接管时默认地面模式，从已有独立相机接管时默认飞行。
+- 地面模式复用 `LocalPlayer` 的原版输入与移动物理，包括重力、跳跃、潜行、疾跑、台阶、液体和梯子；双击空格切换飞行，飞行时启用 `noPhysics` 并可穿过方块。地面与飞行速度倍率均可在 `0.1–5.0` 间即时调整，默认 `1.0`。
+- 相机不执行会发送移动状态的 `LocalPlayer.tick()`，并屏蔽 abilities、骑乘和鞘翅等发包入口。真实本地玩家在会话期间使用空输入、停止本地移动与鼠标转向且不作为 controlled camera，服务端位置校正仍可正常写回真实玩家。
+- 地面碰撞为真实世界碰撞与当前可见投影 `VoxelShape` 的并集；解析遵循 Litematica placement/subregion 启用及渲染状态、合成顺序、空气覆盖、客户端区块可用性和 `loadEntireSchematics`。投影只贡献形状，不模拟投影液体、梯子、摩擦或弹跳。
+- Creator 相机跨区块时补充刷新新进入视野边缘的客户端区块；渲染器注入为可选，允许 Sodium 等渲染器替换原版路径。
+- 进入时保存原 camera entity、`smartCull` 及 Tweakeroo Free Camera 配置；Tweakeroo 存在时临时协调为 `freeCameraPlayerMovement=true`、`freeCameraPlayerInputs=false`，Creator 退出后精确恢复原值与原相机。
+- 退出 Creator、世界卸载、断线、客户端关闭或初始化失败时按相反顺序恢复状态；本地玩家死亡/重生导致实例替换时自动关闭 Creator，但保留 focus 和 recovery cache。相机位置和飞行状态不跨 Creator 会话持久化。
+- Creator HUD 显示地面/飞行状态。单元测试覆盖速度边界、会话恢复、双击飞行、玩家隔离、Tweakeroo 快照、投影可见性合成和跨区块刷新；开发客户端已启动到主菜单验证所有相机 Mixin 可正常应用。
+
 ## 配套工作
 
 - Creator 的完成编辑/卸载命令已与 Litematica 原生导出和 selected-placement 行为分离。
