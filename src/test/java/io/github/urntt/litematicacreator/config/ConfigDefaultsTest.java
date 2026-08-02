@@ -22,6 +22,14 @@ class ConfigDefaultsTest
     }
 
     @Test
+    void airPlacementDistanceUsesTheExpectedDefaultAndBounds()
+    {
+        assertEquals(5, CreatorConfigDefaults.AIR_PLACEMENT_DISTANCE);
+        assertEquals(1, CreatorConfigDefaults.AIR_PLACEMENT_DISTANCE_MIN);
+        assertEquals(128, CreatorConfigDefaults.AIR_PLACEMENT_DISTANCE_MAX);
+    }
+
+    @Test
     void continuousBreakUsesTheExpectedDefaultAndBounds()
     {
         assertEquals(4, CreatorConfigDefaults.CONTINUOUS_BREAK_INTERVAL_TICKS);

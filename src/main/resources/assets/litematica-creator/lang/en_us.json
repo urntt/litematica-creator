@@ -1,6 +1,7 @@
 {
 	"litematica-creator.config.generic.comment.enableCreatorMode": "Allows Litematica Creator to consume edit inputs and maintain a client-side schematic draft.",
 	"litematica-creator.config.generic.comment.creatorEditRange": "Maximum distance in blocks for Creator projection targeting and editing.",
+	"litematica-creator.config.generic.comment.airPlacementDistance": "Fixed camera distance for placing a projection when no real or projection block is hit. Limited by Creator Edit Range.",
 	"litematica-creator.config.generic.comment.continuousPlaceIntervalTicks": "Interval between repeated projection placements while the use key is held, in client ticks.",
 	"litematica-creator.config.generic.comment.continuousBreakIntervalTicks": "Interval between repeated projection deletions while the attack key is held, in client ticks.",
 	"litematica-creator.config.generic.comment.debugLogging": "Writes extra Litematica Creator diagnostics to the game log.",
@@ -9,6 +10,7 @@
 	"litematica-creator.config.generic.comment.selectNewDraftPlacement": "Also selects a newly created blank placement in Litematica's native placement manager.",
 	"litematica-creator.config.generic.name.debugLogging": "Debug Logging",
 	"litematica-creator.config.generic.name.creatorEditRange": "Creator Edit Range",
+	"litematica-creator.config.generic.name.airPlacementDistance": "Air Projection Placement Distance",
 	"litematica-creator.config.generic.name.continuousPlaceIntervalTicks": "Continuous Projection Place Interval",
 	"litematica-creator.config.generic.name.continuousBreakIntervalTicks": "Continuous Projection Break Interval",
 	"litematica-creator.config.generic.name.enableCreatorMode": "Creator Mode",
@@ -17,6 +19,7 @@
 	"litematica-creator.config.generic.name.selectNewDraftPlacement": "Select New Blank Placement",
 	"litematica-creator.config.generic.prettyName.debugLogging": "Debug Logging",
 	"litematica-creator.config.generic.prettyName.creatorEditRange": "Creator Edit Range",
+	"litematica-creator.config.generic.prettyName.airPlacementDistance": "Air Projection Placement Distance",
 	"litematica-creator.config.generic.prettyName.continuousPlaceIntervalTicks": "Continuous Projection Place Interval",
 	"litematica-creator.config.generic.prettyName.continuousBreakIntervalTicks": "Continuous Projection Break Interval",
 	"litematica-creator.config.generic.prettyName.enableCreatorMode": "Creator Mode",

@@ -9,7 +9,8 @@ record CreatorEditTarget(
         BlockPos clickedBlockPos,
         Direction side,
         Vec3 hitVec,
-        boolean schematicBlock)
+        boolean schematicBlock,
+        boolean airTarget)
 {
     CreatorEditTarget
     {
@@ -19,14 +20,15 @@ record CreatorEditTarget(
 
     CreatorEditTargetKey key()
     {
-        return new CreatorEditTargetKey(this.blockPos, this.clickedBlockPos, this.side, this.schematicBlock);
+        return new CreatorEditTargetKey(this.blockPos, this.clickedBlockPos, this.side, this.schematicBlock, this.airTarget);
     }
 
     record CreatorEditTargetKey(
             BlockPos blockPos,
             BlockPos clickedBlockPos,
             Direction side,
-            boolean schematicBlock)
+            boolean schematicBlock,
+            boolean airTarget)
     {
     }
 }

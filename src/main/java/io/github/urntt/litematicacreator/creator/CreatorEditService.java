@@ -4,8 +4,6 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.BlockItem;
@@ -15,7 +13,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.Vec3;
 
 import fi.dy.masa.litematica.mixin.entity.IMixinEntity;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
@@ -24,6 +21,7 @@ import fi.dy.masa.litematica.util.EntityUtils;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
+import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.event.CreatorClientTickHandler;
 import io.github.urntt.litematicacreator.gui.GuiFocusSwitcher;
 
@@ -259,7 +257,13 @@ public class CreatorEditService
                 EntityUtils.setEntityRotations(mc.player, camera.getYRot(), camera.getXRot());
             }
 
-            BlockPlaceContext context = new BlockPlaceContext(mc.player, hand, stack, hit);
+            CreatorPlacementBlockContext context = new CreatorPlacementBlockContext(mc.player, hand, stack, hit);
+
+            if (target.airTarget())
+            {
+                context.useClickedPosition();
+            }
+
             BlockState state = blockItem.getBlock().getStateForPlacement(context);
 
             if (state == null || state.isAir())
@@ -308,23 +312,44 @@ public class CreatorEditService
     {
         RayTraceWrapper trace = this.trace(mc);
 
-        if (trace == null || trace.getBlockHitResult() == null)
+        if (trace != null && trace.getBlockHitResult() != null)
+        {
+            BlockHitResult hit = trace.getBlockHitResult();
+
+            if (trace.getHitType() == RayTraceWrapper.HitType.SCHEMATIC_BLOCK)
+            {
+                return new CreatorEditTarget(hit.getBlockPos().relative(hit.getDirection()), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true, false);
+            }
+            else if (trace.getHitType() == RayTraceWrapper.HitType.VANILLA_BLOCK)
+            {
+                return new CreatorEditTarget(hit.getBlockPos().relative(hit.getDirection()), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), false, false);
+            }
+        }
+
+        Entity camera = CreatorCameraCompat.getCameraEntity();
+
+        if (camera == null)
         {
             return null;
         }
 
-        BlockHitResult hit = trace.getBlockHitResult();
-
-        if (trace.getHitType() == RayTraceWrapper.HitType.SCHEMATIC_BLOCK)
-        {
-            return new CreatorEditTarget(hit.getBlockPos().relative(hit.getDirection()), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true);
-        }
-        else if (trace.getHitType() == RayTraceWrapper.HitType.VANILLA_BLOCK)
-        {
-            return new CreatorEditTarget(hit.getBlockPos().relative(hit.getDirection()), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), false);
-        }
-
-        return null;
+        int distance = CreatorAirPlacementTarget.effectiveDistance(
+                Configs.Generic.AIR_PLACEMENT_DISTANCE.getIntegerValue(),
+                Configs.Generic.CREATOR_EDIT_RANGE.getIntegerValue()
+        );
+        CreatorAirPlacementTarget.Target airTarget = CreatorAirPlacementTarget.resolve(
+                camera.getEyePosition(1.0F),
+                camera.getViewVector(1.0F),
+                distance
+        );
+        return new CreatorEditTarget(
+                airTarget.blockPos(),
+                airTarget.blockPos(),
+                airTarget.side(),
+                airTarget.hitPosition(),
+                false,
+                true
+        );
     }
 
     @Nullable
@@ -338,7 +363,7 @@ public class CreatorEditService
         }
 
         BlockHitResult hit = trace.getBlockHitResult();
-        return new CreatorEditTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true);
+        return new CreatorEditTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true, false);
     }
 
     @Nullable
@@ -355,11 +380,11 @@ public class CreatorEditService
 
         if (trace.getHitType() == RayTraceWrapper.HitType.SCHEMATIC_BLOCK)
         {
-            return new CreatorEditTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true);
+            return new CreatorEditTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true, false);
         }
         else if (trace.getHitType() == RayTraceWrapper.HitType.VANILLA_BLOCK)
         {
-            return new CreatorEditTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), false);
+            return new CreatorEditTarget(hit.getBlockPos(), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), false, false);
         }
 
         return null;
@@ -444,6 +469,23 @@ public class CreatorEditService
             boolean replaceable = targetState.canBeReplaced(this);
             this.replaceClicked = replaceable;
             return replaceable;
+        }
+    }
+
+    private static class CreatorPlacementBlockContext extends BlockPlaceContext
+    {
+        private CreatorPlacementBlockContext(
+                net.minecraft.world.entity.player.Player player,
+                InteractionHand hand,
+                ItemStack stack,
+                BlockHitResult hit)
+        {
+            super(player, hand, stack, hit);
+        }
+
+        private void useClickedPosition()
+        {
+            this.replaceClicked = true;
         }
     }
 }

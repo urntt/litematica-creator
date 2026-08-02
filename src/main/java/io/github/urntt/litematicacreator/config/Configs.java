@@ -45,6 +45,12 @@ public class Configs implements IConfigHandler
                 CreatorConfigDefaults.CREATOR_EDIT_RANGE_MIN,
                 CreatorConfigDefaults.CREATOR_EDIT_RANGE_MAX
         ).apply(GENERIC_KEY);
+        public static final ConfigInteger AIR_PLACEMENT_DISTANCE = new ConfigInteger(
+                "airPlacementDistance",
+                CreatorConfigDefaults.AIR_PLACEMENT_DISTANCE,
+                CreatorConfigDefaults.AIR_PLACEMENT_DISTANCE_MIN,
+                CreatorConfigDefaults.AIR_PLACEMENT_DISTANCE_MAX
+        ).apply(GENERIC_KEY);
         public static final ConfigInteger CONTINUOUS_PLACE_INTERVAL_TICKS = new ConfigInteger(
                 "continuousPlaceIntervalTicks",
                 CreatorConfigDefaults.CONTINUOUS_PLACE_INTERVAL_TICKS,
@@ -65,6 +71,7 @@ public class Configs implements IConfigHandler
                 HIDE_SUBREGION_BOXES_IN_CREATOR_MODE,
                 OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY,
                 CREATOR_EDIT_RANGE,
+                AIR_PLACEMENT_DISTANCE,
                 CONTINUOUS_PLACE_INTERVAL_TICKS,
                 CONTINUOUS_BREAK_INTERVAL_TICKS
         );
