@@ -230,6 +230,12 @@
 - #56 `ignoreCreatorCameraEntityPlacementCollision` 默认关闭。默认 placement preflight 使用最终投影状态在 schematic world 中计算原版碰撞形状，以真实客户端世界检查本体和其他阻挡放置的实体，并额外检查未注册的相机替身；开启后跳过这层实体占位检查。
 - 单元测试覆盖相机模式联动、默认配置、双 render state 去重决策和实体放置碰撞决策；开发客户端已完成 Fabric/Mixin 初始化及资源加载验证。
 
+## Creator Camera 紧急崩溃修复（#57）
+
+- Minecraft 26.2 的 `Entity.getId()` 会在实体尚未分配 ID 时抛出 `IllegalStateException`。Creator 相机刻意不注册到 `ClientLevel` 实体列表，因此 #51 新增的替身 render-state 提取在进入 Creator 模式后的首个渲染帧触发了该检查。
+- `CreatorCameraEntity` 现在于构造时显式取得固定的非零负数客户端 ID。该 ID 只满足渲染状态提取和去重，不把相机加入世界实体索引，也不改变服务端同步、碰撞或生命周期语义。
+- 回归测试锁定客户端相机 ID 必须非零且位于服务端正常分配范围之外；完整测试、构建及开发客户端 Fabric/Mixin 初始化均已通过。
+
 ## 配套工作
 
 - Creator 的完成编辑/卸载命令已与 Litematica 原生导出和 selected-placement 行为分离。

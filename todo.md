@@ -53,6 +53,7 @@
 - [x] #54 Creator 相机遵循原版自动跳跃设置
 - [x] #55 可配置的 Creator 相机投影碰撞
 - [x] #56 可配置的 Creator 相机实体放置碰撞忽略
+- [x] #57 进入 Creator 模式时未注册相机实体缺少 ID 导致崩溃
 - [x] Creator 与 Litematica 的完成编辑/卸载命令边界
 - [x] 坐标、目标解析和稀疏 region 核心单元测试
 - [x] Focus、稀疏 subregion 和生命周期设计文档同步
