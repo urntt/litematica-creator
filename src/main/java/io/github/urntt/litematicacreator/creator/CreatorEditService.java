@@ -30,10 +30,8 @@ import io.github.urntt.litematicacreator.gui.GuiFocusSwitcher;
 public class CreatorEditService
 {
     private static final CreatorEditService INSTANCE = new CreatorEditService();
-    private static final int PLACE_INTERVAL_TICKS = 4;
     private static final long NO_TARGET_MESSAGE_INTERVAL_MS = 1500L;
 
-    private long nextPlaceTick;
     private long lastNoTargetWarning;
 
     private CreatorEditService()
@@ -47,11 +45,10 @@ public class CreatorEditService
 
     public void resetTransientState()
     {
-        this.nextPlaceTick = 0L;
         this.lastNoTargetWarning = 0L;
     }
 
-    public boolean placeProjectionBlock()
+    public boolean placeProjectionBlock(boolean showWarnings)
     {
         Minecraft mc = Minecraft.getInstance();
 
@@ -60,18 +57,15 @@ public class CreatorEditService
             return false;
         }
 
-        if (!this.canPlaceNow())
-        {
-            return true;
-        }
-
-        this.nextPlaceTick = CreatorClientTickHandler.getClientTicks() + PLACE_INTERVAL_TICKS;
-
         @Nullable CreatorTarget target = this.getPlacementTarget(mc);
 
         if (target == null)
         {
-            this.showNoTargetWarningThrottled();
+            if (showWarnings)
+            {
+                this.showNoTargetWarningThrottled();
+            }
+
             return true;
         }
 
@@ -83,7 +77,11 @@ public class CreatorEditService
 
         if (heldItem == null)
         {
-            InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_block_selected");
+            if (showWarnings)
+            {
+                InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_block_selected");
+            }
+
             return true;
         }
 
@@ -106,7 +104,11 @@ public class CreatorEditService
 
         if (preflight.outcome() == PreflightOutcome.INVALID_STATE)
         {
-            InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_place_state");
+            if (showWarnings)
+            {
+                InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_place_state");
+            }
+
             return true;
         }
 
@@ -365,11 +367,6 @@ public class CreatorEditService
         }
 
         return canEdit;
-    }
-
-    private boolean canPlaceNow()
-    {
-        return CreatorClientTickHandler.getClientTicks() >= this.nextPlaceTick;
     }
 
     private void showNoTargetWarningThrottled()

@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import fi.dy.masa.malilib.interfaces.IClientTickHandler;
 import io.github.urntt.litematicacreator.LitematicaCreator;
 import io.github.urntt.litematicacreator.creator.CreatorCameraCompat;
+import io.github.urntt.litematicacreator.creator.CreatorEditGestureController;
 import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.recovery.CreatorRecoveryManager;
@@ -37,6 +38,7 @@ public class CreatorClientTickHandler implements IClientTickHandler
         }
 
         this.updateTweakerooFreeCameraCompatibility(mc);
+        CreatorEditGestureController.INSTANCE.onClientTick(mc, clientTicks);
         CreatorRecoveryManager.getInstance().onClientTick(mc, clientTicks);
     }
 

@@ -9,6 +9,7 @@ import fi.dy.masa.malilib.util.GuiUtils;
 import io.github.urntt.litematicacreator.Reference;
 import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.config.Hotkeys;
+import io.github.urntt.litematicacreator.creator.CreatorEditGestureController;
 import io.github.urntt.litematicacreator.creator.CreatorEditService;
 import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
@@ -57,6 +58,18 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
     public boolean onKeyInput(KeyEvent input, boolean eventKeyState)
     {
         Minecraft mc = Minecraft.getInstance();
+        boolean acceptsCreatorEdits = CreatorManager.getInstance().isCreatorModeEnabled() && GuiUtils.getCurrentScreen() == null;
+
+        if (mc.options.keyUse.matches(input))
+        {
+            CreatorEditGestureController.INSTANCE.onPlaceInput(eventKeyState, acceptsCreatorEdits);
+        }
+
+        if (mc.options.keyAttack.matches(input))
+        {
+            CreatorEditGestureController.INSTANCE.onBreakInput(eventKeyState, acceptsCreatorEdits);
+        }
+
         boolean swapOffhandKey = mc.options.keySwapOffhand.matches(input);
         boolean swapOffhandWasHeld = swapOffhandKey && this.swapOffhandKeyHeld && this.heldSwapOffhandKey == input.key();
 
@@ -123,6 +136,17 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
     public boolean onMouseClick(MouseButtonEvent click, boolean eventButtonState)
     {
         Minecraft mc = Minecraft.getInstance();
+        boolean acceptsCreatorEdits = CreatorManager.getInstance().isCreatorModeEnabled() && GuiUtils.getCurrentScreen() == null;
+
+        if (mc.options.keyUse.matchesMouse(click))
+        {
+            CreatorEditGestureController.INSTANCE.onPlaceInput(eventButtonState, acceptsCreatorEdits);
+        }
+
+        if (mc.options.keyAttack.matchesMouse(click))
+        {
+            CreatorEditGestureController.INSTANCE.onBreakInput(eventButtonState, acceptsCreatorEdits);
+        }
 
         if (!eventButtonState || !CreatorManager.getInstance().isCreatorModeEnabled() || GuiUtils.getCurrentScreen() != null)
         {

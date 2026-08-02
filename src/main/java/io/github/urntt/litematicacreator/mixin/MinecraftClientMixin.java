@@ -7,7 +7,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import io.github.urntt.litematicacreator.creator.CreatorEditService;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.recovery.CreatorRecoveryManager;
 
@@ -23,7 +22,7 @@ public abstract class MinecraftClientMixin
     @Inject(method = "startUseItem", at = @At("HEAD"), cancellable = true)
     private void litematicacreator$onStartUseItem(CallbackInfo ci)
     {
-        if (CreatorManager.getInstance().isCreatorModeEnabled() && CreatorEditService.getInstance().placeProjectionBlock())
+        if (CreatorManager.getInstance().isCreatorModeEnabled())
         {
             ci.cancel();
         }
@@ -34,8 +33,16 @@ public abstract class MinecraftClientMixin
     {
         if (CreatorManager.getInstance().isCreatorModeEnabled())
         {
-            CreatorEditService.getInstance().deleteProjectionBlock();
             cir.setReturnValue(true);
+        }
+    }
+
+    @Inject(method = "continueAttack", at = @At("HEAD"), cancellable = true)
+    private void litematicacreator$onContinueAttack(boolean leftClick, CallbackInfo ci)
+    {
+        if (CreatorManager.getInstance().isCreatorModeEnabled())
+        {
+            ci.cancel();
         }
     }
 }

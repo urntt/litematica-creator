@@ -7,6 +7,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 
 import fi.dy.masa.malilib.interfaces.IWorldLoadListener;
 import io.github.urntt.litematicacreator.creator.CreatorEditService;
+import io.github.urntt.litematicacreator.creator.CreatorEditGestureController;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.creator.CreatorPlacementIndex;
 import io.github.urntt.litematicacreator.recovery.CreatorRecoveryManager;
@@ -54,6 +55,7 @@ public class CreatorWorldLoadListener implements IWorldLoadListener
         CreatorManager manager = CreatorManager.getInstance();
         manager.setCreatorModeEnabled(false, false);
         manager.clearFocusSilently();
+        CreatorEditGestureController.INSTANCE.resetTransientState();
         CreatorEditService.getInstance().resetTransientState();
         CreatorClientTickHandler.INSTANCE.resetCompatibilityState();
     }
