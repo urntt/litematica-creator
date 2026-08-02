@@ -40,13 +40,11 @@ public class InitHandler implements IInitializationHandler
         );
         Configs.Generic.TRANSLATION_MODE.setValueChangeCallback(
                 cfg -> {
-                    Registry.TRANSLATION_OVERRIDE_MANAGER.registerLanguageMode(
-                            Reference.MOD_ID,
-                            (i18nMode) cfg.getOptionListValue()
-                    );
-                    Configs.checkBaseLanguage();
-                    this.refreshCurrentCreatorConfigGui();
+                    this.applyTranslationConfigChange();
                 }
+        );
+        Configs.Generic.TRANSLATION_LANGUAGE.setValueChangeCallback(
+                cfg -> this.applyTranslationConfigChange()
         );
         Configs.Generic.ENABLE_CREATOR_MODE.setValueChangeCallback(
                 cfg -> CreatorManager.getInstance().setCreatorModeEnabled(cfg.getBooleanValue(), false)
@@ -69,6 +67,14 @@ public class InitHandler implements IInitializationHandler
         if (GuiUtils.getCurrentScreen() instanceof GuiConfigs gui)
         {
             gui.requestRefresh();
+        }
+    }
+
+    private void applyTranslationConfigChange()
+    {
+        if (Configs.applyTranslationSettings())
+        {
+            this.refreshCurrentCreatorConfigGui();
         }
     }
 }

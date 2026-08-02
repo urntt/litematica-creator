@@ -2,7 +2,6 @@ package io.github.urntt.litematicacreator.config;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonElement;
@@ -27,6 +26,7 @@ public class Configs implements IConfigHandler
 {
     private static final String CONFIG_FILE_NAME = Reference.MOD_ID + ".json";
     public static final Optional<i18nManager> LANG = Optional.ofNullable(i18nManager.create(Reference.MOD_ID));
+    private static final CreatorTranslationApplyGate TRANSLATION_APPLY_GATE = new CreatorTranslationApplyGate();
 
     private static final String GENERIC_KEY = Reference.MOD_ID + ".config.generic";
 
@@ -76,24 +76,33 @@ public class Configs implements IConfigHandler
     {
         Path configFile = FileUtils.getConfigDirectory().resolve(CONFIG_FILE_NAME);
 
-        if (Files.exists(configFile) && Files.isReadable(configFile))
-        {
-            JsonElement element = JsonUtils.parseJsonFile(configFile);
+        TRANSLATION_APPLY_GATE.beginLoading();
 
-            if (element != null && element.isJsonObject())
+        try
+        {
+            if (Files.exists(configFile) && Files.isReadable(configFile))
             {
-                JsonObject root = element.getAsJsonObject();
-                ConfigUtils.readConfigBase(root, "Generic", Generic.OPTIONS);
-                ConfigUtils.readConfigBase(root, "Hotkeys", Hotkeys.HOTKEY_LIST);
-                LitematicaCreator.debugLog("Loaded config file '{}'.", configFile.toAbsolutePath());
-            }
-            else
-            {
-                LitematicaCreator.LOGGER.error("Failed to load config file '{}'.", configFile.toAbsolutePath());
+                JsonElement element = JsonUtils.parseJsonFile(configFile);
+
+                if (element != null && element.isJsonObject())
+                {
+                    JsonObject root = element.getAsJsonObject();
+                    ConfigUtils.readConfigBase(root, "Generic", Generic.OPTIONS);
+                    ConfigUtils.readConfigBase(root, "Hotkeys", Hotkeys.HOTKEY_LIST);
+                    LitematicaCreator.debugLog("Loaded config file '{}'.", configFile.toAbsolutePath());
+                }
+                else
+                {
+                    LitematicaCreator.LOGGER.error("Failed to load config file '{}'.", configFile.toAbsolutePath());
+                }
             }
         }
+        finally
+        {
+            TRANSLATION_APPLY_GATE.endLoading();
+        }
 
-        checkBaseLanguage();
+        applyTranslationSettings();
     }
 
     public static void saveToFile()
@@ -133,43 +142,51 @@ public class Configs implements IConfigHandler
     @Override
     public void onLanguageChanged(String newLang)
     {
-        checkBaseLanguage();
+        applyTranslationSettings();
     }
 
-    public static void checkBaseLanguage()
+    public static boolean applyTranslationSettings()
     {
-        i18nMode mode = (i18nMode) Generic.TRANSLATION_MODE.getOptionListValue();
-
-        if (mode == i18nMode.FOLLOW_MALILIB)
+        if (!TRANSLATION_APPLY_GATE.beginApplying())
         {
-            LANG.ifPresent(i18nManager -> setLanguageIfAvailable(i18nManager, Registry.TRANSLATION_OVERRIDE_MANAGER.getBaseLanguageCode()));
+            return false;
         }
-        else if (mode == i18nMode.FOLLOW_VANILLA)
+
+        try
         {
-            LANG.ifPresent(i18nManager -> setLanguageIfAvailable(i18nManager, Registry.TRANSLATION_OVERRIDE_MANAGER.getVanillaLanguageCode()));
+            i18nMode mode = (i18nMode) Generic.TRANSLATION_MODE.getOptionListValue();
+            String configuredLanguage = Generic.TRANSLATION_LANGUAGE.getOptionListValue().getStringValue();
+            String vanillaLanguage = mode == i18nMode.FOLLOW_VANILLA ?
+                    Registry.TRANSLATION_OVERRIDE_MANAGER.getVanillaLanguageCode() : configuredLanguage;
+            String malilibLanguage = mode == i18nMode.FOLLOW_MALILIB ?
+                    Registry.TRANSLATION_OVERRIDE_MANAGER.getBaseLanguageCode() : configuredLanguage;
+            Registry.TRANSLATION_OVERRIDE_MANAGER.registerLanguageMode(Reference.MOD_ID, mode);
+            LANG.ifPresent(manager -> CreatorTranslationPolicy.requestedLanguage(
+                    mode,
+                    configuredLanguage,
+                    vanillaLanguage,
+                    malilibLanguage
+            ).ifPresent(language -> setLanguageIfAvailable(manager, language)));
+            return true;
+        }
+        finally
+        {
+            TRANSLATION_APPLY_GATE.endApplying();
         }
     }
 
     private static void setLanguageIfAvailable(i18nManager manager, String languageCode)
     {
-        if (manager.getLang().getLangCode().equalsIgnoreCase(languageCode))
+        String resolvedLanguage = CreatorTranslationPolicy.resolveAvailableLanguage(
+                languageCode,
+                manager.getDefaultLang().getLangCode(),
+                manager.getLanguageOptions().stream().map(i18nOption::getKey).toList()
+        );
+        manager.setLang(resolvedLanguage);
+
+        if (!Generic.TRANSLATION_LANGUAGE.getOptionListValue().getStringValue().equalsIgnoreCase(resolvedLanguage))
         {
-            return;
+            Generic.TRANSLATION_LANGUAGE.setOptionListValue(new CreatorI18nConfig(manager));
         }
-
-        List<i18nOption> list = manager.getLanguageOptions();
-
-        for (i18nOption entry : list)
-        {
-            if (entry.getKey().equalsIgnoreCase(languageCode))
-            {
-                manager.setLang(languageCode);
-                Generic.TRANSLATION_LANGUAGE.setOptionListValue(new CreatorI18nConfig(manager).fromString(languageCode));
-                return;
-            }
-        }
-
-        manager.resetLangToDefault();
-        Generic.TRANSLATION_LANGUAGE.resetToDefault();
     }
 }
