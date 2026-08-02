@@ -148,6 +148,21 @@
 - 第三人称只替换本地玩家 `AvatarRenderState` 中的主副手、左右主手映射、手臂姿势和四件盔甲；其他玩家始终使用真实同步状态。
 - 虚拟盔甲仅进入渲染快照，不修改真实装备、属性、护甲值、耐久、HUD 护甲条或服务器状态；退出 Creator 模式后所有读取自动恢复真实物品。
 
+## Creator 目标轮廓与编辑距离（#12、#23）
+
+- `creatorEditRange` 为统一的 Creator 目标距离配置，默认 10 格、允许 1–128 格；放置、删除、pick block 和投影选中框均通过同一 `CreatorTargeting` 使用 Creator camera 与 Litematica 通用射线。
+- Minecraft 26.2 的 `LevelExtractor.extractBlockOutline()` 完成原版轮廓提取后，Creator 只在最近命中为有效、启用且已索引的投影方块时替换 `BlockOutlineRenderState`，因此后方真实方块不会再显示穿透轮廓。
+- 投影轮廓使用 schematic world 中状态的实际 `VoxelShape`、模型半透明标志、高对比度选项以及 debug collision/occlusion/interaction shapes；台阶、栅栏等非完整方块保持原版形状。
+- Creator 关闭、GUI 打开、真实方块更近、placement 隐藏或禁用、投影状态为空时均保留原版轮廓行为；重叠 placement 的交互选择逻辑仍由 Focus Switcher 负责。
+- 单元测试覆盖编辑距离默认值与边界，以及 Creator 世界视图和有效投影目标的轮廓启用条件。
+
+## 独立翻译模式（#19）
+
+- 翻译模式和翻译语言共用统一应用入口：独立模式使用 `translationLanguage`，跟随模式解析原版或 MaLiLib 语言并在缺失时回退默认语言，关闭模式保留当前 manager 与所选语言但停用覆盖。
+- 配置加载期间抑制语言与模式回调，全部字段读取完成后再应用最终状态，避免 `translationLanguage` 先于 `translationMode` 反序列化时覆盖独立语言。
+- `CreatorI18nConfig` 的循环和反序列化返回新的配置 entry，不再原地修改 MaLiLib 默认对象；语言变化因此能被 `ConfigOptionList` 识别，并即时刷新当前 Creator 设置界面。
+- 单元测试覆盖四种模式的语言来源、大小写匹配、缺失语言回退、语言循环及加载/重入回调抑制。
+
 ## 本地编辑动作反馈（#25）
 
 - 只有 `CreatorSchematicEditor.setBlockState()` 确认实际修改成功后才挥手；放置使用本次解析到的虚拟主手或副手，删除使用主手。

@@ -15,12 +15,15 @@
 - [x] #9 Creator HUD 使用虚拟快捷栏和副手
 - [x] #10 placement 移动后投影方块编辑位置异常
 - [x] #11 稀疏草稿中未编辑位置被声明为空气
+- [x] #12 投影方块使用原版式选中框
 - [x] #13 Tweakeroo `freeCameraPlayerInputs` 兼容处理时机
 - [x] #14 面向空气放置时提示刷屏
 - [x] #15 长按放置的固定间隔
 - [x] #16 Creator 模式下真实破坏阻断
 - [x] #17 退出 Creator 模式后的异常交互阻断
 - [x] #18 未保存 schematic 的 recovery cache
+- [x] #19 独立翻译模式正确应用所选语言
+- [x] #23 可配置的 Creator 投影编辑距离
 - [x] #24 第一/第三人称使用虚拟手持与虚拟装备渲染
 - [x] #25 成功编辑投影时播放本地手部动画
 - [x] #31 退出世界时关闭 Creator 模式
@@ -62,17 +65,6 @@
   - 复现矩阵：Creator cell/普通多方块 region、同区块/跨区块、玩家与目标位于同一/相邻区块、单 placement/同 schematic 多 placement、单击/快速连续删除、`loadEntireSchematics` 开启/关闭。
   - 验收：上述组合中删除只更新实际受影响的投影内容，不会令区块内其他投影暂时消失；跨区块和多 placement 变换后也不遗留旧渲染。
 
-- [ ] #12 面向投影方块时选中框穿透到真实方块
-  - Creator 模式下使用 Creator/Litematica trace 结果渲染目标框。
-  - 投影方块是有效目标时抑制原版真实方块选中框。
-  - 验收：面向 Creator 投影方块时，选中框只显示在该投影方块上。
-
-- [ ] #23 投影方块触及/交互距离不可调
-  - 将 `CreatorEditService.EDIT_RANGE` 改为配置项。
-  - 建议默认 10 格，允许范围 1-128 格。
-  - 放置、删除、pick block、交互和后续 Creator camera 复用同一配置。
-  - 验收：修改配置后，所有 Creator 编辑操作的有效距离同步变化。
-
 ## 虚拟物品栏与输入
 
 - [!] #41 后期兼容或模仿 Inventory Profiles Next / ItemScroller
@@ -80,13 +72,6 @@
   - 先按目标版本调查两者可用的公开接口、screen/menu 识别方式和 mixin 注入点，再决定采用显式兼容适配器还是只复刻高价值行为。
   - 候选行为包括排序、同类物品移动、滚轮搬运、拖拽搬运和快捷栏补充；所有结果必须只写虚拟物品栏。
   - 验收：兼容功能不修改真实背包、不发送 container packet，并在未安装第三方模组时保持当前行为。
-
-## 本地化
-
-- [ ] #19 独立翻译模式不切换语言
-  - `translationMode=INDEPENDENT` 时，将 `translationLanguage` 直接应用到 Creator i18n manager。
-  - 保存并重新加载配置后保留独立语言。
-  - 验收：不改变 Minecraft 或 MaLiLib 语言时，Creator 设置文本可以独立切换语言。
 
 ## Creator Camera
 
