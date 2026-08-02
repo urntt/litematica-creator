@@ -79,6 +79,22 @@ final class CreatorInventorySlotPolicy
         return selected;
     }
 
+    static boolean swapSelectedWithOffhand(ItemStack[] stacks, int selectedHotbarSlot)
+    {
+        int selected = Math.floorMod(selectedHotbarSlot, CreatorInventory.HOTBAR_SIZE);
+        ItemStack hotbarStack = stacks[selected];
+        ItemStack offhandStack = stacks[CreatorInventory.OFFHAND_SLOT];
+
+        if (ItemStack.matches(hotbarStack, offhandStack))
+        {
+            return false;
+        }
+
+        stacks[selected] = offhandStack;
+        stacks[CreatorInventory.OFFHAND_SLOT] = hotbarStack;
+        return true;
+    }
+
     private static int findMatchingStorageSlot(ItemStack[] stacks, ItemStack picked)
     {
         for (int slot = 0; slot < CreatorInventory.OFFHAND_SLOT; ++slot)

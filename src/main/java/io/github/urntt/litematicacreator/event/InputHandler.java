@@ -20,6 +20,10 @@ import net.minecraft.client.input.MouseButtonEvent;
 public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IMouseInputHandler
 {
     private static final InputHandler INSTANCE = new InputHandler();
+    private static final int NO_HELD_KEY = Integer.MIN_VALUE;
+
+    private boolean swapOffhandKeyHeld;
+    private int heldSwapOffhandKey = NO_HELD_KEY;
 
     private InputHandler()
     {
@@ -53,23 +57,62 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
     public boolean onKeyInput(KeyEvent input, boolean eventKeyState)
     {
         Minecraft mc = Minecraft.getInstance();
+        boolean swapOffhandKey = mc.options.keySwapOffhand.matches(input);
+        boolean swapOffhandWasHeld = swapOffhandKey && this.swapOffhandKeyHeld && this.heldSwapOffhandKey == input.key();
 
-        if (eventKeyState && CreatorManager.getInstance().isCreatorModeEnabled() && GuiUtils.getCurrentScreen() == null)
+        if (swapOffhandKey)
         {
-            if (Configs.Generic.OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY.getBooleanValue() &&
+            this.swapOffhandKeyHeld = eventKeyState;
+            this.heldSwapOffhandKey = eventKeyState ? input.key() : NO_HELD_KEY;
+        }
+
+        if (CreatorManager.getInstance().isCreatorModeEnabled() && GuiUtils.getCurrentScreen() == null)
+        {
+            if (eventKeyState && Configs.Generic.OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY.getBooleanValue() &&
                 mc.options.keyInventory.matches(input))
             {
                 GuiCreatorInventory.openFromHotkey();
                 return true;
             }
 
-            for (int i = 0; i < mc.options.keyHotbarSlots.length; ++i)
+            if (swapOffhandKey)
             {
-                if (mc.options.keyHotbarSlots[i].matches(input))
+                if (shouldSwapOffhand(eventKeyState, swapOffhandWasHeld, isActiveCreatorHotkey(input.key())))
                 {
-                    CreatorInventory.getInstance().setSelectedHotbarSlot(i);
-                    return true;
+                    CreatorInventory.getInstance().swapSelectedWithOffhand();
                 }
+
+                return eventKeyState;
+            }
+
+            if (eventKeyState)
+            {
+                for (int i = 0; i < mc.options.keyHotbarSlots.length; ++i)
+                {
+                    if (mc.options.keyHotbarSlots[i].matches(input))
+                    {
+                        CreatorInventory.getInstance().setSelectedHotbarSlot(i);
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    static boolean shouldSwapOffhand(boolean eventKeyState, boolean wasHeld, boolean creatorHotkeyActive)
+    {
+        return eventKeyState && !wasHeld && !creatorHotkeyActive;
+    }
+
+    private static boolean isActiveCreatorHotkey(int keyCode)
+    {
+        for (IHotkey hotkey : Hotkeys.HOTKEY_LIST)
+        {
+            if (hotkey.getKeybind().isKeybindHeld() && hotkey.getKeybind().getKeys().contains(keyCode))
+            {
+                return true;
             }
         }
 

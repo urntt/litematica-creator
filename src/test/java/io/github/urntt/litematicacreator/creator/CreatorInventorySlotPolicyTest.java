@@ -18,6 +18,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CreatorInventorySlotPolicyTest
 {
@@ -152,6 +155,28 @@ class CreatorInventorySlotPolicyTest
 
         assertEquals(6, CreatorInventorySlotPolicy.findFirstEmptyHotbarSlot(stacks, 6));
         assertEquals(-1, CreatorInventorySlotPolicy.findFirstEmptyHotbarSlot(fullHotbar(), 6));
+    }
+
+    @Test
+    void swapsSelectedHotbarSlotWithOffhand()
+    {
+        ItemStack[] stacks = emptyStacks();
+        ItemStack hotbarStack = new ItemStack(Items.STONE, 12);
+        ItemStack offhandStack = new ItemStack(Items.DIRT, 37);
+        stacks[4] = hotbarStack;
+        stacks[CreatorInventory.OFFHAND_SLOT] = offhandStack;
+
+        assertTrue(CreatorInventorySlotPolicy.swapSelectedWithOffhand(stacks, 13));
+        assertSame(offhandStack, stacks[4]);
+        assertSame(hotbarStack, stacks[CreatorInventory.OFFHAND_SLOT]);
+    }
+
+    @Test
+    void identicalHandsDoNotCreateAChange()
+    {
+        ItemStack[] stacks = emptyStacks();
+
+        assertFalse(CreatorInventorySlotPolicy.swapSelectedWithOffhand(stacks, 0));
     }
 
     private static ItemStack[] emptyStacks()

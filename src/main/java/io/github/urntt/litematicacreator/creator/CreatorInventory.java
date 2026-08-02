@@ -88,6 +88,17 @@ public class CreatorInventory
         return this.isValidSlot(slot) ? this.stacks[slot].copy() : ItemStack.EMPTY;
     }
 
+    public void swapSelectedWithOffhand()
+    {
+        this.runTransaction(() ->
+        {
+            if (CreatorInventorySlotPolicy.swapSelectedWithOffhand(this.stacks, this.selectedHotbarSlot))
+            {
+                this.markChanged();
+            }
+        });
+    }
+
     public void setStack(int slot, ItemStack stack)
     {
         if (!this.isValidSlot(slot))
