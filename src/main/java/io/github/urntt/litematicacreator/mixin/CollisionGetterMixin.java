@@ -17,7 +17,7 @@ import io.github.urntt.litematicacreator.camera.CreatorCameraEntity;
 import io.github.urntt.litematicacreator.camera.CreatorProjectionCollisions;
 
 @Mixin(CollisionGetter.class)
-public abstract class CollisionGetterMixin
+public interface CollisionGetterMixin
 {
     @Inject(method = "getBlockCollisions", at = @At("RETURN"), cancellable = true)
     private void litematicacreator$appendProjectionCollisions(
