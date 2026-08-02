@@ -178,6 +178,20 @@
 - 两参数非广播 swing 只更新本地动画，不调用 `LocalPlayer.swing(hand)` 的发包路径；投影交互动画留待 #29。
 - 单元测试覆盖配置迁移与完整 ItemStack 往返、搜索合并和文本匹配、左右主手及盔甲位映射，以及成功/失败编辑的反馈决策。
 
+## 连续放置与持续破坏（#21）
+
+- Creator 的放置与删除输入统一由 client tick 手势控制器执行；原始键鼠事件只锁存 fresh press 和释放状态，Minecraft 的 `startUseItem()`、`startAttack()` 与 `continueAttack()` 在 Creator 模式下只负责阻断原版路径。
+- 输入锁存保留同一 tick 内快速按下后立即释放的点击，忽略键盘重复 press；打开 GUI、退出 Creator、切换世界或失去玩家/世界会清空手势，仍按住的按键必须释放后才能重新开始。
+- `placementRepeatMode` 提供 `fixed` 与 `accurate` 两种模式，默认 `fixed`；`placementRepeatIntervalTicks` 默认 4、范围 1–20，同时作为固定重复间隔和 Accurate 首次冷却。
+- Fixed 模式首次按下立即尝试，长按后按配置间隔重新射线；重复阶段的无目标和占用阻断保持静默。
+- Accurate 模式首次按下立即尝试并清空历史；首次冷却内按首次出现顺序去重保存新目标，冷却后的第一个新目标会触发 FIFO backfill 和当前目标，然后解除冷却，后续未处理的新目标立即执行。
+- Accurate 不使用鼠标距离或相机角度绕过首次冷却。目标身份由最终写入位置、命中位置、命中面和真实/投影来源共同组成，同一手势内已经处理或排队的身份不会重复执行。
+- Backfill 只保存目标几何快照；每次执行都会重新解析 placement、focus、重叠和占用，并读取当时的虚拟主手/副手方块。切换虚拟物品不会重置或改写队列。
+- 普通 blocked/no-op 目标会跳过并继续剩余队列；重叠 placement 会打开 Focus Switcher、终止队列并要求松键后重新开始。
+- `continuousBreakIntervalTicks` 默认 4、范围 1–20。攻击 fresh press 立即删除当前投影，长按时按间隔重新射线并只处理变化后的目标；删除后可继续命中并删除后方投影。
+- 每次实际修改继续走 focus、metadata、recovery 和最小区块刷新，并播放本地手部动画；无目标不提示，真实攻击、放置和交互路径仍被阻断且不发送相关服务端包。
+- 单元测试覆盖 1/4/20 tick、快速点按、键盘重复、释放和中断重新武装、Accurate FIFO 去重与解锁、目标暂时消失、执行时上下文、blocked 继续、overlap 中止，以及持续删除的目标推进和相同目标抑制。
+
 ## 配套工作
 
 - Creator 的完成编辑/卸载命令已与 Litematica 原生导出和 selected-placement 行为分离。
