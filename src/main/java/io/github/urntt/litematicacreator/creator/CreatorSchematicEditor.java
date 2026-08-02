@@ -2,12 +2,15 @@ package io.github.urntt.litematicacreator.creator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.Blocks;
@@ -19,12 +22,14 @@ import fi.dy.masa.litematica.schematic.SchematicMetadata;
 import fi.dy.masa.litematica.schematic.container.LitematicaBlockStateContainer;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacementEventHandler;
+import fi.dy.masa.litematica.schematic.placement.SchematicPlacementManager;
 import fi.dy.masa.litematica.schematic.placement.SubRegionPlacement;
 import fi.dy.masa.litematica.schematic.placement.SubRegionPlacement.RequiredEnabled;
 import fi.dy.masa.litematica.selection.Box;
 import fi.dy.masa.litematica.util.SchematicUtils;
 import io.github.urntt.litematicacreator.mixin.LitematicaSchematicAccessor;
 import io.github.urntt.litematicacreator.mixin.SchematicPlacementAccessor;
+import io.github.urntt.litematicacreator.mixin.SchematicPlacementManagerAccessor;
 import io.github.urntt.litematicacreator.recovery.CreatorRecoveryManager;
 
 public final class CreatorSchematicEditor
@@ -96,7 +101,7 @@ public final class CreatorSchematicEditor
         else
         {
             markModified(schematic);
-            rebuildAllPlacements(schematic);
+            rebuildChangedBlock(schematic, regionName, containerPos, placementsFor(schematic, placement));
         }
 
         return true;
@@ -168,16 +173,8 @@ public final class CreatorSchematicEditor
         );
         String regionName = uniqueCellRegionName(schematic, relativePos);
         LitematicaBlockStateContainer container = new LitematicaBlockStateContainer(1, 1, 1);
-        List<SchematicPlacement> placements = new ArrayList<>();
-        placements.add(editedPlacement);
-
-        for (SchematicPlacement placement : DataManager.getSchematicPlacementManager().getAllPlacementsOfSchematic(schematic))
-        {
-            if (placement != editedPlacement)
-            {
-                placements.add(placement);
-            }
-        }
+        List<SchematicPlacement> placements = placementsFor(schematic, editedPlacement);
+        Map<SchematicPlacement, Set<ChunkPos>> oldChunks = snapshotTouchedChunks(placements);
 
         schematicAccessor.litematicacreator$getBlockContainers().put(regionName, container);
         schematicAccessor.litematicacreator$getTileEntities().put(regionName, new HashMap<>());
@@ -189,21 +186,15 @@ public final class CreatorSchematicEditor
 
         for (SchematicPlacement placement : placements)
         {
-            SchematicPlacementEventHandler.getInstance().invokePrePlacementChange(CreatorPlacementIndex.INSTANCE, placement);
             SchematicPlacementAccessor placementAccessor = (SchematicPlacementAccessor) placement;
             placementAccessor.litematicacreator$getRelativeSubRegionPlacements().put(regionName, new SubRegionPlacement(relativePos, regionName));
             placementAccessor.litematicacreator$setSubRegionCount(schematic.getSubRegionCount());
-
-            if (placement == editedPlacement)
-            {
-                container.set(0, 0, 0, SchematicUtils.getUntransformedBlockState(worldState, editedPlacement, regionName));
-            }
-
-            SchematicPlacementEventHandler.getInstance().invokePlacementModified(CreatorPlacementIndex.INSTANCE, placement);
         }
 
+        container.set(0, 0, 0, SchematicUtils.getUntransformedBlockState(worldState, editedPlacement, regionName));
         schematic.getMetadata().setTotalBlocks(Math.max(0, schematic.getMetadata().getTotalBlocks()) + 1);
         refreshGeometryMetadata(schematic);
+        publishPlacementChanges(placements, oldChunks);
         markModified(schematic);
     }
 
@@ -211,22 +202,7 @@ public final class CreatorSchematicEditor
     {
         LitematicaSchematicAccessor schematicAccessor = (LitematicaSchematicAccessor) schematic;
         List<SchematicPlacement> placements = List.copyOf(DataManager.getSchematicPlacementManager().getAllPlacementsOfSchematic(schematic));
-        int remainingRegionCount = Math.max(0, schematic.getSubRegionCount() - 1);
-
-        for (SchematicPlacement placement : placements)
-        {
-            SchematicPlacementEventHandler.getInstance().invokePrePlacementChange(CreatorPlacementIndex.INSTANCE, placement);
-            SchematicPlacementAccessor placementAccessor = (SchematicPlacementAccessor) placement;
-            placementAccessor.litematicacreator$getRelativeSubRegionPlacements().remove(regionName);
-            placementAccessor.litematicacreator$setSubRegionCount(remainingRegionCount);
-
-            if (remainingRegionCount == 0)
-            {
-                placementAccessor.litematicacreator$setEnclosingBox(null);
-            }
-
-            SchematicPlacementEventHandler.getInstance().invokePlacementModified(CreatorPlacementIndex.INSTANCE, placement);
-        }
+        Map<SchematicPlacement, Set<ChunkPos>> oldChunks = snapshotTouchedChunks(placements);
 
         schematicAccessor.litematicacreator$getBlockContainers().remove(regionName);
         schematicAccessor.litematicacreator$getTileEntities().remove(regionName);
@@ -235,17 +211,84 @@ public final class CreatorSchematicEditor
         schematicAccessor.litematicacreator$getEntities().remove(regionName);
         schematicAccessor.litematicacreator$getSubRegionPositions().remove(regionName);
         schematicAccessor.litematicacreator$getSubRegionSizes().remove(regionName);
+        int remainingRegionCount = schematic.getSubRegionCount();
+
+        for (SchematicPlacement placement : placements)
+        {
+            SchematicPlacementAccessor placementAccessor = (SchematicPlacementAccessor) placement;
+            placementAccessor.litematicacreator$getRelativeSubRegionPlacements().remove(regionName);
+            placementAccessor.litematicacreator$setSubRegionCount(remainingRegionCount);
+
+            if (remainingRegionCount == 0)
+            {
+                placementAccessor.litematicacreator$setEnclosingBox(null);
+            }
+        }
 
         refreshGeometryMetadata(schematic);
+        publishPlacementChanges(placements, oldChunks);
         markModified(schematic);
     }
 
-    private static void rebuildAllPlacements(LitematicaSchematic schematic)
+    private static List<SchematicPlacement> placementsFor(
+            LitematicaSchematic schematic,
+            SchematicPlacement editedPlacement)
     {
+        List<SchematicPlacement> placements = new ArrayList<>();
+        placements.add(editedPlacement);
+
         for (SchematicPlacement placement : DataManager.getSchematicPlacementManager().getAllPlacementsOfSchematic(schematic))
         {
-            DataManager.getSchematicPlacementManager().markChunksForRebuild(placement);
+            if (placement != editedPlacement)
+            {
+                placements.add(placement);
+            }
         }
+
+        return List.copyOf(placements);
+    }
+
+    private static Map<SchematicPlacement, Set<ChunkPos>> snapshotTouchedChunks(List<SchematicPlacement> placements)
+    {
+        Map<SchematicPlacement, Set<ChunkPos>> chunks = new IdentityHashMap<>();
+
+        for (SchematicPlacement placement : placements)
+        {
+            chunks.put(placement, Set.copyOf(placement.getTouchedChunks(RequiredEnabled.PLACEMENT_ENABLED)));
+        }
+
+        return chunks;
+    }
+
+    private static Map<SchematicPlacement, Set<ChunkPos>> publishPlacementChanges(
+            List<SchematicPlacement> placements,
+            Map<SchematicPlacement, Set<ChunkPos>> oldChunks)
+    {
+        SchematicPlacementManager manager = DataManager.getSchematicPlacementManager();
+        Set<ChunkPos> preChange = ((SchematicPlacementManagerAccessor) manager).litematicacreator$getChunksPreChange();
+        SchematicPlacementEventHandler events = SchematicPlacementEventHandler.getInstance();
+
+        for (SchematicPlacement placement : placements)
+        {
+            preChange.clear();
+            preChange.addAll(oldChunks.getOrDefault(placement, Set.of()));
+            events.invokePlacementModified(CreatorPlacementIndex.INSTANCE, placement);
+        }
+
+        preChange.clear();
+        return snapshotTouchedChunks(placements);
+    }
+
+    private static Set<ChunkPos> rebuildChangedBlock(
+            LitematicaSchematic schematic,
+            String regionName,
+            BlockPos containerPos,
+            List<SchematicPlacement> placements)
+    {
+        Set<ChunkPos> chunks = CreatorChunkRefreshPlan.forBlockChange(schematic, regionName, containerPos, placements);
+        SchematicPlacementManager manager = DataManager.getSchematicPlacementManager();
+        chunks.forEach(manager::markChunkForRebuild);
+        return chunks;
     }
 
     private static void refreshGeometryMetadata(LitematicaSchematic schematic)

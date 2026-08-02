@@ -15,7 +15,8 @@
 		"MultiPlayerGameModeMixin",
 		"OverlayRendererMixin",
 		"SchematicPlacementMixin",
-		"SchematicPlacementAccessor"
+		"SchematicPlacementAccessor",
+		"SchematicPlacementManagerAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1
