@@ -209,14 +209,26 @@
 
 ## Creator Camera（#20）
 
-- Creator 模式开启时会从当前 camera entity 的位置、朝向、姿态和落地状态创建未注册到世界实体列表的纯客户端 `CreatorCameraEntity`；从真实玩家接管时默认地面模式，从已有独立相机接管时默认飞行。
+- Creator 模式开启时会从当前 camera entity 的位置和朝向创建未注册到世界实体列表的纯客户端 `CreatorCameraEntity`；从真实玩家接管时默认地面模式，从已有独立相机接管时默认飞行。
 - 地面模式复用 `LocalPlayer` 的原版输入与移动物理，包括重力、跳跃、潜行、疾跑、台阶、液体和梯子；双击空格切换飞行，飞行时启用 `noPhysics` 并可穿过方块。地面与飞行速度倍率均可在 `0.1–5.0` 间即时调整，默认 `1.0`。
-- 相机不执行会发送移动状态的 `LocalPlayer.tick()`，并屏蔽 abilities、骑乘和鞘翅等发包入口。真实本地玩家在会话期间使用空输入、停止本地移动与鼠标转向且不作为 controlled camera，服务端位置校正仍可正常写回真实玩家。
+- 相机不执行会发送移动状态的 `LocalPlayer.tick()`，并屏蔽 abilities、骑乘和鞘翅等发包入口。真实本地玩家在会话期间不作为 controlled camera，服务端位置校正仍可正常写回真实玩家。
 - 地面碰撞为真实世界碰撞与当前可见投影 `VoxelShape` 的并集；解析遵循 Litematica placement/subregion 启用及渲染状态、合成顺序、空气覆盖、客户端区块可用性和 `loadEntireSchematics`。投影只贡献形状，不模拟投影液体、梯子、摩擦或弹跳。
 - Creator 相机跨区块时补充刷新新进入视野边缘的客户端区块；渲染器注入为可选，允许 Sodium 等渲染器替换原版路径。
 - 进入时保存原 camera entity、`smartCull` 及 Tweakeroo Free Camera 配置；Tweakeroo 存在时临时协调为 `freeCameraPlayerMovement=true`、`freeCameraPlayerInputs=false`，Creator 退出后精确恢复原值与原相机。
 - 退出 Creator、世界卸载、断线、客户端关闭或初始化失败时按相反顺序恢复状态；本地玩家死亡/重生导致实例替换时自动关闭 Creator，但保留 focus 和 recovery cache。相机位置和飞行状态不跨 Creator 会话持久化。
 - Creator HUD 显示地面/飞行状态。单元测试覆盖速度边界、会话恢复、双击飞行、玩家隔离、Tweakeroo 快照、投影可见性合成和跨区块刷新；开发客户端已启动到主菜单验证所有相机 Mixin 可正常应用。
+
+## Creator Camera 后续修复（#50–#56）
+
+- #50 真实本体只隔离主动输入和鼠标转向，不再清零速度或取消 `move()`；本体继续执行原版玩家 tick，保留进入相机前的惯性、重力、碰撞和服务端位置校正。26.2 默认会跳过非当前 camera 的 `LocalPlayer`，因此 Creator 在实体提取末尾补入真实本体 render state。
+- #51 未注册的 Creator 相机实体也会被显式提取为玩家 render state；它使用原版“实体隐身但对当前玩家可见”的半透明 RenderType，同时强制完整玩家模型并移除名字、阴影、火焰和 outline。第一人称和第三人称均补入该替身，真实本体保持正常不透明渲染。
+- 虚拟手持与装备跟随半透明相机替身；相机活动时真实本体恢复真实装备渲染，相机关闭但 Creator 模式仍开启时继续沿用此前的本地玩家虚拟装备行为。按实体 ID 去重可避免 Tweakeroo 同时补入本体时重复渲染。
+- #52 新增默认 `M+B` 的独立相机热键，以及默认开启的“进入 Creator 模式时开启相机”和“退出 Creator 模式时关闭相机”设置。手动关闭相机后不会被 client tick 自动重开；关闭退出联动后，相机可在 Creator 模式结束后继续活动。世界卸载、断线和客户端关闭仍无条件清理相机会话。
+- #53 相机只继承来源位置和朝向，始终以站立姿态、独立碰撞箱、零初速度和非落地状态创建，不再继承本体鞘翅、游泳、爬行、潜行或疾跑状态。
+- #54 通过最小 `LocalPlayer` accessor 每 tick 同步原版 `autoJump` 选项，关闭自动跳跃时 Creator 相机不再自行开启该能力。
+- #55 `creatorCameraProjectionCollision` 默认开启；关闭后地面模式只与真实世界碰撞，飞行模式继续忽略全部碰撞。
+- #56 `ignoreCreatorCameraEntityPlacementCollision` 默认关闭。默认 placement preflight 使用最终投影状态在 schematic world 中计算原版碰撞形状，以真实客户端世界检查本体和其他阻挡放置的实体，并额外检查未注册的相机替身；开启后跳过这层实体占位检查。
+- 单元测试覆盖相机模式联动、默认配置、双 render state 去重决策和实体放置碰撞决策；开发客户端已完成 Fabric/Mixin 初始化及资源加载验证。
 
 ## 配套工作
 

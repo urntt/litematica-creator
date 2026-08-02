@@ -46,6 +46,13 @@
 - [x] #47 Palette Shift+单击恢复原版 carried 行为
 - [x] #48 Creator 模式下换手键误操作真实主副手
 - [x] #49 可配置的持续放置投影间隔
+- [x] #50 Creator Camera 下渲染并保留真实本体物理
+- [x] #51 第一/第三人称渲染半透明 Creator 相机替身
+- [x] #52 独立 Creator Camera 热键与 Creator 模式自动联动设置
+- [x] #53 Creator 相机姿态和碰撞箱不继承真实本体状态
+- [x] #54 Creator 相机遵循原版自动跳跃设置
+- [x] #55 可配置的 Creator 相机投影碰撞
+- [x] #56 可配置的 Creator 相机实体放置碰撞忽略
 - [x] Creator 与 Litematica 的完成编辑/卸载命令边界
 - [x] 坐标、目标解析和稀疏 region 核心单元测试
 - [x] Focus、稀疏 subregion 和生命周期设计文档同步
