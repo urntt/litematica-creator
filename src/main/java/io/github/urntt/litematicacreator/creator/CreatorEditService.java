@@ -19,7 +19,6 @@ import net.minecraft.world.phys.Vec3;
 
 import fi.dy.masa.litematica.mixin.entity.IMixinEntity;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
-import fi.dy.masa.litematica.util.RayTraceUtils;
 import fi.dy.masa.litematica.util.RayTraceUtils.RayTraceWrapper;
 import fi.dy.masa.litematica.util.EntityUtils;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
@@ -31,7 +30,6 @@ import io.github.urntt.litematicacreator.gui.GuiFocusSwitcher;
 public class CreatorEditService
 {
     private static final CreatorEditService INSTANCE = new CreatorEditService();
-    private static final double EDIT_RANGE = 10.0D;
     private static final int PLACE_INTERVAL_TICKS = 4;
     private static final long NO_TARGET_MESSAGE_INTERVAL_MS = 1500L;
 
@@ -346,8 +344,7 @@ public class CreatorEditService
     @Nullable
     private RayTraceWrapper trace(Minecraft mc)
     {
-        Entity camera = CreatorCameraCompat.getCameraEntity();
-        return camera != null && mc.level != null ? RayTraceUtils.getGenericTrace(mc.level, camera, EDIT_RANGE, true, false, false) : null;
+        return CreatorTargeting.trace(mc);
     }
 
     private CreatorTargetResolver.Resolution resolvePlacementTarget(CreatorTarget target)

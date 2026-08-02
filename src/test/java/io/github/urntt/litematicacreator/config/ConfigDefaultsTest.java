@@ -14,6 +14,14 @@ class ConfigDefaultsTest
     }
 
     @Test
+    void creatorEditRangeUsesTheExpectedBounds()
+    {
+        assertEquals(10, CreatorConfigDefaults.CREATOR_EDIT_RANGE);
+        assertEquals(1, CreatorConfigDefaults.CREATOR_EDIT_RANGE_MIN);
+        assertEquals(128, CreatorConfigDefaults.CREATOR_EDIT_RANGE_MAX);
+    }
+
+    @Test
     void creatorHotkeysUseTheExpectedDefaults()
     {
         assertEquals("Y", CreatorConfigDefaults.TOGGLE_CREATOR_MODE);

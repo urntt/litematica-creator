@@ -12,6 +12,7 @@ import fi.dy.masa.malilib.config.ConfigUtils;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigHandler;
 import fi.dy.masa.malilib.config.options.ConfigBoolean;
+import fi.dy.masa.malilib.config.options.ConfigInteger;
 import fi.dy.masa.malilib.config.options.ConfigOptionList;
 import fi.dy.masa.malilib.registry.Registry;
 import fi.dy.masa.malilib.util.FileUtils;
@@ -46,6 +47,12 @@ public class Configs implements IConfigHandler
         public static final ConfigBoolean OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY = new ConfigBoolean(
                 "openCreatorInventoryWithInventoryKey", CreatorConfigDefaults.OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY
         ).apply(GENERIC_KEY);
+        public static final ConfigInteger CREATOR_EDIT_RANGE = new ConfigInteger(
+                "creatorEditRange",
+                CreatorConfigDefaults.CREATOR_EDIT_RANGE,
+                CreatorConfigDefaults.CREATOR_EDIT_RANGE_MIN,
+                CreatorConfigDefaults.CREATOR_EDIT_RANGE_MAX
+        ).apply(GENERIC_KEY);
         public static final ConfigOptionList TRANSLATION_LANGUAGE = new ConfigOptionList(
                 "translationLanguage", new CreatorI18nConfig(LANG.orElseThrow())
         ).apply(GENERIC_KEY);
@@ -59,6 +66,7 @@ public class Configs implements IConfigHandler
                 SELECT_NEW_DRAFT_PLACEMENT,
                 HIDE_SUBREGION_BOXES_IN_CREATOR_MODE,
                 OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY,
+                CREATOR_EDIT_RANGE,
                 TRANSLATION_LANGUAGE,
                 TRANSLATION_MODE
         );

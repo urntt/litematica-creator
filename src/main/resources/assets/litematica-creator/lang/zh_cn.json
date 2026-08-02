@@ -1,5 +1,6 @@
 {
 	"litematica-creator.config.generic.comment.enableCreatorMode": "允许 Litematica Creator 消费编辑输入，并维护仅存在于客户端的投影草稿。",
+	"litematica-creator.config.generic.comment.creatorEditRange": "Creator 投影选取和编辑的最大距离，单位为方块。",
 	"litematica-creator.config.generic.comment.debugLogging": "向游戏日志写入额外的 Litematica Creator 诊断信息。",
 	"litematica-creator.config.generic.comment.hideSubregionBoxesInCreatorMode": "在 Creator 模式开启时隐藏 Litematica 的放置子区域框。",
 	"litematica-creator.config.generic.comment.openCreatorInventoryWithInventoryKey": "在 Creator 模式下按物品栏键时打开 Creator 虚拟物品栏，而不是真实物品栏。",
@@ -7,6 +8,7 @@
 	"litematica-creator.config.generic.comment.translationLanguage": "Litematica Creator 的 MaLiLib 配置项所使用的翻译语言。",
 	"litematica-creator.config.generic.comment.translationMode": "控制 Litematica Creator 跟随原版语言、MaLiLib 语言，或使用独立选择的语言。",
 	"litematica-creator.config.generic.name.debugLogging": "调试日志",
+	"litematica-creator.config.generic.name.creatorEditRange": "Creator 编辑距离",
 	"litematica-creator.config.generic.name.enableCreatorMode": "Creator 模式",
 	"litematica-creator.config.generic.name.hideSubregionBoxesInCreatorMode": "Creator 模式下隐藏子区域框",
 	"litematica-creator.config.generic.name.openCreatorInventoryWithInventoryKey": "物品栏键打开 Creator 物品栏",
@@ -14,6 +16,7 @@
 	"litematica-creator.config.generic.name.translationLanguage": "翻译语言",
 	"litematica-creator.config.generic.name.translationMode": "翻译模式",
 	"litematica-creator.config.generic.prettyName.debugLogging": "调试日志",
+	"litematica-creator.config.generic.prettyName.creatorEditRange": "Creator 编辑距离",
 	"litematica-creator.config.generic.prettyName.enableCreatorMode": "Creator 模式",
 	"litematica-creator.config.generic.prettyName.hideSubregionBoxesInCreatorMode": "Creator 模式下隐藏子区域框",
 	"litematica-creator.config.generic.prettyName.openCreatorInventoryWithInventoryKey": "物品栏键打开 Creator 物品栏",

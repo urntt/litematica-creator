@@ -3,6 +3,9 @@ package io.github.urntt.litematicacreator.config;
 final class CreatorConfigDefaults
 {
     static final boolean OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY = true;
+    static final int CREATOR_EDIT_RANGE = 10;
+    static final int CREATOR_EDIT_RANGE_MIN = 1;
+    static final int CREATOR_EDIT_RANGE_MAX = 128;
 
     static final String TOGGLE_CREATOR_MODE = "Y";
     static final String OPEN_CREATOR_INVENTORY = "M,E";
