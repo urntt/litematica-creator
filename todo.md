@@ -43,6 +43,16 @@
 
 ## 编辑正确性
 
+- [~] #37 删除单个投影方块后，整个投影区块偶发暂时不可见
+  - 已确认这更像 schematic world/render chunk 的失效刷新问题，而不是投影数据丢失：再次放置方块会触发重建并恢复原有内容。
+  - Creator 新建的 `1x1x1` cell 删除唯一方块时必然进入 `removeRegion()`；当前实现会先对 placement 发布 post-change 并调度后台 rebuild，之后才从 schematic 的各个 region 数据映射中移除该 region。Litematica worker 因此可能读到 placement 与 schematic 暂时不一致的状态。
+  - 普通 region 内删块则会调用 `rebuildAllPlacements()`，为该 schematic 的每个 placement 重建全部 touched chunks，刷新范围远大于实际变更范围。
+  - Litematica 的 rebuild task 会先卸载已有 schematic chunk，再重建并替换；同区块的新任务只会移除仍在队列中的旧任务，已经运行的任务不会被取消。全量重复调度与结构变更期间的异步读取共同构成目前最可信的竞态来源。
+  - 修复方向：先在客户端线程完整提交 schematic 与所有 placement 的结构变更，再统一发布 placement 更新；分别保存每个 placement 的 old/new touched chunks，只对并集调度一次刷新。普通方块状态变化只刷新该 schematic 坐标映射到各 placement 后实际受影响的区块。
+  - 诊断：debug 模式记录编辑坐标、是否删除 region、placement hash、old/new touched chunks、目标区块是否已加载及 rebuild 提交序号，用提交序号确认是否存在旧任务晚于新任务完成。
+  - 复现矩阵：Creator cell/普通多方块 region、同区块/跨区块、玩家与目标位于同一/相邻区块、单 placement/同 schematic 多 placement、单击/快速连续删除、`loadEntireSchematics` 开启/关闭。
+  - 验收：上述组合中删除只更新实际受影响的投影内容，不会令区块内其他投影暂时消失；跨区块和多 placement 变换后也不遗留旧渲染。
+
 - [ ] #12 面向投影方块时选中框穿透到真实方块
   - Creator 模式下使用 Creator/Litematica trace 结果渲染目标框。
   - 投影方块是有效目标时抑制原版真实方块选中框。
@@ -53,6 +63,48 @@
   - 建议默认 10 格，允许范围 1-128 格。
   - 放置、删除、pick block、交互和后续 Creator camera 复用同一配置。
   - 验收：修改配置后，所有 Creator 编辑操作的有效距离同步变化。
+
+## 虚拟物品栏与输入
+
+- [ ] #38 Creator pick block 使用原版式选槽与单个物品
+  - 当前原因：`CreatorInventory.pickBlock()` 直接把新 stack 设为最大堆叠数，并无条件覆盖当前选中的虚拟快捷栏槽位。
+  - 按原版 pick item 次序处理：相同 item/components 已在虚拟快捷栏时只选中对应槽；若只在虚拟主物品栏中存在，则像原版 `pickSlot()` 一样换入合适的快捷栏槽；完全不存在时才新建数量为 1 的 stack。
+  - 合适槽位遵循原版 `getSuitableHotbarSlot()` 的搜索顺序，且所有操作只发生在虚拟物品栏，不触碰真实背包或发送 pick item 包。
+  - 验收：重复 pick 同一方块不会复制或覆盖 stack；首次 pick 得到 1 个；带 components 的物品按 `ItemStack.isSameItemSameComponents()` 区分。
+
+- [ ] #39 Creator 模式下用原版物品栏键打开 Creator 物品栏
+  - 当前原因：输入处理器只拦截数字键、中键和滚轮，没有匹配 `Minecraft.options.keyInventory`，也没有对应配置项。
+  - 新增默认开启的通用设置；Creator 模式开启且无其他界面时，在原版处理前消费物品栏键并打开 Creator 物品栏。
+  - 关闭该设置时保留原版真实物品栏行为；原有“打开 Creator 物品栏”独立热键保持不变。
+  - 复用快捷键打开时的首字符抑制，避免自定义物品栏键被写入搜索框。
+  - 验收：设置开/关、重新绑定原版物品栏键和组合键时均按配置打开正确界面，且一次按键只打开一个界面。
+
+- [ ] #40 修正虚拟创造栏的 palette 点击语义
+  - 当前原因：palette 左键在 carried 为空时显式复制最大堆叠数；carried 与点击物品不同时直接用新物品替换。两处都偏离原版创造栏。
+  - 普通单击在 carried 为空时只拿取 palette stack 的原始数量（当前为 1）。
+  - carried 已有不同物品时，左键清空 carried、右键减少 1；相同物品时保留原版左键增加 1、右键减少 1 的行为，不直接替换物品。
+  - Shift+单击采用 Creator 专用语义：将点击物品的最大堆叠直接放入一个空的虚拟快捷栏槽，不改变 carried；9 格都非空时不执行任何操作，也不覆盖已有槽位。
+  - 虚拟生存栏继续走现有 menu 点击逻辑，不随本项修改。
+  - 验收：普通单击、不同/相同 carried、左右键、Shift+单击和快捷栏已满分别覆盖测试，数量上限使用物品自身的最大堆叠数。
+
+- [!] #41 后期兼容或模仿 Inventory Profiles Next / ItemScroller
+  - Creator 物品栏使用本地虚拟 container；第三方模组通常针对原版 screen、`inventoryMenu` 和服务端 slot packet 工作，不能直接允许其操作真实菜单或发送同步包。
+  - 先按目标版本调查两者可用的公开接口、screen/menu 识别方式和 mixin 注入点，再决定采用显式兼容适配器还是只复刻高价值行为。
+  - 候选行为包括排序、同类物品移动、滚轮搬运、拖拽搬运和快捷栏补充；所有结果必须只写虚拟物品栏。
+  - 验收：兼容功能不修改真实背包、不发送 container packet，并在未安装第三方模组时保持当前行为。
+
+## 设置与默认键位
+
+- [ ] #43 更新默认快捷键
+  - `Y`：切换 Creator 模式。
+  - `M,E`：打开 Creator 物品栏。
+  - `M,K`：打开 Creator 设置。
+  - `M,LEFT_SHIFT,S`：结束编辑。
+  - `M,LEFT_SHIFT,D`：卸载当前原理图。
+  - `M,F`：打开 focus 切换器。
+  - `M,N`：新建空白原理图。
+  - 只修改默认值和“重置为默认”结果，不覆盖玩家已经保存的自定义绑定；不改变结束编辑和卸载命令现有语义。
+  - 验收：全新配置及重置配置得到上述组合键，已有配置升级后仍保留玩家绑定，所有组合键只触发一次。
 
 ## 本地化
 
@@ -69,6 +121,13 @@
   - 飞行模式类似创造飞行，并可像旁观模式一样穿过方块。
   - 处理相机输入、碰撞、其他玩家渲染、退出模式、断线和世界卸载。
   - 验收：未安装 Tweakeroo 时 Creator camera 仍可用，退出后玩家和相机状态完整恢复。
+
+- [!] #42 Creator Camera 预览模式
+  - 目标是把投影按普通世界方块的模型、纹理、流体和 block entity 方式不透明渲染，并隐藏缺失/错误方块的彩色 overlay 与轮廓。
+  - Litematica 现有 translucent、colliding blocks 和 overlay 开关是全局配置；直接切换会影响所有 placement 并篡改玩家设置，因此需要 Creator 范围内的临时 render profile 或 placement-scoped renderer 判断。
+  - 需要先确定预览作用于 focus placement 还是全部可见 placement，以及投影与真实方块重叠时的深度、遮挡和 block entity 渲染规则。
+  - 进入/退出预览、退出 Creator、切世界和异常恢复时必须完整恢复 Litematica 原有渲染状态。
+  - 验收：预览中的目标投影视觉上等同正常方块，同时不改变真实世界、不影响非目标 placement，也不持久改写 Litematica 配置。
 
 ## 放置控制
 
