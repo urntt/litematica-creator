@@ -297,6 +297,11 @@ public class CreatorEditService
                 }
             }
 
+            if (!CreatorPlacementEntityCollision.canPlace(mc, schematicWorld, state, target.blockPos()))
+            {
+                return PlacementPreflight.blocked();
+            }
+
             return PlacementPreflight.success(state);
         }
         finally

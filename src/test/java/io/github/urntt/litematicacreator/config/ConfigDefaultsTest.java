@@ -3,6 +3,7 @@ package io.github.urntt.litematicacreator.config;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigDefaultsTest
@@ -55,6 +56,7 @@ class ConfigDefaultsTest
         assertTrue(CreatorConfigDefaults.ENABLE_CREATOR_CAMERA_WITH_CREATOR_MODE);
         assertTrue(CreatorConfigDefaults.DISABLE_CREATOR_CAMERA_WITH_CREATOR_MODE);
         assertTrue(CreatorConfigDefaults.CREATOR_CAMERA_PROJECTION_COLLISION);
+        assertFalse(CreatorConfigDefaults.IGNORE_CREATOR_CAMERA_ENTITY_PLACEMENT_COLLISION);
     }
 
     @Test

@@ -90,6 +90,10 @@ public class Configs implements IConfigHandler
                 "creatorCameraProjectionCollision",
                 CreatorConfigDefaults.CREATOR_CAMERA_PROJECTION_COLLISION
         ).apply(GENERIC_KEY);
+        public static final ConfigBoolean IGNORE_CREATOR_CAMERA_ENTITY_PLACEMENT_COLLISION = new ConfigBoolean(
+                "ignoreCreatorCameraEntityPlacementCollision",
+                CreatorConfigDefaults.IGNORE_CREATOR_CAMERA_ENTITY_PLACEMENT_COLLISION
+        ).apply(GENERIC_KEY);
 
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 ENABLE_CREATOR_MODE,
@@ -104,6 +108,7 @@ public class Configs implements IConfigHandler
                 ENABLE_CREATOR_CAMERA_WITH_CREATOR_MODE,
                 DISABLE_CREATOR_CAMERA_WITH_CREATOR_MODE,
                 CREATOR_CAMERA_PROJECTION_COLLISION,
+                IGNORE_CREATOR_CAMERA_ENTITY_PLACEMENT_COLLISION,
                 CREATOR_CAMERA_GROUND_SPEED_MULTIPLIER,
                 CREATOR_CAMERA_FLIGHT_SPEED_MULTIPLIER
         );

@@ -22,6 +22,7 @@ final class CreatorConfigDefaults
     static final boolean ENABLE_CREATOR_CAMERA_WITH_CREATOR_MODE = true;
     static final boolean DISABLE_CREATOR_CAMERA_WITH_CREATOR_MODE = true;
     static final boolean CREATOR_CAMERA_PROJECTION_COLLISION = true;
+    static final boolean IGNORE_CREATOR_CAMERA_ENTITY_PLACEMENT_COLLISION = false;
 
     static final String TOGGLE_CREATOR_MODE = "Y";
     static final String TOGGLE_CREATOR_CAMERA = "M,B";
