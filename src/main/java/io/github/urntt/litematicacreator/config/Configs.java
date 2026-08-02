@@ -2,7 +2,6 @@ package io.github.urntt.litematicacreator.config;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -12,21 +11,14 @@ import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigHandler;
 import fi.dy.masa.malilib.config.options.ConfigBoolean;
 import fi.dy.masa.malilib.config.options.ConfigInteger;
-import fi.dy.masa.malilib.config.options.ConfigOptionList;
-import fi.dy.masa.malilib.registry.Registry;
 import fi.dy.masa.malilib.util.FileUtils;
 import fi.dy.masa.malilib.util.data.json.JsonUtils;
-import fi.dy.masa.malilib.util.i18n.i18nManager;
-import fi.dy.masa.malilib.util.i18n.i18nMode;
-import fi.dy.masa.malilib.util.i18n.i18nOption;
 import io.github.urntt.litematicacreator.LitematicaCreator;
 import io.github.urntt.litematicacreator.Reference;
 
 public class Configs implements IConfigHandler
 {
     private static final String CONFIG_FILE_NAME = Reference.MOD_ID + ".json";
-    public static final Optional<i18nManager> LANG = Optional.ofNullable(i18nManager.create(Reference.MOD_ID));
-    private static final CreatorTranslationApplyGate TRANSLATION_APPLY_GATE = new CreatorTranslationApplyGate();
 
     private static final String GENERIC_KEY = Reference.MOD_ID + ".config.generic";
 
@@ -53,12 +45,6 @@ public class Configs implements IConfigHandler
                 CreatorConfigDefaults.CREATOR_EDIT_RANGE_MIN,
                 CreatorConfigDefaults.CREATOR_EDIT_RANGE_MAX
         ).apply(GENERIC_KEY);
-        public static final ConfigOptionList TRANSLATION_LANGUAGE = new ConfigOptionList(
-                "translationLanguage", new CreatorI18nConfig(LANG.orElseThrow())
-        ).apply(GENERIC_KEY);
-        public static final ConfigOptionList TRANSLATION_MODE = new ConfigOptionList(
-                "translationMode", i18nMode.FOLLOW_VANILLA
-        ).apply(GENERIC_KEY);
 
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 ENABLE_CREATOR_MODE,
@@ -66,9 +52,7 @@ public class Configs implements IConfigHandler
                 SELECT_NEW_DRAFT_PLACEMENT,
                 HIDE_SUBREGION_BOXES_IN_CREATOR_MODE,
                 OPEN_CREATOR_INVENTORY_WITH_INVENTORY_KEY,
-                CREATOR_EDIT_RANGE,
-                TRANSLATION_LANGUAGE,
-                TRANSLATION_MODE
+                CREATOR_EDIT_RANGE
         );
     }
 
@@ -76,33 +60,22 @@ public class Configs implements IConfigHandler
     {
         Path configFile = FileUtils.getConfigDirectory().resolve(CONFIG_FILE_NAME);
 
-        TRANSLATION_APPLY_GATE.beginLoading();
-
-        try
+        if (Files.exists(configFile) && Files.isReadable(configFile))
         {
-            if (Files.exists(configFile) && Files.isReadable(configFile))
-            {
-                JsonElement element = JsonUtils.parseJsonFile(configFile);
+            JsonElement element = JsonUtils.parseJsonFile(configFile);
 
-                if (element != null && element.isJsonObject())
-                {
-                    JsonObject root = element.getAsJsonObject();
-                    ConfigUtils.readConfigBase(root, "Generic", Generic.OPTIONS);
-                    ConfigUtils.readConfigBase(root, "Hotkeys", Hotkeys.HOTKEY_LIST);
-                    LitematicaCreator.debugLog("Loaded config file '{}'.", configFile.toAbsolutePath());
-                }
-                else
-                {
-                    LitematicaCreator.LOGGER.error("Failed to load config file '{}'.", configFile.toAbsolutePath());
-                }
+            if (element != null && element.isJsonObject())
+            {
+                JsonObject root = element.getAsJsonObject();
+                ConfigUtils.readConfigBase(root, "Generic", Generic.OPTIONS);
+                ConfigUtils.readConfigBase(root, "Hotkeys", Hotkeys.HOTKEY_LIST);
+                LitematicaCreator.debugLog("Loaded config file '{}'.", configFile.toAbsolutePath());
+            }
+            else
+            {
+                LitematicaCreator.LOGGER.error("Failed to load config file '{}'.", configFile.toAbsolutePath());
             }
         }
-        finally
-        {
-            TRANSLATION_APPLY_GATE.endLoading();
-        }
-
-        applyTranslationSettings();
     }
 
     public static void saveToFile()
@@ -137,56 +110,5 @@ public class Configs implements IConfigHandler
     public void save()
     {
         saveToFile();
-    }
-
-    @Override
-    public void onLanguageChanged(String newLang)
-    {
-        applyTranslationSettings();
-    }
-
-    public static boolean applyTranslationSettings()
-    {
-        if (!TRANSLATION_APPLY_GATE.beginApplying())
-        {
-            return false;
-        }
-
-        try
-        {
-            i18nMode mode = (i18nMode) Generic.TRANSLATION_MODE.getOptionListValue();
-            String configuredLanguage = Generic.TRANSLATION_LANGUAGE.getOptionListValue().getStringValue();
-            String vanillaLanguage = mode == i18nMode.FOLLOW_VANILLA ?
-                    Registry.TRANSLATION_OVERRIDE_MANAGER.getVanillaLanguageCode() : configuredLanguage;
-            String malilibLanguage = mode == i18nMode.FOLLOW_MALILIB ?
-                    Registry.TRANSLATION_OVERRIDE_MANAGER.getBaseLanguageCode() : configuredLanguage;
-            Registry.TRANSLATION_OVERRIDE_MANAGER.registerLanguageMode(Reference.MOD_ID, mode);
-            LANG.ifPresent(manager -> CreatorTranslationPolicy.requestedLanguage(
-                    mode,
-                    configuredLanguage,
-                    vanillaLanguage,
-                    malilibLanguage
-            ).ifPresent(language -> setLanguageIfAvailable(manager, language)));
-            return true;
-        }
-        finally
-        {
-            TRANSLATION_APPLY_GATE.endApplying();
-        }
-    }
-
-    private static void setLanguageIfAvailable(i18nManager manager, String languageCode)
-    {
-        String resolvedLanguage = CreatorTranslationPolicy.resolveAvailableLanguage(
-                languageCode,
-                manager.getDefaultLang().getLangCode(),
-                manager.getLanguageOptions().stream().map(i18nOption::getKey).toList()
-        );
-        manager.setLang(resolvedLanguage);
-
-        if (!Generic.TRANSLATION_LANGUAGE.getOptionListValue().getStringValue().equalsIgnoreCase(resolvedLanguage))
-        {
-            Generic.TRANSLATION_LANGUAGE.setOptionListValue(new CreatorI18nConfig(manager));
-        }
     }
 }

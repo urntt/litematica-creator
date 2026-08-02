@@ -18,8 +18,6 @@ import io.github.urntt.litematicacreator.data.DataManager;
 
 public class GuiConfigs extends GuiConfigsBase implements IConfigGuiAllTab
 {
-    private boolean refreshRequested;
-
     public GuiConfigs()
     {
         super(10, 50, Reference.MOD_ID, null, "litematica-creator.gui.title.configs", Reference.MOD_VERSION);
@@ -42,23 +40,6 @@ public class GuiConfigs extends GuiConfigsBase implements IConfigGuiAllTab
             }
 
             x += this.createButton(x, y, -1, tab);
-        }
-    }
-
-    public void requestRefresh()
-    {
-        this.refreshRequested = true;
-    }
-
-    @Override
-    public void tick()
-    {
-        super.tick();
-
-        if (this.refreshRequested)
-        {
-            this.refreshRequested = false;
-            this.initGui();
         }
     }
 

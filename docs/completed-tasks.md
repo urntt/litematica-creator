@@ -156,12 +156,10 @@
 - Creator 关闭、GUI 打开、真实方块更近、placement 隐藏或禁用、投影状态为空时均保留原版轮廓行为；重叠 placement 的交互选择逻辑仍由 Focus Switcher 负责。
 - 单元测试覆盖编辑距离默认值与边界，以及 Creator 世界视图和有效投影目标的轮廓启用条件。
 
-## 独立翻译模式（#19）
+## 游戏语言跟随（#19）
 
-- 翻译模式和翻译语言共用统一应用入口：独立模式使用 `translationLanguage`，跟随模式解析原版或 MaLiLib 语言并在缺失时回退默认语言，关闭模式保留当前 manager 与所选语言但停用覆盖。
-- 配置加载期间抑制语言与模式回调，全部字段读取完成后再应用最终状态，避免 `translationLanguage` 先于 `translationMode` 反序列化时覆盖独立语言。
-- `CreatorI18nConfig` 的循环和反序列化返回新的配置 entry，不再原地修改 MaLiLib 默认对象；语言变化因此能被 `ConfigOptionList` 识别，并即时刷新当前 Creator 设置界面。
-- 单元测试覆盖四种模式的语言来源、大小写匹配、缺失语言回退、语言循环及加载/重入回调抑制。
+- 独立翻译模式和 Creator 语言选择已移除；Creator 不再注册 MaLiLib 翻译覆盖 manager，所有文本直接由 Minecraft 从 `assets/litematica-creator/lang/` 按当前游戏语言解析。
+- 旧配置中的 `translationLanguage` 和 `translationMode` 会被忽略，并在下一次保存 Creator 配置时自然移除。
 
 ## 本地编辑动作反馈（#25）
 

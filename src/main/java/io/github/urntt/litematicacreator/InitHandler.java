@@ -7,9 +7,7 @@ import fi.dy.masa.malilib.event.WorldLoadHandler;
 import fi.dy.masa.litematica.render.infohud.InfoHud;
 import fi.dy.masa.malilib.interfaces.IInitializationHandler;
 import fi.dy.masa.malilib.registry.Registry;
-import fi.dy.masa.malilib.util.GuiUtils;
 import fi.dy.masa.malilib.util.data.ModInfo;
-import fi.dy.masa.malilib.util.i18n.i18nMode;
 import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.creator.CreatorPlacementIndex;
@@ -30,22 +28,6 @@ public class InitHandler implements IInitializationHandler
         Registry.CONFIG_SCREEN.registerConfigScreenFactory(
                 new ModInfo(Reference.MOD_ID, Reference.MOD_NAME, GuiConfigs::new)
         );
-        Configs.LANG.ifPresent(
-                i18nManager ->
-                        Registry.TRANSLATION_OVERRIDE_MANAGER.registerTranslationManager(
-                                Reference.MOD_ID,
-                                i18nManager,
-                                (i18nMode) Configs.Generic.TRANSLATION_MODE.getOptionListValue()
-                        )
-        );
-        Configs.Generic.TRANSLATION_MODE.setValueChangeCallback(
-                cfg -> {
-                    this.applyTranslationConfigChange();
-                }
-        );
-        Configs.Generic.TRANSLATION_LANGUAGE.setValueChangeCallback(
-                cfg -> this.applyTranslationConfigChange()
-        );
         Configs.Generic.ENABLE_CREATOR_MODE.setValueChangeCallback(
                 cfg -> CreatorManager.getInstance().setCreatorModeEnabled(cfg.getBooleanValue(), false)
         );
@@ -60,21 +42,5 @@ public class InitHandler implements IInitializationHandler
         InputEventHandler.getInputManager().registerMouseInputHandler(InputHandler.getInstance());
         TickHandler.getInstance().registerClientTickHandler(CreatorClientTickHandler.INSTANCE);
         InfoHud.getInstance().addInfoHudRenderer(CreatorStatusHud.INSTANCE, true);
-    }
-
-    private void refreshCurrentCreatorConfigGui()
-    {
-        if (GuiUtils.getCurrentScreen() instanceof GuiConfigs gui)
-        {
-            gui.requestRefresh();
-        }
-    }
-
-    private void applyTranslationConfigChange()
-    {
-        if (Configs.applyTranslationSettings())
-        {
-            this.refreshCurrentCreatorConfigGui();
-        }
     }
 }
