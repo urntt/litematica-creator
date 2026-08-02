@@ -1,6 +1,6 @@
 # Litematica Creator TODO
 
-最后更新：2026-08-02
+最后更新：2026-08-03
 
 ## 已完成
 
@@ -37,6 +37,7 @@
 - [x] #45 Creator 物品栏重开后标签页被重置
 - [x] #46 虚拟主手为空时不能使用虚拟副手放置
 - [x] #47 Palette Shift+单击恢复原版 carried 行为
+- [x] #48 Creator 模式下换手键误操作真实主副手
 - [x] Creator 与 Litematica 的完成编辑/卸载命令边界
 - [x] 坐标、目标解析和稀疏 region 核心单元测试
 - [x] Focus、稀疏 subregion 和生命周期设计文档同步
