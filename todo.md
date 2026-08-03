@@ -54,6 +54,9 @@
 - [x] #55 可配置的 Creator 相机投影碰撞
 - [x] #56 可配置的 Creator 相机实体放置碰撞忽略
 - [x] #57 进入 Creator 模式时未注册相机实体缺少 ID 导致崩溃
+- [x] #58 第一人称 Creator 相机只渲染手持物品或半透明手臂
+- [x] #59 Creator 编辑挥手只作用于相机替身
+- [x] #60 Creator 相机替身渲染玩家皮肤第二层
 - [x] Creator 与 Litematica 的完成编辑/卸载命令边界
 - [x] 坐标、目标解析和稀疏 region 核心单元测试
 - [x] Focus、稀疏 subregion 和生命周期设计文档同步
