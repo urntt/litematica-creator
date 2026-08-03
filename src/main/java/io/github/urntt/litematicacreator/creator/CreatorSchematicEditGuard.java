@@ -6,7 +6,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public final class CreatorSchematicEditGuard
 {
-    private static final ReentrantReadWriteLock LOCK = new ReentrantReadWriteLock(true);
+    private static final ReentrantReadWriteLock EDIT_LOCK = new ReentrantReadWriteLock(true);
+    private static final int CHUNK_LOCK_STRIPES = 256;
+    private static final ReentrantReadWriteLock[] CHUNK_LOCKS = createChunkLocks();
     private static final AtomicLong NEXT_TRANSACTION_ID = new AtomicLong();
 
     private CreatorSchematicEditGuard()
@@ -17,34 +19,76 @@ public final class CreatorSchematicEditGuard
     {
         long transactionId = NEXT_TRANSACTION_ID.incrementAndGet();
         long start = System.nanoTime();
-        Lock writeLock = LOCK.writeLock();
+        Lock writeLock = EDIT_LOCK.writeLock();
         writeLock.lock();
         return new EditTransaction(transactionId, System.nanoTime() - start, writeLock);
     }
 
-    public static void runRebuild(Runnable rebuild)
+    public static void runRebuild(long chunkKey, Runnable rebuild)
     {
-        Lock readLock = LOCK.readLock();
-        readLock.lock();
+        Lock chunkWriteLock = chunkLock(chunkKey).writeLock();
+        chunkWriteLock.lock();
 
         try
         {
-            rebuild.run();
+            Lock editReadLock = EDIT_LOCK.readLock();
+            editReadLock.lock();
+
+            try
+            {
+                rebuild.run();
+            }
+            finally
+            {
+                editReadLock.unlock();
+            }
         }
         finally
         {
-            readLock.unlock();
+            chunkWriteLock.unlock();
+        }
+    }
+
+    public static void runRenderCompile(long chunkKey, Runnable renderCompile)
+    {
+        Lock chunkReadLock = chunkLock(chunkKey).readLock();
+        chunkReadLock.lock();
+
+        try
+        {
+            renderCompile.run();
+        }
+        finally
+        {
+            chunkReadLock.unlock();
         }
     }
 
     static int activeRebuildCount()
     {
-        return LOCK.getReadLockCount();
+        return EDIT_LOCK.getReadLockCount();
     }
 
     static boolean isEditActive()
     {
-        return LOCK.isWriteLocked();
+        return EDIT_LOCK.isWriteLocked();
+    }
+
+    private static ReentrantReadWriteLock chunkLock(long chunkKey)
+    {
+        return CHUNK_LOCKS[Math.floorMod(Long.hashCode(chunkKey), CHUNK_LOCK_STRIPES)];
+    }
+
+    private static ReentrantReadWriteLock[] createChunkLocks()
+    {
+        ReentrantReadWriteLock[] locks = new ReentrantReadWriteLock[CHUNK_LOCK_STRIPES];
+
+        for (int index = 0; index < locks.length; index++)
+        {
+            locks[index] = new ReentrantReadWriteLock(true);
+        }
+
+        return locks;
     }
 
     public static final class EditTransaction implements AutoCloseable

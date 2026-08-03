@@ -5,6 +5,9 @@
 	"compatibilityLevel": "JAVA_25",
 	"client": [
 		"AvatarRendererMixin",
+		"ChunkRendererSchematicVboAccessor",
+		"ChunkRenderTaskSchematicAccessor",
+		"ChunkRenderWorkerLitematicaMixin",
 		"CollisionGetterMixin",
 		"EntityTurnMixin",
 		"HudMixin",
@@ -20,6 +23,7 @@
 		"MinecraftClientMixin",
 		"MultiPlayerGameModeMixin",
 		"OverlayRendererMixin",
+		"PlacementManagerTaskAccessor",
 		"PlacementManagerTaskRebuildMixin",
 		"SchematicPlacementMixin",
 		"SchematicPlacementAccessor",
