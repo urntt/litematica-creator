@@ -1,6 +1,7 @@
 package io.github.urntt.litematicacreator.render;
 
 import net.minecraft.client.Camera;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -63,6 +64,7 @@ public final class CreatorCameraRenderStates
         if (CreatorCameraRenderPolicy.shouldAppendCameraAvatar(
                 true,
                 creatorCamera.level() == minecraft.level,
+                minecraft.options.getCameraType() == CameraType.FIRST_PERSON,
                 containsAvatar(output, creatorCamera.getId())
         ))
         {

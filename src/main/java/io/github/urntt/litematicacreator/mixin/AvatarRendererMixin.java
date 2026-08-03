@@ -1,11 +1,17 @@
 package io.github.urntt.litematicacreator.mixin;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.client.renderer.entity.player.AvatarRenderer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.item.ItemModelResolver;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.Avatar;
@@ -20,6 +26,7 @@ import net.minecraft.world.item.component.SwingAnimation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import io.github.urntt.litematicacreator.creator.CreatorManager;
@@ -29,6 +36,8 @@ import io.github.urntt.litematicacreator.render.CreatorVirtualLoadout;
 @Mixin(AvatarRenderer.class)
 public abstract class AvatarRendererMixin
 {
+    private static final int CREATOR_AVATAR_TINT = 0x26FFFFFF;
+
     @Inject(
             method = "extractRenderState(Lnet/minecraft/world/entity/Avatar;Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;F)V",
             at = @At("TAIL")
@@ -117,5 +126,43 @@ public abstract class AvatarRendererMixin
     {
         ItemStack stack = CreatorVirtualLoadout.getEquipment(equipmentSlot);
         return HumanoidArmorLayer.shouldRender(stack, equipmentSlot) ? stack : ItemStack.EMPTY;
+    }
+
+    @Redirect(
+            method = "renderHand",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModelPart(Lnet/minecraft/client/model/geom/ModelPart;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/rendertype/RenderType;IILnet/minecraft/client/renderer/texture/TextureAtlasSprite;)V"
+            )
+    )
+    private void litematicacreator$renderTranslucentCreatorFirstPersonArm(
+            SubmitNodeCollector collector,
+            ModelPart modelPart,
+            PoseStack poseStack,
+            RenderType renderType,
+            int light,
+            int overlay,
+            TextureAtlasSprite sprite)
+    {
+        Minecraft minecraft = Minecraft.getInstance();
+
+        if (CreatorCameraController.getInstance().isActive() && minecraft.options.getCameraType() == CameraType.FIRST_PERSON)
+        {
+            collector.submitModelPart(
+                    modelPart,
+                    poseStack,
+                    renderType,
+                    light,
+                    overlay,
+                    sprite,
+                    CREATOR_AVATAR_TINT,
+                    null,
+                    0
+            );
+        }
+        else
+        {
+            collector.submitModelPart(modelPart, poseStack, renderType, light, overlay, sprite);
+        }
     }
 }

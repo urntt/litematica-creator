@@ -11,8 +11,8 @@ final class CreatorCameraRenderPolicy
         return cameraActive && sameLevel && visible && !alreadyPresent;
     }
 
-    static boolean shouldAppendCameraAvatar(boolean cameraActive, boolean sameLevel, boolean alreadyPresent)
+    static boolean shouldAppendCameraAvatar(boolean cameraActive, boolean sameLevel, boolean firstPerson, boolean alreadyPresent)
     {
-        return cameraActive && sameLevel && !alreadyPresent;
+        return cameraActive && sameLevel && !firstPerson && !alreadyPresent;
     }
 }

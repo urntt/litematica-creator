@@ -7,13 +7,23 @@ import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
+import io.github.urntt.litematicacreator.camera.CreatorCameraController;
+import io.github.urntt.litematicacreator.camera.CreatorCameraEntity;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.render.CreatorVirtualLoadout;
 
 @Mixin(ItemInHandRenderer.class)
 public abstract class ItemInHandRendererMixin
 {
+    @ModifyVariable(method = "submitHandsWithItems", at = @At("HEAD"), argsOnly = true)
+    private LocalPlayer litematicacreator$useCreatorCameraForFirstPersonHands(LocalPlayer player)
+    {
+        CreatorCameraEntity camera = CreatorCameraController.getInstance().getCamera();
+        return camera != null ? camera : player;
+    }
+
     @Redirect(
             method = "tick",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;getMainHandItem()Lnet/minecraft/world/item/ItemStack;")

@@ -18,11 +18,12 @@ class CreatorCameraRenderPolicyTest
     }
 
     @Test
-    void cameraAvatarRendersInBothCameraPerspectivesWithoutDuplication()
+    void cameraAvatarOnlyRendersAsAWorldModelOutsideFirstPerson()
     {
-        assertTrue(CreatorCameraRenderPolicy.shouldAppendCameraAvatar(true, true, false));
-        assertFalse(CreatorCameraRenderPolicy.shouldAppendCameraAvatar(false, true, false));
-        assertFalse(CreatorCameraRenderPolicy.shouldAppendCameraAvatar(true, false, false));
-        assertFalse(CreatorCameraRenderPolicy.shouldAppendCameraAvatar(true, true, true));
+        assertTrue(CreatorCameraRenderPolicy.shouldAppendCameraAvatar(true, true, false, false));
+        assertFalse(CreatorCameraRenderPolicy.shouldAppendCameraAvatar(true, true, true, false));
+        assertFalse(CreatorCameraRenderPolicy.shouldAppendCameraAvatar(false, true, false, false));
+        assertFalse(CreatorCameraRenderPolicy.shouldAppendCameraAvatar(true, false, false, false));
+        assertFalse(CreatorCameraRenderPolicy.shouldAppendCameraAvatar(true, true, false, true));
     }
 }

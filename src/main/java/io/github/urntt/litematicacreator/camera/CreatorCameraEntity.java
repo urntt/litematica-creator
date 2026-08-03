@@ -6,11 +6,13 @@ import net.minecraft.client.multiplayer.chat.ChatAbilities;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Input;
+import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
@@ -25,6 +27,7 @@ public final class CreatorCameraEntity extends LocalPlayer
     private static final float VANILLA_FLIGHT_SPEED = 0.05F;
 
     private final Minecraft minecraft;
+    private final LocalPlayer appearancePlayer;
 
     CreatorCameraEntity(Minecraft minecraft, ClientLevel level, LocalPlayer player, Entity source, boolean flying)
     {
@@ -39,6 +42,7 @@ public final class CreatorCameraEntity extends LocalPlayer
                 ChatAbilities.NO_RESTRICTIONS
         );
         this.minecraft = minecraft;
+        this.appearancePlayer = player;
         this.setId(CLIENT_ENTITY_ID);
         this.input = new CreatorCameraInput(minecraft);
         this.setPosRaw(source.getX(), source.getY(), source.getZ());
@@ -70,6 +74,7 @@ public final class CreatorCameraEntity extends LocalPlayer
                 this.minecraft.options.autoJump().get()
         );
         this.baseTick();
+        this.updateSwingTime();
         this.aiStep();
         this.noPhysics = this.getAbilities().flying;
         this.resetFallDistance();
@@ -78,6 +83,18 @@ public final class CreatorCameraEntity extends LocalPlayer
     public boolean isCreatorFlying()
     {
         return this.getAbilities().flying;
+    }
+
+    @Override
+    public HumanoidArm getMainArm()
+    {
+        return this.appearancePlayer != null ? this.appearancePlayer.getMainArm() : super.getMainArm();
+    }
+
+    @Override
+    public boolean isModelPartShown(PlayerModelPart modelPart)
+    {
+        return this.appearancePlayer != null ? this.appearancePlayer.isModelPartShown(modelPart) : super.isModelPartShown(modelPart);
     }
 
     public void turnCamera(double yawChange, double pitchChange)

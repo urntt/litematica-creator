@@ -22,6 +22,7 @@ import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
 import io.github.urntt.litematicacreator.config.Configs;
+import io.github.urntt.litematicacreator.camera.CreatorCameraController;
 import io.github.urntt.litematicacreator.gui.GuiFocusSwitcher;
 
 public class CreatorEditService
@@ -140,7 +141,10 @@ public class CreatorEditService
 
         boolean edited = CreatorEditFeedback.afterSuccessfulEdit(
                 CreatorSchematicEditor.setBlockState(placement, target.blockPos(), preflight.state()),
-                () -> mc.player.swing(heldItem.hand(), false)
+                () -> CreatorEditFeedback.feedbackTarget(
+                        mc.player,
+                        CreatorCameraController.getInstance().getCamera()
+                ).swing(heldItem.hand(), false)
         );
         return edited ? CreatorEditOutcome.EDITED : CreatorEditOutcome.NO_CHANGE;
     }
@@ -181,7 +185,10 @@ public class CreatorEditService
             CreatorManager.getInstance().focusPlacement(placement);
             boolean edited = CreatorEditFeedback.afterSuccessfulEdit(
                     CreatorSchematicEditor.setBlockState(placement, target.blockPos(), Blocks.AIR.defaultBlockState()),
-                    () -> mc.player.swing(InteractionHand.MAIN_HAND, false)
+                    () -> CreatorEditFeedback.feedbackTarget(
+                            mc.player,
+                            CreatorCameraController.getInstance().getCamera()
+                    ).swing(InteractionHand.MAIN_HAND, false)
             );
             return edited ? CreatorEditOutcome.EDITED : CreatorEditOutcome.NO_CHANGE;
         }
