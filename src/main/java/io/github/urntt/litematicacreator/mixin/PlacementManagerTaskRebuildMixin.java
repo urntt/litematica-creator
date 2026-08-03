@@ -13,6 +13,7 @@ public class PlacementManagerTaskRebuildMixin
     @WrapMethod(method = "run")
     private void litematicacreator$guardCreatorSchematicEdits(Operation<Void> original)
     {
-        CreatorSchematicEditGuard.runRebuild(() -> original.call());
+        long chunkKey = ((PlacementManagerTaskAccessor) (Object) this).litematicacreator$getChunkLong();
+        CreatorSchematicEditGuard.runRebuild(chunkKey, () -> original.call());
     }
 }

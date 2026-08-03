@@ -25,17 +25,18 @@ class CreatorChunkRefreshPlanTest
     }
 
     @Test
-    void structuralEditUnionsOldAndNewTouchedChunksWithoutDuplicates()
+    void structuralEditRefreshesOnlyTheChangedRegionChunks()
     {
-        ChunkPos oldOnly = new ChunkPos(-2, 5);
-        ChunkPos shared = new ChunkPos(3, 4);
-        ChunkPos newOnly = new ChunkPos(9, -7);
+        ChunkPos rebuild = new ChunkPos(-2, 5);
+        ChunkPos unload = new ChunkPos(3, 4);
+        ChunkPos unrelatedPlacementChunk = new ChunkPos(9, -7);
 
-        Set<ChunkPos> chunks = CreatorChunkRefreshPlan.unionChunkSets(
-                List.of(Set.of(oldOnly, shared), Set.of(shared)),
-                List.of(Set.of(shared, newOnly))
+        CreatorChunkRefreshPlan.StructuralRefresh refresh = CreatorChunkRefreshPlan.forStructuralChange(
+                Set.of(rebuild, unload),
+                Set.of(rebuild, unrelatedPlacementChunk)
         );
 
-        assertEquals(Set.of(oldOnly, shared, newOnly), chunks);
+        assertEquals(Set.of(rebuild), refresh.rebuildChunks());
+        assertEquals(Set.of(unload), refresh.unloadChunks());
     }
 }
