@@ -110,15 +110,24 @@
 - 放置状态无效或目标不可替换时，不会切换 focus、创建草稿/subregion、标记 dirty 或调度 recovery；占用阻断保持静默。
 - 只有预检成功后才提交 focus、新草稿和 schematic 写入；重叠 placement 仍先打开 Focus Switcher，不执行本次放置。
 
-## 投影区块重建竞态（#37）
+## 投影编辑原子提交（#37 第一阶段）
 
 - Creator 的结构编辑会先保存各 placement 的旧 touched chunks，再完整修改 schematic container、附属数据、subregion placement 和 metadata；所有对象一致后才逐个发布 placement change。
 - 发布每个 placement change 前，通过最小 accessor 把对应的旧区块快照交给 Litematica pre/post 流程；新增或删除 subregion 使用 old/new touched chunks 并集完成卸载与重建。
 - 普通方块编辑不再调用全量 `rebuildAllPlacements()`；同一 container 坐标会按每个 placement 和 subregion 的 origin、rotation、mirror 映射到世界坐标，只刷新实际受影响的区块。
-- 全局公平读写锁把 `PlacementManagerTaskRebuild.run()` 包装为读事务，把 Creator schematic 编辑包装为写事务。普通重建仍可并行，编辑会等待旧状态读取结束，后续重建只能看到完整提交后的状态；异常路径均保证释放锁。
+- 全局公平读写锁把 `PlacementManagerTaskRebuild.run()` 包装为读事务，把 Creator schematic 编辑包装为写事务。编辑会等待旧状态读取结束，后续重建只能看到完整提交后的状态；异常路径均保证释放锁。
 - `debugLogging` 会记录事务编号、锁等待时间、编辑坐标、region 删除状态、placement hash、old/new touched chunks 和最终刷新区块。
 - 单元测试覆盖并行读、读写互斥、异常释放、全部 placement/subregion 旋转镜像组合的坐标往返、普通编辑最小区块刷新及结构编辑 old/new 区块合并去重。
-- 游戏内回归矩阵包括 Creator cell/普通 region、同区块/跨区块、远距离和快速连续删除、单 placement/同 schematic 多 placement，以及 `loadEntireSchematics` 开关。
+- 该阶段曾显著降低 #37 的出现频率，但后续实测确认没有根治；#37 已重新移入 TODO，并与放置路径的 #61 一起追踪。
+
+## Schematic world 与渲染快照同步（#37、#61 候选修复）
+
+- 源码审计确认 Litematica 后台 `PlacementManagerTaskRebuild` 会依次卸载旧 chunk、装入空 chunk、构造并替换完整 chunk；渲染任务则可能在中间窗口创建 `ChunkCacheSchematic`，把空 chunk 引用保留到稍后的网格编译。
+- Creator 为 schematic game chunk 使用公平的分片读写锁：同一区块的 placement rebuild 使用写锁并彼此串行，渲染编译使用读锁；不同区块仍可并行。
+- 渲染任务取得稳定读锁后，会在真正编译前重新执行 `rebuildWorldView()`，避免继续使用任务入队时捕获的旧或中间态 chunk 引用；编译和 GPU 上传完成后才释放读锁。
+- 旧的“抑制 placement 全量刷新并缩小结构刷新范围”方案已回退，避免改变 Litematica 原生 placement change 语义。
+- 并发单元测试覆盖同区块 rebuild/rebuild、rebuild/render 双向互斥、不同区块并行和异常释放；Fabric 26.2 开发客户端已验证全部新增 Mixin 能正常应用。
+- 本节记录已实现的候选修复，不代表问题已关闭；测试机完成高频放置与删除回归前，#37、#61 保持进行中。
 
 ## 虚拟创造物品栏（#8）
 

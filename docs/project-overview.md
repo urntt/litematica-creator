@@ -13,7 +13,7 @@ Litematica Creator 是一个纯客户端 Litematica 附属。它把“编辑原�
 - **任意方向扩展**：稀疏 `1x1x1` subregion 按编辑位置动态创建，适合从零草拟，也适合扩展已有 schematic。
 - **独立 Creator Camera**：可在地面模式中按原版方式移动，也可切换飞行和穿墙；真实玩家本体维持独立的原版物理和服务端位置。
 - **保留 Litematica 生态**：Creator 直接编辑标准 `LitematicaSchematic`，而不是维护无法互通的私有投影格式。
-- **异常恢复与并发安全**：未保存内容使用标准 `.litematic` recovery generation 缓存；编辑事务与异步区块重建经过隔离和最小化刷新。
+- **异常恢复与并发安全**：未保存内容使用标准 `.litematic` recovery generation 缓存；编辑事务、异步 schematic chunk 重建和渲染 world-view 快照按一致性边界隔离。
 
 ## 典型使用场景
 
@@ -29,7 +29,7 @@ Litematica Creator 是一个纯客户端 Litematica 附属。它把“编辑原�
 2. `CreatorTargeting` 从当前 Creator Camera 统一执行真实世界与投影 `VoxelShape` 射线。
 3. `CreatorFocus` 决定边界外操作要扩展哪个 schematic；placement 负责坐标、旋转和镜像，schematic 始终是数据真源。
 4. `CreatorSchematicEditor` 写入现有 region，或按需创建稀疏 Creator cell，并同步同一 schematic 的全部 placements 与 metadata。
-5. Litematica placement manager 重建实际受影响的 schematic chunks；同一区块任务串行，不同区块仍可并行。
+5. Litematica placement manager 重建实际受影响的 schematic chunks；同一区块重建与渲染编译同步，并在稳定快照中刷新 world view，不同区块仍可并行。
 6. `CreatorRecoveryManager` 在客户端生成不可变快照，后台原子提交标准 `.litematic` generation 和 manifest。
 
 这条链路使 Creator 能复用 Litematica 的数据与渲染体系，同时把真实玩家背包、真实世界状态和服务端数据包保持在编辑边界之外。
