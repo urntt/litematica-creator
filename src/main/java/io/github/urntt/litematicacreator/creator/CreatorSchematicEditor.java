@@ -3,7 +3,6 @@ package io.github.urntt.litematicacreator.creator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -227,9 +226,7 @@ public final class CreatorSchematicEditor
         container.set(0, 0, 0, SchematicUtils.getUntransformedBlockState(worldState, editedPlacement, regionName));
         schematic.getMetadata().setTotalBlocks(Math.max(0, schematic.getMetadata().getTotalBlocks()) + 1);
         refreshGeometryMetadata(schematic);
-        Set<ChunkPos> affectedChunks = snapshotRegionTouchedChunks(placements, regionName);
         Map<SchematicPlacement, Set<ChunkPos>> newChunks = publishPlacementChanges(placements, oldChunks);
-        Set<ChunkPos> refreshChunks = refreshStructuralChunks(affectedChunks);
         markModified(schematic);
         debugTransaction(
                 transaction,
@@ -242,7 +239,7 @@ public final class CreatorSchematicEditor
                 placements,
                 oldChunks,
                 newChunks,
-                refreshChunks
+                CreatorChunkRefreshPlan.unionTouchedChunks(oldChunks, newChunks)
         );
     }
 
@@ -256,7 +253,6 @@ public final class CreatorSchematicEditor
         LitematicaSchematicAccessor schematicAccessor = (LitematicaSchematicAccessor) schematic;
         List<SchematicPlacement> placements = List.copyOf(DataManager.getSchematicPlacementManager().getAllPlacementsOfSchematic(schematic));
         Map<SchematicPlacement, Set<ChunkPos>> oldChunks = snapshotTouchedChunks(placements);
-        Set<ChunkPos> affectedChunks = snapshotRegionTouchedChunks(placements, regionName);
 
         schematicAccessor.litematicacreator$getBlockContainers().remove(regionName);
         schematicAccessor.litematicacreator$getTileEntities().remove(regionName);
@@ -281,7 +277,6 @@ public final class CreatorSchematicEditor
 
         refreshGeometryMetadata(schematic);
         Map<SchematicPlacement, Set<ChunkPos>> newChunks = publishPlacementChanges(placements, oldChunks);
-        Set<ChunkPos> refreshChunks = refreshStructuralChunks(affectedChunks);
         markModified(schematic);
         debugTransaction(
                 transaction,
@@ -294,7 +289,7 @@ public final class CreatorSchematicEditor
                 placements,
                 oldChunks,
                 newChunks,
-                refreshChunks
+                CreatorChunkRefreshPlan.unionTouchedChunks(oldChunks, newChunks)
         );
     }
 
@@ -336,60 +331,15 @@ public final class CreatorSchematicEditor
         Set<ChunkPos> preChange = ((SchematicPlacementManagerAccessor) manager).litematicacreator$getChunksPreChange();
         SchematicPlacementEventHandler events = SchematicPlacementEventHandler.getInstance();
 
-        try (CreatorSchematicEditGuard.PlacementRefreshSuppression ignored =
-                     CreatorSchematicEditGuard.suppressPlacementRefreshScheduling())
-        {
-            for (SchematicPlacement placement : placements)
-            {
-                preChange.clear();
-                preChange.addAll(oldChunks.getOrDefault(placement, Set.of()));
-                events.invokePlacementModified(CreatorPlacementIndex.INSTANCE, placement);
-            }
-        }
-        finally
-        {
-            preChange.clear();
-        }
-
-        return snapshotTouchedChunks(placements);
-    }
-
-    private static Set<ChunkPos> snapshotRegionTouchedChunks(
-            List<SchematicPlacement> placements,
-            String regionName)
-    {
-        Set<ChunkPos> chunks = new LinkedHashSet<>();
-
         for (SchematicPlacement placement : placements)
         {
-            chunks.addAll(placement.getTouchedChunksForRegion(regionName, RequiredEnabled.PLACEMENT_ENABLED));
+            preChange.clear();
+            preChange.addAll(oldChunks.getOrDefault(placement, Set.of()));
+            events.invokePlacementModified(CreatorPlacementIndex.INSTANCE, placement);
         }
 
-        return Set.copyOf(chunks);
-    }
-
-    private static Set<ChunkPos> refreshStructuralChunks(Set<ChunkPos> affectedChunks)
-    {
-        SchematicPlacementManager manager = DataManager.getSchematicPlacementManager();
-        SchematicPlacementManagerAccessor accessor = (SchematicPlacementManagerAccessor) manager;
-        Set<ChunkPos> chunksStillTouched = new LinkedHashSet<>();
-
-        for (ChunkPos chunk : affectedChunks)
-        {
-            if (!accessor.litematicacreator$invokeGetAllSchematicsTouchingChunk(chunk).isEmpty())
-            {
-                chunksStillTouched.add(chunk);
-            }
-        }
-
-        CreatorChunkRefreshPlan.StructuralRefresh refresh = CreatorChunkRefreshPlan.forStructuralChange(
-                affectedChunks,
-                chunksStillTouched
-        );
-        refresh.unloadChunks().forEach(manager::markChunkForUnload);
-        refresh.rebuildChunks().forEach(manager::markChunkForRebuild);
-
-        return affectedChunks;
+        preChange.clear();
+        return snapshotTouchedChunks(placements);
     }
 
     private static Set<ChunkPos> rebuildChangedBlock(

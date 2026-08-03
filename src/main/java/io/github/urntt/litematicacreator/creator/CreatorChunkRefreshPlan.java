@@ -1,8 +1,10 @@
 package io.github.urntt.litematicacreator.creator;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
 
@@ -67,19 +69,20 @@ final class CreatorChunkRefreshPlan
         return Set.copyOf(chunks);
     }
 
-    static StructuralRefresh forStructuralChange(
-            Set<ChunkPos> affectedChunks,
-            Set<ChunkPos> chunksStillTouched)
+    static Set<ChunkPos> unionTouchedChunks(
+            Map<SchematicPlacement, Set<ChunkPos>> oldChunks,
+            Map<SchematicPlacement, Set<ChunkPos>> newChunks)
     {
-        Set<ChunkPos> rebuild = new LinkedHashSet<>(affectedChunks);
-        rebuild.retainAll(chunksStillTouched);
-        Set<ChunkPos> unload = new LinkedHashSet<>(affectedChunks);
-        unload.removeAll(chunksStillTouched);
-
-        return new StructuralRefresh(Set.copyOf(rebuild), Set.copyOf(unload));
+        return unionChunkSets(oldChunks.values(), newChunks.values());
     }
 
-    record StructuralRefresh(Set<ChunkPos> rebuildChunks, Set<ChunkPos> unloadChunks)
+    static Set<ChunkPos> unionChunkSets(
+            Collection<? extends Set<ChunkPos>> oldChunks,
+            Collection<? extends Set<ChunkPos>> newChunks)
     {
+        Set<ChunkPos> chunks = new LinkedHashSet<>();
+        oldChunks.forEach(chunks::addAll);
+        newChunks.forEach(chunks::addAll);
+        return Set.copyOf(chunks);
     }
 }

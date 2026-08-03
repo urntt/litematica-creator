@@ -20,12 +20,10 @@
 		"MinecraftClientMixin",
 		"MultiPlayerGameModeMixin",
 		"OverlayRendererMixin",
-		"PlacementManagerTaskAccessor",
 		"PlacementManagerTaskRebuildMixin",
 		"SchematicPlacementMixin",
 		"SchematicPlacementAccessor",
-		"SchematicPlacementManagerAccessor",
-		"SchematicPlacementManagerRefreshMixin"
+		"SchematicPlacementManagerAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1
