@@ -1,0 +1,231 @@
+# Litematica Creator
+
+[中文](#中文) | [English](#english)
+
+Litematica Creator is a client-side Litematica addon for building schematic drafts as naturally as placing blocks in Creative mode, without changing the real world.
+
+> Development status: `0.1.0-dev` for Minecraft/Fabric `26.2`. Back up important schematics before editing them with a development build.
+
+## 中文
+
+### 简介
+
+Litematica Creator 让玩家在生存模式中直接放置、删除和拾取“投影方块”，从零搭建或继续编辑 Litematica 原理图。
+
+它只修改客户端中的 `LitematicaSchematic` 和 `SchematicPlacement`：
+
+- 不放置或破坏真实方块。
+- 不消耗真实背包中的物品。
+- 不发送对应的真实攻击或放置数据包。
+- 不绕过服务器权限或生存限制。
+
+编辑结果仍是普通 Litematica 原理图，可以继续使用 Litematica 的渲染、材料列表、Verifier、保存和后续建造流程。
+
+### 主要功能
+
+- **直接编辑投影**：右键放置、左键删除、中键拾取投影或真实方块。
+- **从零创建草稿**：在没有可编辑 placement 时自动创建草稿，也可主动新建空白原理图。
+- **稀疏动态扩展**：在原理图边界外编辑时按需创建 `1x1x1` subregion，不用频繁扩张一个巨大 region，也不会声明大片隐式空气。
+- **虚拟创造物品栏**：具有独立的虚拟快捷栏、背包、副手、盔甲和丢弃栏，支持创造分类、搜索和原版式 pick block；数据仅保存在客户端。
+- **Creator Focus**：编辑目标独立于 Litematica selected placement；同一 schematic 的任意 placement 都可以作为编辑入口，修改会反映到它的全部 placements。
+- **Creator Camera**：纯客户端地面/飞行相机，支持双击空格飞行、穿墙、速度调节和可选投影碰撞；真实玩家本体保持独立，继续受重力、惯性和服务端校正影响。
+- **安全恢复**：未落盘或修改后未保存的 schematic 会写入 recovery cache，可在重新进入同一世界后恢复 placement、selected placement 和 Creator focus。
+- **旋转与镜像感知**：编辑坐标和方块状态会根据 placement 与 subregion 的旋转、镜像正确换算。
+
+### 运行要求
+
+| 组件 | 要求 |
+| --- | --- |
+| Minecraft | `26.2` |
+| Java | `25` |
+| Fabric Loader | 已测试 `0.19.3` |
+| MaLiLib | `>=0.29.2` 且 `<0.30.0`；开发基线为 `0.29.2-sakura.4` |
+| Litematica | `>=0.28.2` 且 `<0.29.0`；开发基线为 `0.28.2-sakura.1` |
+
+Tweakeroo 不是硬依赖。检测到其 Free Camera 时，Creator 会临时协调相机状态并在退出后恢复。Syncmatica 集成尚未实现。
+
+### 安装
+
+1. 安装 Minecraft `26.2`、Fabric Loader、MaLiLib 和 Litematica。
+2. 将 Litematica Creator JAR 放入客户端的 `mods` 文件夹。
+3. 启动游戏，并在 MaLiLib 配置界面确认 `Litematica Creator` 已加载。
+
+这是纯客户端模组，服务器不需要安装。
+
+### 快速上手
+
+1. 按 `Y` 开启 Creator 模式。默认会同时开启 Creator Camera。
+2. 按原版物品栏键或 `M + E` 打开 Creator 物品栏，选择要放置的方块。
+3. 右键放置投影方块，左键删除，中键拾取；数字键和滚轮切换虚拟快捷栏。
+4. 在空气中右键时，投影会按配置的固定距离放置；编辑距离和连续放置/删除间隔可以在设置中调整。
+5. 对已有投影操作会切换 Creator focus；发生重叠或需要主动切换时，使用 `M + F` 打开 Focus Switcher。
+6. 使用 Litematica 原生界面把编辑结果导出为 `.litematic` 文件。
+
+默认快捷键：
+
+| 操作 | 默认按键 |
+| --- | --- |
+| 切换 Creator 模式 | `Y` |
+| 切换 Creator Camera | `M + B` |
+| 打开 Creator 物品栏 | `M + E` |
+| 打开 Creator 设置 | `M + K` |
+| 结束编辑并清空 focus | `M + Left Shift + S` |
+| 卸载 focus 对应的原理图及其 placements | `M + Left Shift + D` |
+| 打开 Focus Switcher | `M + F` |
+| 新建空白原理图 | `M + N` |
+
+“结束编辑”不会导出文件或卸载原理图；“卸载当前原理图”也不会删除磁盘上的 `.litematic` 文件。正式保存和导出应继续在 Litematica 界面完成。
+
+### Recovery Cache
+
+Recovery cache 位于 `config/litematica-creator/recovery/`，用于恢复：
+
+- 尚未关联文件的 schematic。
+- 已关联文件、但修改后尚未保存的 schematic。
+
+正常退出、断线、切换世界和异常终止后均可使用最近一次完整缓存。恢复后 Creator 模式保持关闭，但会恢复退出前的 focus。Recovery cache 不是正式版本管理或手动保存的替代品。
+
+### 当前边界
+
+- 主要支持普通 `BlockItem` 的单方块放置；门、床等多方块语义尚未实现。
+- 尚无通用 BlockState/NBT 编辑器，也不支持与投影容器、告示牌等交互。
+- 尚无撤销/重做、多方块批量操作和实时多人同步。
+- Creator Camera 的普通方块式投影预览模式尚未实现。
+- 项目依赖 Litematica 内部实现，目标版本变化时可能需要适配。
+
+### 构建
+
+Windows：
+
+```powershell
+.\gradlew.bat build --no-daemon --max-workers=1
+```
+
+Linux/macOS：
+
+```bash
+./gradlew build --no-daemon --max-workers=1
+```
+
+构建产物位于 `build/libs/`。项目使用 Minecraft 官方命名空间、Fabric Loom `1.17.x` 和 Java 25。
+
+### 文档
+
+- [项目概览](docs/project-overview.md)
+- [设计与开发计划](docs/creator-design-and-roadmap.md)
+- [已完成任务与实现记录](docs/completed-tasks.md)
+- [当前 TODO](todo.md)
+
+## English
+
+### Overview
+
+Litematica Creator lets survival players place, remove, and pick projected blocks directly, making it possible to draft a new Litematica schematic or continue editing an existing one in-world.
+
+It only changes client-side `LitematicaSchematic` and `SchematicPlacement` data:
+
+- It does not place or break real blocks.
+- It does not consume items from the real inventory.
+- It does not send the corresponding real attack or placement packets.
+- It does not bypass server permissions or survival restrictions.
+
+The result remains a normal Litematica schematic and can use Litematica's rendering, material list, Verifier, save, and later construction workflows.
+
+### Features
+
+- **Direct projection editing**: right-click to place, left-click to remove, and middle-click to pick projected or real blocks.
+- **Draft from scratch**: automatically create a draft when no placement can be edited, or explicitly create an empty schematic.
+- **Sparse expansion**: create `1x1x1` subregions only where edits occur outside existing bounds, without repeatedly resizing one huge region or declaring large volumes of implicit air.
+- **Virtual Creative inventory**: separate virtual hotbar, inventory, offhand, armor, and trash slots with Creative tabs, search, and vanilla-style pick block. All data stays client-side.
+- **Creator Focus**: the edit target is independent from Litematica's selected placement. Any placement of the same schematic can be used as an edit entry point, and every placement reflects the same schematic changes.
+- **Creator Camera**: a client-only ground/flight camera with double-tap flight, noclip while flying, speed controls, and optional projection collision. The real player remains behind and continues normal gravity, momentum, and server corrections.
+- **Recovery cache**: schematics without a backing file, and modified file-backed schematics, can be restored with their placements, Litematica selection, and Creator focus.
+- **Transform-aware editing**: placement and subregion rotation and mirroring are respected for coordinates and block states.
+
+### Requirements
+
+| Component | Requirement |
+| --- | --- |
+| Minecraft | `26.2` |
+| Java | `25` |
+| Fabric Loader | Tested with `0.19.3` |
+| MaLiLib | `>=0.29.2` and `<0.30.0`; development baseline `0.29.2-sakura.4` |
+| Litematica | `>=0.28.2` and `<0.29.0`; development baseline `0.28.2-sakura.1` |
+
+Tweakeroo is optional. When its Free Camera is detected, Creator temporarily coordinates the external camera state and restores it afterward. Syncmatica integration is not implemented yet.
+
+### Installation
+
+1. Install Minecraft `26.2`, Fabric Loader, MaLiLib, and Litematica.
+2. Put the Litematica Creator JAR in the client's `mods` directory.
+3. Start the game and confirm that `Litematica Creator` appears in the MaLiLib configuration screen.
+
+This is a client-only mod; the server does not need it.
+
+### Quick Start
+
+1. Press `Y` to enable Creator mode. Creator Camera is enabled with it by default.
+2. Press the vanilla inventory key or `M + E` to open the Creator inventory and choose a block.
+3. Right-click to place a projected block, left-click to remove one, and middle-click to pick one. Number keys and the mouse wheel select the virtual hotbar slot.
+4. Right-clicking air uses the configured fixed placement distance. Edit range and continuous placement/removal intervals are configurable.
+5. Editing an existing projection changes Creator focus. Use `M + F` when projections overlap or when you want to select a focus explicitly.
+6. Export the result as a `.litematic` through Litematica's native screens.
+
+Default keybinds:
+
+| Action | Default key |
+| --- | --- |
+| Toggle Creator mode | `Y` |
+| Toggle Creator Camera | `M + B` |
+| Open Creator inventory | `M + E` |
+| Open Creator settings | `M + K` |
+| Finish editing and clear focus | `M + Left Shift + S` |
+| Unload the focused schematic and its placements | `M + Left Shift + D` |
+| Open Focus Switcher | `M + F` |
+| Create an empty schematic | `M + N` |
+
+"Finish editing" does not export or unload anything. "Unload current schematic" never deletes the original `.litematic` file. Use Litematica's own screens for permanent saves and exports.
+
+### Recovery Cache
+
+Recovery data is stored in `config/litematica-creator/recovery/` for:
+
+- Schematics without a backing file.
+- File-backed schematics modified since their last save.
+
+The latest complete cache can be recovered after a normal exit, disconnect, world switch, or abnormal process termination. Creator mode remains disabled after recovery, while the previous focus is restored. Recovery is not a replacement for normal saves or version control.
+
+### Current Limitations
+
+- Placement primarily covers ordinary single-block `BlockItem` behavior. Multi-block blocks such as doors and beds are not implemented yet.
+- There is no general BlockState/NBT editor or virtual interaction for containers, signs, and similar projected blocks.
+- Undo/redo, bulk placement, and real-time multiplayer synchronization are not available yet.
+- Normal opaque block rendering for Creator Camera preview mode is not implemented yet.
+- The addon relies on Litematica internals and may require adaptation for other target versions.
+
+### Building
+
+Windows:
+
+```powershell
+.\gradlew.bat build --no-daemon --max-workers=1
+```
+
+Linux/macOS:
+
+```bash
+./gradlew build --no-daemon --max-workers=1
+```
+
+Artifacts are written to `build/libs/`. The project uses the official Minecraft namespace, Fabric Loom `1.17.x`, and Java 25.
+
+### Documentation
+
+- [Project overview](docs/project-overview.md)
+- [Design and roadmap, Chinese](docs/creator-design-and-roadmap.md)
+- [Completed implementation notes, Chinese](docs/completed-tasks.md)
+- [Current TODO, Chinese](todo.md)
+
+## License
+
+All rights reserved (`ARR`).
