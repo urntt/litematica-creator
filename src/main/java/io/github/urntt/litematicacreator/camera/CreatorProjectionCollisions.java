@@ -8,7 +8,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.CollisionGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
@@ -52,7 +54,7 @@ public final class CreatorProjectionCollisions
             {
                 VoxelShape moved = shape.move(pos);
 
-                if (moved.bounds().intersects(queryBounds))
+                if (intersects(moved, queryBounds))
                 {
                     shapes.add(moved);
                 }
@@ -60,5 +62,10 @@ public final class CreatorProjectionCollisions
         }
 
         return List.copyOf(shapes);
+    }
+
+    static boolean intersects(VoxelShape shape, AABB bounds)
+    {
+        return !shape.isEmpty() && Shapes.joinIsNotEmpty(shape, Shapes.create(bounds), BooleanOp.AND);
     }
 }
