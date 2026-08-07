@@ -8,7 +8,7 @@
 		"ChunkRendererSchematicVboAccessor",
 		"ChunkRenderTaskSchematicAccessor",
 		"ChunkRenderWorkerLitematicaMixin",
-		"CollisionGetterMixin",
+		"EntityCollisionMixin",
 		"EntityTurnMixin",
 		"HudMixin",
 		"ItemInHandRendererMixin",
