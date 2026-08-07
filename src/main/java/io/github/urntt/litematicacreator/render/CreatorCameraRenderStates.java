@@ -83,7 +83,7 @@ public final class CreatorCameraRenderStates
         return ((LevelExtractorAccessor) (Object) extractor).litematicacreator$extractEntity(entity, partialTicks);
     }
 
-    private static void makeCameraAvatarTranslucent(EntityRenderState state)
+    public static void makeCameraAvatarTranslucent(EntityRenderState state)
     {
         state.isInvisible = true;
         state.displayFireAnimation = false;

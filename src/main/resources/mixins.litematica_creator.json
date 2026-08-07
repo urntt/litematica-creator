@@ -11,6 +11,7 @@
 		"EntityCollisionMixin",
 		"EntityTurnMixin",
 		"HudMixin",
+		"InventoryScreenMixin",
 		"ItemInHandRendererMixin",
 		"LevelExtractorMixin",
 		"LevelExtractorAccessor",

@@ -17,6 +17,7 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.Avatar;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -31,6 +32,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.camera.CreatorCameraController;
+import io.github.urntt.litematicacreator.render.CreatorCameraAvatarRenderPolicy;
 import io.github.urntt.litematicacreator.render.CreatorVirtualLoadout;
 
 @Mixin(AvatarRenderer.class)
@@ -73,6 +75,25 @@ public abstract class AvatarRendererMixin
         state.chestEquipment = renderableEquipment(EquipmentSlot.CHEST);
         state.legsEquipment = renderableEquipment(EquipmentSlot.LEGS);
         state.feetEquipment = renderableEquipment(EquipmentSlot.FEET);
+
+        if (creatorCameraAvatar)
+        {
+            Pose pose = entity.getPose();
+            state.pose = pose;
+            state.isCrouching = entity.isCrouching();
+            state.isFallFlying = CreatorCameraAvatarRenderPolicy.renderAsFallFlying(entity.isFallFlying(), pose);
+            state.isVisuallySwimming = !state.isFallFlying && entity.isVisuallySwimming();
+            state.swimAmount = state.isFallFlying ? 0.0F : entity.getSwimAmount(partialTicks);
+            state.fallFlyingTimeInTicks = entity.getFallFlyingTicks() + partialTicks;
+            state.elytraRotX = entity.elytraAnimationState.getRotX(partialTicks);
+            state.elytraRotY = entity.elytraAnimationState.getRotY(partialTicks);
+            state.elytraRotZ = entity.elytraAnimationState.getRotZ(partialTicks);
+            state.showCape = CreatorCameraAvatarRenderPolicy.showCapeWithVirtualChest(
+                    state.showCape,
+                    state.chestEquipment.has(DataComponents.GLIDER)
+            );
+        }
+
         state.isUsingItem = false;
         state.ticksUsingItem = 0.0F;
         state.heldOnHead.clear();
