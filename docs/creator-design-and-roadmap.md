@@ -520,7 +520,7 @@ Tweakeroo 没有专门为 Creator 暴露稳定 public API。直接硬 import 会
 - Creator 编辑闭环：右键用虚拟 `BlockItem` 创建投影方块，左键删除当前 Creator 投影方块，中键 pick 真实方块或 Creator 投影方块。
 - 完成编辑入口只清空 focus；卸载入口按 focus schematic 卸载全部 placements；文件导出继续使用 Litematica 原生界面。
 - Creator 自带纯客户端相机：可独立热键切换并配置与 Creator 模式的自动联动；地面模式复用原版玩家移动物理和可配置的真实/投影碰撞，双击空格切换可穿墙飞行，速度倍率可配置，HUD 显示当前状态。
-- 真实玩家主动输入、转向和 controlled-camera 状态在会话中隔离，但本体继续执行重力、惯性和服务端校正；相机不执行网络玩家 tick，编辑射线及放置朝向全部来自 Creator camera。
+- 真实玩家主动输入和转向在会话中隔离，但本体继续作为网络受控玩家执行并同步重力、惯性、击退和服务端校正；相机不执行网络玩家 tick，编辑射线及放置朝向全部来自 Creator camera。
 - 实体提取阶段同时补入正常本体和半透明 Creator 相机替身；相机姿态不继承本体，并同步原版自动跳跃选项。投影放置默认检查本体、相机和其他实体占位，也可由设置显式忽略。
 - Tweakeroo Free Camera 配置通过反射软检测并按会话快照恢复；跨区块渲染边缘刷新使用可选注入，不将 Tweakeroo 或 Sodium 变为硬依赖。
 - JUnit 回归测试覆盖旋转/镜像坐标往返、候选身份合并、放置占用策略、通用 region 空状态、focus 通知决策，以及 recovery eligibility、manifest、调度、原子 generation 和主动删除抑制。

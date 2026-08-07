@@ -220,7 +220,7 @@
 
 - Creator 模式开启时会从当前 camera entity 的位置和朝向创建未注册到世界实体列表的纯客户端 `CreatorCameraEntity`；从真实玩家接管时默认地面模式，从已有独立相机接管时默认飞行。
 - 地面模式复用 `LocalPlayer` 的原版输入与移动物理，包括重力、跳跃、潜行、疾跑、台阶、液体和梯子；双击空格切换飞行，飞行时启用 `noPhysics` 并可穿过方块。地面与飞行速度倍率均可在 `0.1–5.0` 间即时调整，默认 `1.0`。
-- 相机不执行会发送移动状态的 `LocalPlayer.tick()`，并屏蔽 abilities、骑乘和鞘翅等发包入口。真实本地玩家在会话期间不作为 controlled camera，服务端位置校正仍可正常写回真实玩家。
+- 相机不执行会发送移动状态的 `LocalPlayer.tick()`，并屏蔽 abilities、骑乘和鞘翅等服务端发包入口。真实本地玩家继续作为网络受控玩家同步本体自身的位置、落地和碰撞状态；服务端位置校正仍只写回真实玩家。
 - 地面碰撞为真实世界碰撞与当前可见投影 `VoxelShape` 的并集；解析遵循 Litematica placement/subregion 启用及渲染状态、合成顺序、空气覆盖、客户端区块可用性和 `loadEntireSchematics`。投影只贡献形状，不模拟投影液体、梯子、摩擦或弹跳。
 - Creator 相机跨区块时补充刷新新进入视野边缘的客户端区块；渲染器注入为可选，允许 Sodium 等渲染器替换原版路径。
 - 进入时保存原 camera entity、`smartCull` 及 Tweakeroo Free Camera 配置；Tweakeroo 存在时临时协调为 `freeCameraPlayerMovement=true`、`freeCameraPlayerInputs=false`，Creator 退出后精确恢复原值与原相机。
@@ -261,6 +261,16 @@
 - 新的 `EntityCollisionMixin` 只在实体为 Creator Camera 且本次扫掠范围确实包含投影碰撞形状时，于 `Entity.collide()` 入口接管求解；其他实体、飞行模式、关闭投影碰撞或附近没有投影时继续走原版或 Lithium 快路径。
 - 相机专用求解器保持原版的实体、世界边界、真实方块、投影形状合并顺序，并复用轴向裁剪、落地判定和跨台阶候选高度规则；实现不链接 Lithium 私有类，也不要求安装 Lithium。
 - 单元测试覆盖无形状快路径、投影形状轴向裁剪以及跨台阶候选高度去重排序；Fabric 开发客户端已在同时加载 Lithium `0.25.3+mc26.2` 时完成 Mixin、资源和主菜单初始化，实际投影碰撞手感留待游戏内验收。
+
+## Creator Camera 运动与替身状态修复（#68–#74）
+
+- #68 覆写 Creator Camera 的原版潜行防坠落计算，用真实世界碰撞与当前可见投影 `VoxelShape` 的并集判断脚下支撑；站在投影上潜行时不再把全部水平位移削为零，走到投影边缘时仍保留原版式防坠落。姿态空间检查也使用相同投影支撑语义。
+- #69 Creator 虚拟物品栏的玩家预览在相机活动时改为提取 `CreatorCameraEntity`，因此预览跟随替身姿态、虚拟手持和虚拟装备；相机关闭时继续显示真实玩家。
+- #70 相机保留 `tryToStartFallFlying()` 的网络发包阻断，改由本地 fresh-jump 状态机直接启动虚拟鞘翅滑翔；落地、移除可滑翔装备或切入创造飞行时停止。该流程不发 `START_FALL_FLYING` 包，也不消耗真实或虚拟物品耐久。
+- #71 手工相机 tick 补齐 `ClientAvatarState.tick()` 和原版私有 `updateSwimAmount()`；匍匐/游泳模型会随独立碰撞箱平滑转为水平姿态，替身披风与鞘翅动画也取得连续的运动状态。
+- #72 `CreatorCameraController` 在单人游戏真正暂停时不推进相机物理；多人游戏打开菜单但世界未暂停时仍按原版继续运动。
+- #73、#74 真实玩家继续使用空输入隔离主动移动和转向，但恢复 `isControlledCamera=true`。原版 `LocalPlayer.tick()` 因而会把本体自己的重力、惯性、击退、推动、流体和挤压结果发送给服务端，怪物追踪、虚空伤害、落地及鞘翅停止均以实际本体位置处理；未注册相机仍不执行网络玩家 tick，绝不会发送相机坐标。
+- 单元测试覆盖投影支撑下的潜行位移、边缘回退、虚拟鞘翅启动/停止条件和既有相机生命周期；本批完成后共有 125 项测试通过。
 
 ## 配套工作
 

@@ -61,6 +61,13 @@
 - [x] #62 Creator 相机替身不再推动真实实体
 - [x] #63 Creator 相机独立更新潜行等姿态碰撞箱
 - [x] #64 Creator 相机投影碰撞兼容 Lithium
+- [x] #68 潜行时可在投影方块支撑面上移动
+- [x] #69 Creator 物品栏玩家预览使用相机替身
+- [x] #70 Creator 相机虚拟鞘翅渲染与本地滑翔
+- [x] #71 Creator 相机匍匐模型姿态同步
+- [x] #72 单人游戏暂停时冻结 Creator 相机
+- [x] #73 Creator Camera 下本体继续更新姿态与运动状态
+- [x] #74 Creator Camera 下本体运动继续同步至服务端
 - [x] Creator 与 Litematica 的完成编辑/卸载命令边界
 - [x] 坐标、目标解析和稀疏 region 核心单元测试
 - [x] Focus、稀疏 subregion 和生命周期设计文档同步
