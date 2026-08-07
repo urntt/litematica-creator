@@ -1,6 +1,6 @@
 # Litematica Creator 已完成工作记录
 
-最后更新：2026-08-03
+最后更新：2026-08-07
 
 本文档保存已完成工作的实现细节和历史验收记录。当前和部分完成的工作统一维护在 [`../todo.md`](../todo.md)。
 
@@ -118,16 +118,16 @@
 - 全局公平读写锁把 `PlacementManagerTaskRebuild.run()` 包装为读事务，把 Creator schematic 编辑包装为写事务。编辑会等待旧状态读取结束，后续重建只能看到完整提交后的状态；异常路径均保证释放锁。
 - `debugLogging` 会记录事务编号、锁等待时间、编辑坐标、region 删除状态、placement hash、old/new touched chunks 和最终刷新区块。
 - 单元测试覆盖并行读、读写互斥、异常释放、全部 placement/subregion 旋转镜像组合的坐标往返、普通编辑最小区块刷新及结构编辑 old/new 区块合并去重。
-- 该阶段曾显著降低 #37 的出现频率，但后续实测确认没有根治；#37 已重新移入 TODO，并与放置路径的 #61 一起追踪。
+- 该阶段曾显著降低 #37 的出现频率，但后续实测确认没有根治；最终修复由下节的 schematic world 与渲染快照同步完成。
 
-## Schematic world 与渲染快照同步（#37、#61 候选修复）
+## Schematic world 与渲染快照同步（#37、#61）
 
 - 源码审计确认 Litematica 后台 `PlacementManagerTaskRebuild` 会依次卸载旧 chunk、装入空 chunk、构造并替换完整 chunk；渲染任务则可能在中间窗口创建 `ChunkCacheSchematic`，把空 chunk 引用保留到稍后的网格编译。
 - Creator 为 schematic game chunk 使用公平的分片读写锁：同一区块的 placement rebuild 使用写锁并彼此串行，渲染编译使用读锁；不同区块仍可并行。
 - 渲染任务取得稳定读锁后，会在真正编译前重新执行 `rebuildWorldView()`，避免继续使用任务入队时捕获的旧或中间态 chunk 引用；编译和 GPU 上传完成后才释放读锁。
 - 旧的“抑制 placement 全量刷新并缩小结构刷新范围”方案已回退，避免改变 Litematica 原生 placement change 语义。
 - 并发单元测试覆盖同区块 rebuild/rebuild、rebuild/render 双向互斥、不同区块并行和异常释放；Fabric 26.2 开发客户端已验证全部新增 Mixin 能正常应用。
-- 本节记录已实现的候选修复，不代表问题已关闭；测试机完成高频放置与删除回归前，#37、#61 保持进行中。
+- 2026-08-07，测试机经过连续数小时高频放置与删除测试后未再复现整块或整体投影消失，#37、#61 正式关闭。
 
 ## 虚拟创造物品栏（#8）
 
@@ -252,6 +252,15 @@
 - #59 成功放置或删除投影后的本地 `swing()` 改为优先作用于 Creator 相机；相机自己的轻量 tick 显式推进原版挥手时间。真实本体不再同步播放 Creator 编辑动画，相机替身和第一人称手持仍正常播放。
 - #60 相机实体动态代理真实本地玩家的主手侧与 `PlayerModelPart` 可见性，因此头部、夹克、左右袖和裤腿第二层会随真实玩家设置完整渲染，不再使用新建 `LocalPlayer` 的默认关闭状态。
 - 单元测试覆盖第一人称世界替身抑制、第三人称去重和反馈目标选择；完整构建及开发客户端 Mixin 类加载验证通过，最终视觉效果留待游戏内验收。
+
+## Creator Camera 物理兼容修复（#62–#64）
+
+- #62 `CreatorCameraEntity` 不再执行 `LivingEntity.pushEntities()`。相机替身仍可按正常移动逻辑检测方块碰撞，但不会主动给真实本体或其他世界实体施加推力；它本身未注册到世界实体列表，真实实体也不会反向把它作为可推动目标。
+- #63 相机的轻量 tick 会在 `aiStep()` 后显式执行原版 `updatePlayerPose()`，补回跳过 `Player.tick()` 后缺失的姿态刷新。地面模式潜行会切换为独立的蹲姿和 1.5 格碰撞箱，飞行模式继续按原版创造模式把潜行键用于下降而保持站姿。
+- #64 移除了依赖 `CollisionGetter.getBlockCollisions()` 返回值追加形状的旧 Mixin。Lithium 的移动优化直接扫描区块方块并绕过该接口，因此旧路径无法参与相机移动碰撞。
+- 新的 `EntityCollisionMixin` 只在实体为 Creator Camera 且本次扫掠范围确实包含投影碰撞形状时，于 `Entity.collide()` 入口接管求解；其他实体、飞行模式、关闭投影碰撞或附近没有投影时继续走原版或 Lithium 快路径。
+- 相机专用求解器保持原版的实体、世界边界、真实方块、投影形状合并顺序，并复用轴向裁剪、落地判定和跨台阶候选高度规则；实现不链接 Lithium 私有类，也不要求安装 Lithium。
+- 单元测试覆盖无形状快路径、投影形状轴向裁剪以及跨台阶候选高度去重排序；Fabric 开发客户端已在同时加载 Lithium `0.25.3+mc26.2` 时完成 Mixin、资源和主菜单初始化，实际投影碰撞手感留待游戏内验收。
 
 ## 配套工作
 
