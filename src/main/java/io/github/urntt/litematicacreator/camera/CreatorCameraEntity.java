@@ -18,6 +18,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import io.github.urntt.litematicacreator.config.Configs;
+import io.github.urntt.litematicacreator.mixin.LivingEntityInvoker;
 import io.github.urntt.litematicacreator.mixin.LocalPlayerAccessor;
 import io.github.urntt.litematicacreator.render.CreatorVirtualLoadout;
 
@@ -29,6 +30,7 @@ public final class CreatorCameraEntity extends LocalPlayer
 
     private final Minecraft minecraft;
     private final LocalPlayer appearancePlayer;
+    private boolean creatorJumpWasDown;
 
     CreatorCameraEntity(Minecraft minecraft, ClientLevel level, LocalPlayer player, Entity source, boolean flying)
     {
@@ -70,6 +72,8 @@ public final class CreatorCameraEntity extends LocalPlayer
     public void creatorTick()
     {
         this.updateOldPositionAndRotation();
+        this.avatarState().tick(this.position(), this.getDeltaMovement());
+        boolean wasOnGround = this.onGround();
         this.applyConfiguredSpeeds();
         ((LocalPlayerAccessor) (Object) this).litematicacreator$setAutoJumpEnabled(
                 this.minecraft.options.autoJump().get()
@@ -77,6 +81,8 @@ public final class CreatorCameraEntity extends LocalPlayer
         this.baseTick();
         this.updateSwingTime();
         this.aiStep();
+        this.updateCreatorFallFlying(wasOnGround);
+        ((LivingEntityInvoker) (Object) this).litematicacreator$updateSwimAmount();
         this.updatePlayerPose();
         this.noPhysics = this.getAbilities().flying;
         this.resetFallDistance();
@@ -230,6 +236,35 @@ public final class CreatorCameraEntity extends LocalPlayer
 
         return this.level().noCollision(this, supportBounds) &&
                 CreatorProjectionCollisions.collect(this, (ClientLevel) this.level(), supportBounds).isEmpty();
+    }
+
+    private void updateCreatorFallFlying(boolean wasOnGround)
+    {
+        boolean jumpDown = this.input.keyPresses.jump();
+        boolean canGlide = this.canGlide();
+
+        if (CreatorCameraFlightPolicy.shouldStopFallFlying(
+                this.getAbilities().flying,
+                this.isFallFlying(),
+                canGlide
+        ))
+        {
+            this.stopFallFlying();
+        }
+        else if (CreatorCameraFlightPolicy.shouldStartFallFlying(
+                jumpDown,
+                this.creatorJumpWasDown,
+                wasOnGround,
+                this.getAbilities().flying,
+                this.isFallFlying(),
+                canGlide,
+                this.isInWater()
+        ))
+        {
+            super.tryToStartFallFlying();
+        }
+
+        this.creatorJumpWasDown = jumpDown;
     }
 
     private void updateOldPositionAndRotation()

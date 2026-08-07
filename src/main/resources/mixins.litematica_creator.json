@@ -18,6 +18,7 @@
 		"LitematicaInputHandlerMixin",
 		"LocalPlayerMixin",
 		"LocalPlayerAccessor",
+		"LivingEntityInvoker",
 		"LitematicaSchematicAccessor",
 		"LivingEntityRendererAccessor",
 		"MinecraftClientMixin",

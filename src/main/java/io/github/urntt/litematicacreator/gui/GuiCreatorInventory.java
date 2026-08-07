@@ -45,6 +45,7 @@ import net.minecraft.world.item.TooltipFlag;
 import org.jspecify.annotations.Nullable;
 
 import fi.dy.masa.malilib.gui.GuiBase;
+import io.github.urntt.litematicacreator.camera.CreatorCameraController;
 import io.github.urntt.litematicacreator.creator.CreatorInventory;
 
 public class GuiCreatorInventory extends AbstractContainerScreen<CreatorInventoryMenu>
@@ -513,6 +514,13 @@ public class GuiCreatorInventory extends AbstractContainerScreen<CreatorInventor
 
         if (this.selectedTab.getType() == CreativeModeTab.Type.INVENTORY)
         {
+            LocalPlayer previewPlayer = CreatorCameraController.getInstance().getCamera();
+
+            if (previewPlayer == null)
+            {
+                previewPlayer = this.minecraft.player;
+            }
+
             InventoryScreen.extractEntityInInventoryFollowsMouse(
                     graphics,
                     this.leftPos + 73,
@@ -523,7 +531,7 @@ public class GuiCreatorInventory extends AbstractContainerScreen<CreatorInventor
                     0.0625F,
                     mouseX,
                     mouseY,
-                    this.minecraft.player
+                    previewPlayer
             );
         }
     }
