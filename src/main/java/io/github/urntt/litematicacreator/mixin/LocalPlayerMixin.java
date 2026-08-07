@@ -54,13 +54,13 @@ public abstract class LocalPlayerMixin
     }
 
     @Inject(method = "isControlledCamera", at = @At("HEAD"), cancellable = true)
-    private void litematicacreator$preventRealPlayerCameraPackets(CallbackInfoReturnable<Boolean> cir)
+    private void litematicacreator$keepRealPlayerSynchronized(CallbackInfoReturnable<Boolean> cir)
     {
         LocalPlayer player = (LocalPlayer) (Object) this;
 
         if (CreatorCameraController.getInstance().shouldIsolatePlayer(player, Minecraft.getInstance()))
         {
-            cir.setReturnValue(false);
+            cir.setReturnValue(true);
         }
     }
 }

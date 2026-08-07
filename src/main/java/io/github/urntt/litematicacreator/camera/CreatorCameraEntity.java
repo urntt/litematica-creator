@@ -14,6 +14,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import io.github.urntt.litematicacreator.config.Configs;
@@ -124,6 +125,29 @@ public final class CreatorCameraEntity extends LocalPlayer
     }
 
     @Override
+    protected Vec3 maybeBackOffFromEdge(Vec3 movement, MoverType moverType)
+    {
+        float maxDownStep = this.maxUpStep();
+        boolean shouldStayOnSurface = !this.getAbilities().flying &&
+                movement.y <= 0.0D &&
+                (moverType == MoverType.SELF || moverType == MoverType.PLAYER) &&
+                this.isStayingOnGroundSurface() &&
+                this.creatorIsAboveGround(maxDownStep);
+
+        return shouldStayOnSurface ?
+                CreatorSneakEdgeMovement.backOff(movement, maxDownStep, this::creatorCanFallAtLeast) :
+                movement;
+    }
+
+    @Override
+    protected boolean canPlayerFitWithinBlocksAndEntitiesWhen(Pose pose)
+    {
+        AABB bounds = this.getDimensions(pose).makeBoundingBox(this.position()).deflate(1.0E-7D);
+        return this.level().noCollision(this, bounds) &&
+                CreatorProjectionCollisions.collect(this, (ClientLevel) this.level(), bounds).isEmpty();
+    }
+
+    @Override
     public void onUpdateAbilities()
     {
         this.noPhysics = this.getAbilities().flying;
@@ -183,6 +207,29 @@ public final class CreatorCameraEntity extends LocalPlayer
 
         this.getAbilities().setWalkingSpeed((float) (VANILLA_GROUND_SPEED * groundMultiplier));
         this.getAbilities().setFlyingSpeed((float) (VANILLA_FLIGHT_SPEED * flightMultiplier));
+    }
+
+    private boolean creatorIsAboveGround(float maxDownStep)
+    {
+        return this.onGround() ||
+                this.fallDistance < maxDownStep &&
+                !this.creatorCanFallAtLeast(0.0D, 0.0D, maxDownStep - this.fallDistance);
+    }
+
+    private boolean creatorCanFallAtLeast(double deltaX, double deltaZ, double minHeight)
+    {
+        AABB boundingBox = this.getBoundingBox();
+        AABB supportBounds = new AABB(
+                boundingBox.minX + 1.0E-7D + deltaX,
+                boundingBox.minY - minHeight - 1.0E-7D,
+                boundingBox.minZ + 1.0E-7D + deltaZ,
+                boundingBox.maxX - 1.0E-7D + deltaX,
+                boundingBox.minY,
+                boundingBox.maxZ - 1.0E-7D + deltaZ
+        );
+
+        return this.level().noCollision(this, supportBounds) &&
+                CreatorProjectionCollisions.collect(this, (ClientLevel) this.level(), supportBounds).isEmpty();
     }
 
     private void updateOldPositionAndRotation()

@@ -178,7 +178,10 @@ public final class CreatorCameraController
             minecraft.setCameraEntity(this.camera);
         }
 
-        this.camera.creatorTick();
+        if (!minecraft.isPaused())
+        {
+            this.camera.creatorTick();
+        }
     }
 
     public boolean acceptsInput()
