@@ -2,6 +2,7 @@ package io.github.urntt.litematicacreator.camera;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -42,5 +43,13 @@ class CreatorCameraFlightPolicyTest
         assertTrue(CreatorCameraFlightPolicy.shouldStopFallFlying(false, true, false));
         assertFalse(CreatorCameraFlightPolicy.shouldStopFallFlying(false, true, true));
         assertFalse(CreatorCameraFlightPolicy.shouldStopFallFlying(true, false, false));
+    }
+
+    @Test
+    void fallFlyingAnimationTicksAdvanceAndResetLikeVanilla()
+    {
+        assertEquals(1, CreatorCameraFlightPolicy.nextFallFlyingTicks(true, 0));
+        assertEquals(12, CreatorCameraFlightPolicy.nextFallFlyingTicks(true, 11));
+        assertEquals(0, CreatorCameraFlightPolicy.nextFallFlyingTicks(false, 11));
     }
 }

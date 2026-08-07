@@ -63,14 +63,12 @@
 - [x] #64 Creator 相机投影碰撞兼容 Lithium
 - [x] #68 潜行时可在投影方块支撑面上移动
 - [x] #69 Creator 物品栏玩家预览使用相机替身
-- [x] #70 Creator 相机虚拟鞘翅渲染与本地滑翔
 - [x] #71 Creator 相机匍匐模型姿态同步
 - [x] #72 单人游戏暂停时冻结 Creator 相机
 - [x] #73 Creator Camera 下本体继续更新姿态与运动状态
 - [x] #74 Creator Camera 下本体运动继续同步至服务端
 - [x] #75 可配置是否允许在空中放置投影方块
 - [x] #76 Creator 物品栏替身预览使用半透明渲染
-- [x] #77 Creator 相机替身鞘翅飞行姿态同步
 - [x] #78 投影楼梯空缺部分不再误触发匍匐姿态
 - [x] Creator 与 Litematica 的完成编辑/卸载命令边界
 - [x] 坐标、目标解析和稀疏 region 核心单元测试
@@ -97,6 +95,11 @@
   - 验收：兼容功能不修改真实背包、不发送 container packet，并在未安装第三方模组时保持当前行为。
 
 ## Creator Camera
+
+- [~] #70、#77 Creator 相机虚拟鞘翅模型与滑翔姿态同步
+  - 已确认此前只替换了虚拟胸甲和纹理相关 render state，却没有补回跳过 `LivingEntity.tick()` 后缺失的 `fallFlyTicks` 与 `ElytraAnimationState.tick()`。
+  - `fallFlyTicks` 未推进会让 `AvatarRenderState.fallFlyingScale()` 始终为 0，因此替身保持直立；翼动画未推进会让左右翼角始终为 0，因此两片翼重叠成使用默认鞘翅纹理的竖直矩形。
+  - 当前实现已按原版生命周期推进滑翔计时和翼动画，代码测试及 Mixin 初始化完成后仍需游戏内确认整身水平滑翔、左右翼展开及动画过渡。
 
 - [!] #42 Creator Camera 预览模式
   - 目标是把投影按普通世界方块的模型、纹理、流体和 block entity 方式不透明渲染，并隐藏缺失/错误方块的彩色 overlay 与轮廓。

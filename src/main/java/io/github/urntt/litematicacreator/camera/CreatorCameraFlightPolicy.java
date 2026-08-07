@@ -28,4 +28,9 @@ final class CreatorCameraFlightPolicy
     {
         return fallFlying && (creativeFlying || !canGlide);
     }
+
+    static int nextFallFlyingTicks(boolean fallFlying, int currentTicks)
+    {
+        return fallFlying ? currentTicks + 1 : 0;
+    }
 }

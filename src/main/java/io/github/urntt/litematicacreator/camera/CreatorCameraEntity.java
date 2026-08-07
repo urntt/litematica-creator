@@ -82,6 +82,7 @@ public final class CreatorCameraEntity extends LocalPlayer
         this.updateSwingTime();
         this.aiStep();
         this.updateCreatorFallFlying(wasOnGround);
+        this.updateCreatorFallFlyingAnimation();
         ((LivingEntityInvoker) (Object) this).litematicacreator$updateSwimAmount();
         this.updatePlayerPose();
         this.noPhysics = this.getAbilities().flying;
@@ -265,6 +266,15 @@ public final class CreatorCameraEntity extends LocalPlayer
         }
 
         this.creatorJumpWasDown = jumpDown;
+    }
+
+    private void updateCreatorFallFlyingAnimation()
+    {
+        LivingEntityInvoker livingEntity = (LivingEntityInvoker) (Object) this;
+        livingEntity.litematicacreator$setFallFlyTicks(
+                CreatorCameraFlightPolicy.nextFallFlyingTicks(this.isFallFlying(), this.getFallFlyingTicks())
+        );
+        this.elytraAnimationState.tick();
     }
 
     private void updateOldPositionAndRotation()
