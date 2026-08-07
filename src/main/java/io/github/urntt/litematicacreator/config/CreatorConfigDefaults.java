@@ -6,6 +6,7 @@ final class CreatorConfigDefaults
     static final int CREATOR_EDIT_RANGE = 10;
     static final int CREATOR_EDIT_RANGE_MIN = 1;
     static final int CREATOR_EDIT_RANGE_MAX = 128;
+    static final boolean ENABLE_AIR_PLACEMENT = true;
     static final int AIR_PLACEMENT_DISTANCE = 5;
     static final int AIR_PLACEMENT_DISTANCE_MIN = 1;
     static final int AIR_PLACEMENT_DISTANCE_MAX = 128;

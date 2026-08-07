@@ -337,6 +337,11 @@ public class CreatorEditService
             }
         }
 
+        if (!Configs.Generic.ENABLE_AIR_PLACEMENT.getBooleanValue())
+        {
+            return null;
+        }
+
         Entity camera = CreatorCameraCompat.getCameraEntity();
 
         if (camera == null)

@@ -25,6 +25,7 @@ class ConfigDefaultsTest
     @Test
     void airPlacementDistanceUsesTheExpectedDefaultAndBounds()
     {
+        assertTrue(CreatorConfigDefaults.ENABLE_AIR_PLACEMENT);
         assertEquals(5, CreatorConfigDefaults.AIR_PLACEMENT_DISTANCE);
         assertEquals(1, CreatorConfigDefaults.AIR_PLACEMENT_DISTANCE_MIN);
         assertEquals(128, CreatorConfigDefaults.AIR_PLACEMENT_DISTANCE_MAX);
