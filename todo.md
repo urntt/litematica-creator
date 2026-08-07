@@ -68,6 +68,10 @@
 - [x] #72 单人游戏暂停时冻结 Creator 相机
 - [x] #73 Creator Camera 下本体继续更新姿态与运动状态
 - [x] #74 Creator Camera 下本体运动继续同步至服务端
+- [x] #75 可配置是否允许在空中放置投影方块
+- [x] #76 Creator 物品栏替身预览使用半透明渲染
+- [x] #77 Creator 相机替身鞘翅飞行姿态同步
+- [x] #78 投影楼梯空缺部分不再误触发匍匐姿态
 - [x] Creator 与 Litematica 的完成编辑/卸载命令边界
 - [x] 坐标、目标解析和稀疏 region 核心单元测试
 - [x] Focus、稀疏 subregion 和生命周期设计文档同步
