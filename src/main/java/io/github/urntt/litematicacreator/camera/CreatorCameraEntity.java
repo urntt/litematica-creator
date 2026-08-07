@@ -76,6 +76,7 @@ public final class CreatorCameraEntity extends LocalPlayer
         this.baseTick();
         this.updateSwingTime();
         this.aiStep();
+        this.updatePlayerPose();
         this.noPhysics = this.getAbilities().flying;
         this.resetFallDistance();
     }
@@ -131,6 +132,12 @@ public final class CreatorCameraEntity extends LocalPlayer
     @Override
     protected void sendRidingJump()
     {
+    }
+
+    @Override
+    protected void pushEntities()
+    {
+        // This client-only entity must never apply movement to real world entities.
     }
 
     @Override
