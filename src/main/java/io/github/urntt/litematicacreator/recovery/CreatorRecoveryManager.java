@@ -643,14 +643,7 @@ public final class CreatorRecoveryManager implements ISchematicPlacementEventLis
         {
             for (JsonObject storedJson : manifest.placements())
             {
-                JsonObject json = storedJson.deepCopy();
-
-                if (!json.has("schematic") || !json.get("schematic").isJsonPrimitive() ||
-                    !Path.of(json.get("schematic").getAsString()).toAbsolutePath().normalize().equals(expectedCache) ||
-                    !json.has("placements") || !json.get("placements").isJsonArray())
-                {
-                    throw new IllegalArgumentException("Recovery placement has an invalid schematic path or subregion list");
-                }
+                JsonObject json = RecoveryPlacementJson.prepareForRestore(storedJson, expectedCache);
 
                 SchematicPlacement placement = SchematicPlacement.fromJson(json);
 

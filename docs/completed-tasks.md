@@ -280,6 +280,12 @@
 - #78 投影碰撞候选不再以整个 `VoxelShape` 的外接盒判断相交，而是对相机查询盒与实际体素形状执行布尔求交。倒放楼梯空缺的半格、其他凹形或多盒形状现在与真实方块使用一致的姿态空间语义，同时保留 Lithium 兼容碰撞入口。
 - 回归测试覆盖空中放置默认值、倒放楼梯实际形状的占用与空缺区域、滑翔姿态兜底和虚拟鞘翅披风纹理决策；本批完成后共有 129 项测试通过。开发客户端在未安装和安装 Lithium `0.25.3` 两种情况下均通过 Fabric/Mixin 初始化，物品栏预览注入点成功应用。
 
+## Recovery cache 实例迁移修复（#18）
+
+- Placement JSON 由 Litematica 序列化时会冗余保存 recovery `.litematic` 的绝对路径。复制或重命名 Minecraft 实例后，该字段仍指向旧实例目录，旧恢复逻辑因而会把完整有效的 cache 误判为路径无效。
+- 恢复时继续严格验证 manifest 的 entry ID、generation 和 `cache_file`，但不再要求 placement JSON 内的旧绝对路径等于当前路径。通过验证后，会在内存副本中将其重新绑定到当前 recovery 文件，再交给 `SchematicPlacement.fromJson()`；磁盘上的 manifest、cache 和原始 schematic 均不修改。
+- 结构验证仍要求 placement JSON 具有非空的 `schematic` 字段和数组形式的 `placements`，损坏数据继续按失败路径保留。回归测试覆盖实例目录迁移、外部旧路径重绑定、源 JSON 不变和畸形字段拒绝；本批完成后共有 132 项测试通过。
+
 ## 配套工作
 
 - Creator 的完成编辑/卸载命令已与 Litematica 原生导出和 selected-placement 行为分离。
