@@ -30,7 +30,8 @@
 		"PlacementManagerTaskRebuildMixin",
 		"SchematicPlacementMixin",
 		"SchematicPlacementAccessor",
-		"SchematicPlacementManagerAccessor"
+		"SchematicPlacementManagerAccessor",
+		"SubRegionPlacementAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -199,6 +199,22 @@ public final class CreatorRecoveryManager implements ISchematicPlacementEventLis
         this.deleteTrackedEntrySynchronously(schematic);
     }
 
+    public void onSchematicSaved(LitematicaSchematic schematic, boolean clean)
+    {
+        this.suppressed.release(schematic);
+        this.deleteTrackedEntrySynchronously(schematic);
+
+        if (!clean)
+        {
+            this.markChanged(schematic, CreatorClientTickHandler.getClientTicks());
+        }
+    }
+
+    public boolean hasRecoveryEntry(LitematicaSchematic schematic)
+    {
+        return this.tracked.containsKey(schematic);
+    }
+
     @Override
     public void onPlacementAdded(SchematicPlacement placement)
     {
