@@ -12,6 +12,7 @@ import fi.dy.masa.malilib.config.IConfigHandler;
 import fi.dy.masa.malilib.config.options.ConfigBoolean;
 import fi.dy.masa.malilib.config.options.ConfigDouble;
 import fi.dy.masa.malilib.config.options.ConfigInteger;
+import fi.dy.masa.malilib.config.options.ConfigOptionList;
 import fi.dy.masa.malilib.util.FileUtils;
 import fi.dy.masa.malilib.util.data.json.JsonUtils;
 import io.github.urntt.litematicacreator.LitematicaCreator;
@@ -97,6 +98,9 @@ public class Configs implements IConfigHandler
                 "ignoreCreatorCameraEntityPlacementCollision",
                 CreatorConfigDefaults.IGNORE_CREATOR_CAMERA_ENTITY_PLACEMENT_COLLISION
         ).apply(GENERIC_KEY);
+        public static final ConfigOptionList CREATOR_EXPORT_REGION_MODE = new ConfigOptionList(
+                "creatorExportRegionMode", CreatorConfigDefaults.CREATOR_EXPORT_REGION_MODE
+        ).apply(GENERIC_KEY);
 
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 ENABLE_CREATOR_MODE,
@@ -113,6 +117,7 @@ public class Configs implements IConfigHandler
                 DISABLE_CREATOR_CAMERA_WITH_CREATOR_MODE,
                 CREATOR_CAMERA_PROJECTION_COLLISION,
                 IGNORE_CREATOR_CAMERA_ENTITY_PLACEMENT_COLLISION,
+                CREATOR_EXPORT_REGION_MODE,
                 CREATOR_CAMERA_GROUND_SPEED_MULTIPLIER,
                 CREATOR_CAMERA_FLIGHT_SPEED_MULTIPLIER
         );

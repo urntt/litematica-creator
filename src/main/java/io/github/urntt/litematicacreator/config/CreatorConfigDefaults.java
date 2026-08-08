@@ -24,6 +24,7 @@ final class CreatorConfigDefaults
     static final boolean DISABLE_CREATOR_CAMERA_WITH_CREATOR_MODE = true;
     static final boolean CREATOR_CAMERA_PROJECTION_COLLISION = true;
     static final boolean IGNORE_CREATOR_CAMERA_ENTITY_PLACEMENT_COLLISION = false;
+    static final CreatorExportRegionMode CREATOR_EXPORT_REGION_MODE = CreatorExportRegionMode.SPARSE_COMPACT;
 
     static final String TOGGLE_CREATOR_MODE = "Y";
     static final String TOGGLE_CREATOR_CAMERA = "M,B";
@@ -33,6 +34,7 @@ final class CreatorConfigDefaults
     static final String DISCARD_DRAFT = "M,LEFT_SHIFT,D";
     static final String OPEN_FOCUS_SWITCHER = "M,F";
     static final String NEW_BLANK = "M,N";
+    static final String OPEN_SCHEMATIC_MANAGER = "M,G";
 
     private CreatorConfigDefaults()
     {

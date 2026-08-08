@@ -3,6 +3,7 @@ package io.github.urntt.litematicacreator.creator;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 public final class CreatorSchematicEditGuard
 {
@@ -22,6 +23,21 @@ public final class CreatorSchematicEditGuard
         Lock writeLock = EDIT_LOCK.writeLock();
         writeLock.lock();
         return new EditTransaction(transactionId, System.nanoTime() - start, writeLock);
+    }
+
+    public static <T> T readSnapshot(Supplier<T> snapshotFactory)
+    {
+        Lock readLock = EDIT_LOCK.readLock();
+        readLock.lock();
+
+        try
+        {
+            return snapshotFactory.get();
+        }
+        finally
+        {
+            readLock.unlock();
+        }
     }
 
     public static void runRebuild(long chunkKey, Runnable rebuild)
