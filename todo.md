@@ -72,7 +72,6 @@
 - [x] #76 Creator 物品栏替身预览使用半透明渲染
 - [x] #77 Creator 相机替身鞘翅滑翔模型与动作同步
 - [x] #78 投影楼梯空缺部分不再误触发匍匐姿态
-- [x] #79 Creator 草稿导出 metadata 规范化
 实现细节和历史验收记录见 [`docs/completed-tasks.md`](docs/completed-tasks.md)。
 
 ## 已取消
@@ -87,6 +86,14 @@
 
 ## 原理图导出与数据模型
 
+- [~] #79 Creator 草稿导出 metadata 规范化与内存对象文件绑定
+  - 已完成：仅对 `creator-draft-yyyyMMdd-HHmmss` 占位名称规范化导出副本，文件内名称和旧草稿创建时间正确，普通 schematic Save As 不受影响。
+  - 剩余：首次成功保存后，继续使用当前内存 schematic 和 placements，但将其绑定到实际 `.litematic` 路径并同步正式名称、创建时间和文件类型；“重新加载”必须能读取刚保存的文件。
+  - 同一 schematic 的全部 placements 都要更新缓存的文件路径，focus、selected placement、placement hash 和对象身份保持不变，不卸载再重新加载出一份重复对象。
+  - 只有写盘成功后才能提交绑定、清除对应 recovery entry 并转为 clean file-backed；后续再次编辑应按 dirty file-backed 重新建立 recovery。保存失败不能改变内存状态。
+  - 普通已有 file-backed schematic、downgrade/export 等非首次 Creator 保存路径不能被误接管。
+  - 与 #80 的边界：region 压缩后磁盘快照和稀疏内存表示可以结构不同；这里的“对应”至少要求文件身份、metadata、dirty/recovery 语义和重新加载入口一致。
+
 - [ ] #80 导出时压缩稀疏 Creator cell subregions
   - 当前 `1x1x1` Creator cell 是编辑态和 recovery cache 的稀疏表示；导出普通 `.litematic` 时生成独立规范化快照，不实时改写当前 schematic 或 placements。
   - 只压缩带 Creator 保留前缀的 cell regions，原有普通 Litematica regions 保持名称、边界和内容不变。
@@ -95,6 +102,14 @@
   - 搬移并重定位 BlockState、block entity NBT、entities、scheduled block ticks 和 scheduled fluid ticks，随后重新计算 region count、total volume、total blocks 和 enclosing size。
   - Recovery cache 继续保存未经压缩的稀疏编辑状态；压缩仅作用于玩家通过 Litematica 明确导出的文件。
   - 验收：相邻实心结构导出后 region 数显著减少且语义不变；不规则结构不产生额外显式空气，保存重载后方块、附属数据和 metadata 保持正确。
+
+## Litematica 工具兼容
+
+- [ ] #81 Creator 虚拟主副手中的 Litematica 工具物品生效
+  - Creator 模式下，用虚拟主手和副手匹配 Litematica 的 `toolItem` 与 `toolItemComponents` 配置；不临时替换或修改真实玩家物品栏。
+  - Tool HUD、选区点设置、placement 选择/移动、操作模式切换、中键和带 modifier 的滚轮操作都应识别虚拟工具。
+  - 虚拟工具操作与 Creator 放置、删除、pick block 发生按键冲突时，工具语义优先且同一次输入只能执行一条路径；普通无 modifier 滚轮仍切换虚拟快捷栏。
+  - 验收：默认木棍及自定义带 components 的工具在虚拟任一只手中行为与真实手持一致，真实主副手及服务端状态不变。
 
 ## 虚拟物品栏与输入
 
@@ -138,6 +153,35 @@
   - 建立在 undo/redo 和稀疏草稿模型之上。
   - 验收：一次操作可以创建多个投影方块，并作为一个 undo transaction。
 
+## 原版式放置与物品使用
+
+- [!] #82 客户端原版式交互事务层
+  - 当前实现仅调用 `Block#getStateForPlacement()` 并向一个预先确定的格子写入单个 BlockState，无法承载原版 `Item#useOn`、`BlockItem#place` 和方块交互产生的多位置、副数据或实体变更。
+  - 建立纯客户端事务世界视图：读取目标 placement、事务内先前写入和可作为依附环境的真实世界方块；捕获方块、block entity NBT、实体和 scheduled ticks 变更，但不修改真实世界、不发送包、不消耗或损伤虚拟物品。
+  - 最终写入位置必须来自原版 context，包括替换命中格、写相邻格和一次写多个格；事务全部验证成功后再原子提交到 schematic，失败时不创建草稿/subregion、不切 focus、不标 dirty。
+  - 与重叠 placement、旋转/镜像、多 placements、recovery、最小 chunk rebuild 以及未来 #30 undo transaction 保持一致。
+
+- [ ] #83 完整 BlockItem 放置语义
+  - 多格放置：门、床、大型花丛及其他一次放置多个 BlockState 的方块必须完整写入。
+  - 依附与生存条件：梯子、藤蔓、发光地衣、幽匿脉络、按钮、灯笼、滴水石锥、硫磺尖锥、竹子、海草、海带、拉杆、钟等应能读取真实/投影支撑环境并按原版决定状态。
+  - 原地合并与累加：半砖合成双半砖；蜡烛、花簇、海龟蛋及其他可在同一格重复放置的方块更新命中格，而不是把结果错误写到相邻格。
+  - 保留水含状态、朝向、连接状态和 placement context 产生的其他属性；以代表性方块矩阵测试，而不是维护按方块硬编码的例外列表。
+
+- [ ] #84 投影实体放置
+  - 支持盔甲架、展示框、画、刷怪蛋等通过物品生成实体的 Creator 操作，将实体类型、位置、朝向、变体和必要 NBT 写入 schematic entity 数据。
+  - 画等具有尺寸和附着面的实体要执行原版式空间校验；实体创建失败时整个事务回滚。
+  - 后续补齐投影实体的命中、删除、pick 和 NBT 编辑；全程不在真实客户端世界注册实体或向服务器发包。
+
+- [!] #85 桶与投影流体
+  - 支持水桶、岩浆桶及其他标准流体容器放置静态投影流体源，并持久化对应 BlockState/FluidState。
+  - 需要确定空桶清除投影流体源与细雪时的虚拟物品结果，以及不模拟流动情况下是否支持 pickup；该决策不能影响真实流体。
+  - 投影流动、scheduled fluid ticks 和 Creator Camera 流体物理仍分别由 #65 或后续任务处理，不因桶放置自动扩散。
+
+- [!] #86 通用物品使用与持久化结果
+  - 在 #82 上接入会产生可持久化 schematic 结果的非 BlockItem 使用，例如末影之眼写入末地传送门框架，以及后续蜡化/除蜡、点燃、施肥等明确可映射为 BlockState/NBT 的行为。
+  - 区分“对投影方块使用物品”“空手使用投影方块”和“只影响玩家或真实实体、无法写入 schematic”的物品；后者不能假装成功或向服务器发送操作。
+  - 与 #22 的状态/NBT 编辑和 #29 的虚拟方块交互共用同一事务层，逐类增加能力测试，不按一长串物品 ID 写特判。
+
 ## 方块状态、NBT 与交互
 
 - [ ] #22 投影方块状态/NBT 编辑
@@ -147,10 +191,11 @@
   - 验收：常见 BlockState 属性和 NBT 保存重载后保持一致。
 
 - [ ] #29 与投影方块交互
-  - 区分右键交互和相邻放置。
+  - 区分空手/持物右键交互和相邻放置；门、活板门、拉杆、按钮等原版交互应修改对应投影状态。
   - 对可交互投影方块打开虚拟 UI 或状态/NBT 编辑器。
   - 不向服务器发送交互。
-  - 验收：右键投影容器、告示牌等方块时进入 Creator 编辑流程。
+  - 箱子等容器使用虚拟 block entity inventory，告示牌等进入专用编辑；末影之眼等持物交互由 #86 处理。
+  - 验收：右键常见状态方块、容器和告示牌时进入正确 Creator 编辑流程，结果保存重载后保持一致。
 
 ## 撤销、重做与历史
 

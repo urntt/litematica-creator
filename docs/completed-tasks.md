@@ -288,13 +288,10 @@
 
 > 2026-08-08 复测：鞘翅模型、替身模型和滑翔动作已正常；此前为避免固定矩形披风而关闭 `showCape` 的处理同时阻止了 `WingsLayer` 使用玩家披风纹理，因此 #70 仍保留该项纹理修复。
 
-## Creator 鞘翅纹理与导出 metadata（#70、#77、#79）
+## Creator 鞘翅纹理（#70、#77）
 
 - #70、#77 保留原版从真实玩家提取的 `AvatarRenderState.showCape`，不再因虚拟胸甲为鞘翅而强制关闭。原版 `WingsLayer` 因而继续按“专用 Elytra 纹理、玩家披风纹理、默认鞘翅纹理”的顺序选择纹理；`CapeLayer` 会在胸甲为 wings 时自行跳过矩形披风。
-- #79 新增纯 NBT 的 `CreatorSchematicExportNormalizer`，并在 `LitematicaSchematic.writeToFile(Path, String, boolean, boolean)` 最终压缩写盘处统一接入 v7 与 downgrade v6 两条分支。
-- 只有 metadata name 严格匹配 `creator-draft-yyyyMMdd-HHmmss` 的导出副本会被规范化：内部名称改为实际写盘文件名的 stem，有效创建时间保持不变，旧草稿缺失或非正创建时间则从占位名称按系统时区恢复，无效日期回退到本次导出时间。
-- 普通 schematic 的 Save As、`timeModified`、author、description、counts 和 regions 均不改变；当前内存 schematic、placement、dirty 状态及 recovery cache 也不经过该导出入口。这个入口后续由 #80 扩展 region 压缩。
-- 单元测试覆盖扩展名、Unicode 名称、创建时间恢复与回退、普通 schematic no-op、无关 NBT 保持及输入 NBT 不被原地修改；完整 Gradle 测试套件通过。
+- 完整 Gradle 测试和开发客户端 Mixin 初始化通过；带披风账号下的最终纹理由游戏内测试验收。
 
 ## Recovery cache 实例迁移修复（#18）
 
