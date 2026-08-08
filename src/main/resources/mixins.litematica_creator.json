@@ -21,6 +21,7 @@
 		"LocalPlayerAccessor",
 		"LivingEntityInvoker",
 		"LitematicaSchematicAccessor",
+		"LitematicaSchematicWriteMixin",
 		"LivingEntityRendererAccessor",
 		"MinecraftClientMixin",
 		"MultiPlayerGameModeMixin",
