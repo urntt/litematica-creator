@@ -1,6 +1,6 @@
 # Litematica Creator 已完成工作记录
 
-最后更新：2026-08-07
+最后更新：2026-08-08
 
 本文档保存已完成工作的实现细节和历史验收记录。当前和部分完成的工作统一维护在 [`../todo.md`](../todo.md)。
 
@@ -280,13 +280,21 @@
 
 - #75 新增默认开启的 `enableAirPlacement`。关闭后，无论是否启用 Creator Camera，射线未命中真实方块或可见投影时都不会再生成固定距离目标；命中方块后的相邻放置不受影响，原有距离配置继续只控制启用时的固定距离。
 - #76 Creator 物品栏仍复用原版 `InventoryScreen` 玩家预览，但在其私有 render-state 提取返回处仅对 `CreatorCameraEntity` 应用与世界替身相同的隐身半透明状态。真实玩家物品栏预览及其他实体预览不受影响。
-- #70、#77 在 `AvatarRenderer` 完成原版状态提取和虚拟装备替换后，显式从相机替身同步当前 pose、滑翔标志、滑翔时长、游泳混合值和鞘翅动画角度。虚拟胸甲具有 `GLIDER` 组件时不再用玩家披风纹理覆盖鞘翅纹理，避免披风外观固定在替身背部；本地滑翔物理和不发包边界保持不变。
+- #70、#77 在 `AvatarRenderer` 完成原版状态提取和虚拟装备替换后，显式从相机替身同步当前 pose、滑翔标志、滑翔时长、游泳混合值和鞘翅动画角度；本地滑翔物理和不发包边界保持不变。最终纹理选择见后续完成记录。
 - #78 投影碰撞候选不再以整个 `VoxelShape` 的外接盒判断相交，而是对相机查询盒与实际体素形状执行布尔求交。倒放楼梯空缺的半格、其他凹形或多盒形状现在与真实方块使用一致的姿态空间语义，同时保留 Lithium 兼容碰撞入口。
 - 回归测试覆盖空中放置默认值、倒放楼梯实际形状的占用与空缺区域、滑翔姿态兜底和虚拟鞘翅披风纹理决策；本批完成后共有 129 项测试通过。开发客户端在未安装和安装 Lithium `0.25.3` 两种情况下均通过 Fabric/Mixin 初始化，物品栏预览注入点成功应用。
 
 > 2026-08-07 复测更正：上述 #70、#77 的 render-state 补丁只改变了鞘翅纹理选择，没有补回 Creator 轻量 tick 跳过的原版滑翔动画生命周期，因此不能视为完成。后续修复改为每 tick 推进 `fallFlyTicks` 和 `ElytraAnimationState`；最终状态以 `todo.md` 和新的游戏内验收为准。
 
 > 2026-08-08 复测：鞘翅模型、替身模型和滑翔动作已正常；此前为避免固定矩形披风而关闭 `showCape` 的处理同时阻止了 `WingsLayer` 使用玩家披风纹理，因此 #70 仍保留该项纹理修复。
+
+## Creator 鞘翅纹理与导出 metadata（#70、#77、#79）
+
+- #70、#77 保留原版从真实玩家提取的 `AvatarRenderState.showCape`，不再因虚拟胸甲为鞘翅而强制关闭。原版 `WingsLayer` 因而继续按“专用 Elytra 纹理、玩家披风纹理、默认鞘翅纹理”的顺序选择纹理；`CapeLayer` 会在胸甲为 wings 时自行跳过矩形披风。
+- #79 新增纯 NBT 的 `CreatorSchematicExportNormalizer`，并在 `LitematicaSchematic.writeToFile(Path, String, boolean, boolean)` 最终压缩写盘处统一接入 v7 与 downgrade v6 两条分支。
+- 只有 metadata name 严格匹配 `creator-draft-yyyyMMdd-HHmmss` 的导出副本会被规范化：内部名称改为实际写盘文件名的 stem，有效创建时间保持不变，旧草稿缺失或非正创建时间则从占位名称按系统时区恢复，无效日期回退到本次导出时间。
+- 普通 schematic 的 Save As、`timeModified`、author、description、counts 和 regions 均不改变；当前内存 schematic、placement、dirty 状态及 recovery cache 也不经过该导出入口。这个入口后续由 #80 扩展 region 压缩。
+- 单元测试覆盖扩展名、Unicode 名称、创建时间恢复与回退、普通 schematic no-op、无关 NBT 保持及输入 NBT 不被原地修改；完整 Gradle 测试套件通过。
 
 ## Recovery cache 实例迁移修复（#18）
 

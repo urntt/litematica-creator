@@ -63,13 +63,16 @@
 - [x] #64 Creator 相机投影碰撞兼容 Lithium
 - [x] #68 潜行时可在投影方块支撑面上移动
 - [x] #69 Creator 物品栏玩家预览使用相机替身
+- [x] #70 Creator 相机虚拟鞘翅与披风纹理遵循原版选择
 - [x] #71 Creator 相机匍匐模型姿态同步
 - [x] #72 单人游戏暂停时冻结 Creator 相机
 - [x] #73 Creator Camera 下本体继续更新姿态与运动状态
 - [x] #74 Creator Camera 下本体运动继续同步至服务端
 - [x] #75 可配置是否允许在空中放置投影方块
 - [x] #76 Creator 物品栏替身预览使用半透明渲染
+- [x] #77 Creator 相机替身鞘翅滑翔模型与动作同步
 - [x] #78 投影楼梯空缺部分不再误触发匍匐姿态
+- [x] #79 Creator 草稿导出 metadata 规范化
 实现细节和历史验收记录见 [`docs/completed-tasks.md`](docs/completed-tasks.md)。
 
 ## 已取消
@@ -83,13 +86,6 @@
 - [!] 需要设计决策
 
 ## 原理图导出与数据模型
-
-- [ ] #79 Creator 草稿导出 metadata 规范化
-  - Litematica 的“保存到文件”区分文件名与 schematic metadata name；Creator 临时草稿首次导出时需要消除 `creator-draft-*` 占位名称。
-  - 仅对仍使用 Creator 临时名称的草稿，把导出文件内的 metadata name 设为最终文件名 stem；已有正式名称的普通 schematic 保持原样。
-  - 保留有效的 `timeCreated`；旧草稿的创建时间小于等于 0 时，优先从 `creator-draft-yyyyMMdd-HHmmss` 恢复，无法解析时再回退到导出时间。
-  - `timeModified` 继续表示最后编辑时间，author 和普通 file-backed schematic 的重命名语义不变。
-  - 验收：Creator 新旧草稿导出后名称与创建时间正确；普通 Litematica schematic 的“重命名原理图/重命名文件”边界不受影响。
 
 - [ ] #80 导出时压缩稀疏 Creator cell subregions
   - 当前 `1x1x1` Creator cell 是编辑态和 recovery cache 的稀疏表示；导出普通 `.litematic` 时生成独立规范化快照，不实时改写当前 schematic 或 placements。
@@ -109,13 +105,6 @@
   - 验收：兼容功能不修改真实背包、不发送 container packet，并在未安装第三方模组时保持当前行为。
 
 ## Creator Camera
-
-- [~] #70、#77 Creator 相机虚拟鞘翅模型与滑翔姿态同步
-  - 已确认此前只替换了虚拟胸甲和纹理相关 render state，却没有补回跳过 `LivingEntity.tick()` 后缺失的 `fallFlyTicks` 与 `ElytraAnimationState.tick()`。
-  - `fallFlyTicks` 未推进会让 `AvatarRenderState.fallFlyingScale()` 始终为 0，因此替身保持直立；翼动画未推进会让左右翼角始终为 0，因此两片翼重叠成使用默认鞘翅纹理的竖直矩形。
-  - 当前实现已按原版生命周期推进滑翔计时和翼动画；游戏内已确认鞘翅模型、替身模型和滑翔动作正常。
-  - 剩余问题：虚拟鞘翅错误地抑制了原版 `showCape`，导致 `WingsLayer` 无法选择玩家披风纹理；应恢复原版披风显示状态，由原版 `CapeLayer` 在胸甲为 wings 时自行跳过矩形披风渲染。
-  - 验收：启用玩家披风时虚拟鞘翅使用玩家披风纹理，关闭披风显示时使用默认鞘翅纹理，且不会额外渲染固定矩形披风。
 
 - [!] #42 Creator Camera 预览模式
   - 目标是把投影按普通世界方块的模型、纹理、流体和 block entity 方式不透明渲染，并隐藏缺失/错误方块的彩色 overlay 与轮廓。
