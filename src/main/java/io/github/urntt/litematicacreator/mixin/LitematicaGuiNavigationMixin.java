@@ -22,28 +22,32 @@ public abstract class LitematicaGuiNavigationMixin extends GuiBase
     private void litematicacreator$addManagerButton(CallbackInfo ci)
     {
         String label = StringUtils.translate("litematica-creator.gui.manager.open");
-        int width = this.getStringWidth(label) + 20;
+        int width;
         int x;
         int y;
 
         if ((Object) this instanceof GuiMainMenu)
         {
-            x = 32 + this.litematicacreator$getMainMenuColumnWidth();
+            width = this.litematicacreator$getMainMenuColumnWidth();
+            x = 32 + width;
             y = 52;
         }
         else if ((Object) this instanceof GuiSchematicLoadedList)
         {
+            width = this.getStringWidth(label) + 20;
             x = 12 + this.litematicacreator$getMenuButtonWidth(GuiMainMenu.ButtonListenerChangeMenu.ButtonType.LOAD_SCHEMATICS) + 4;
             x += this.litematicacreator$getMenuButtonWidth(GuiMainMenu.ButtonListenerChangeMenu.ButtonType.SCHEMATIC_PLACEMENTS) + 4;
             y = this.getScreenHeight() - 26;
         }
         else
         {
+            width = this.getStringWidth(label) + 20;
             x = 12 + this.litematicacreator$getMenuButtonWidth(GuiMainMenu.ButtonListenerChangeMenu.ButtonType.LOADED_SCHEMATICS) + 4;
             y = this.getScreenHeight() - 26;
         }
 
         ButtonGeneric button = new ButtonGeneric(x, y, width, 20, label);
+        button.setHoverStrings("litematica-creator.gui.manager.hover.open");
         this.addButton(button, (pressed, mouseButton) -> CreatorSchematicManagerScreen.openFromLitematica((GuiBase) (Object) this));
     }
 

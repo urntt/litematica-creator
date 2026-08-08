@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.concurrent.CompletionException;
 import javax.annotation.Nullable;
 
@@ -29,10 +28,11 @@ import fi.dy.masa.litematica.gui.GuiSchematicPlacementsList;
 import fi.dy.masa.litematica.schematic.LitematicaSchematic;
 import fi.dy.masa.litematica.schematic.SchematicMetadata;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
-import fi.dy.masa.litematica.schematic.placement.SchematicPlacementManager;
 import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.gui.GuiTextFieldGeneric;
+import fi.dy.masa.malilib.gui.LeftRight;
 import fi.dy.masa.malilib.gui.button.ButtonGeneric;
+import fi.dy.masa.malilib.gui.widgets.WidgetHoverInfo;
 import fi.dy.masa.malilib.gui.wrappers.TextFieldType;
 import fi.dy.masa.malilib.render.GuiContext;
 import fi.dy.masa.malilib.render.RenderUtils;
@@ -58,6 +58,9 @@ import io.github.urntt.litematicacreator.recovery.CreatorRecoveryManager;
 public final class CreatorSchematicManagerScreen extends GuiBase
 {
     private static final int ROW_HEIGHT = 22;
+    private static final int PANEL_TOP = 50;
+    private static final int PANEL_BOTTOM = 32;
+    private static final int CONTROL_GAP = 4;
     private static final Identifier PREVIEW_TEXTURE = Identifier.fromNamespaceAndPath(Reference.MOD_ID, "manager_preview");
 
     private final Screen navigationParent;
@@ -71,6 +74,13 @@ public final class CreatorSchematicManagerScreen extends GuiBase
     @Nullable private DynamicTexture previewTexture;
     private String status = "";
     private boolean exportRunning;
+    private boolean previewRunning;
+    private boolean searchRefreshQueued;
+    private boolean restoreSearchFocus;
+    private int searchCursor;
+    private int overviewDetailsY = 190;
+    private int placementDetailsY = 166;
+    private int savePreviewY = 270;
     @Nullable private Confirmation pendingConfirmation;
     @Nullable private LitematicaSchematic saveFormSchematic;
     private String saveDirectory = "";
@@ -145,11 +155,19 @@ public final class CreatorSchematicManagerScreen extends GuiBase
     }
 
     @Override
+    protected void drawScreenBackground(GuiContext ctx, int mouseX, int mouseY)
+    {
+        super.drawScreenBackground(ctx, mouseX, mouseY);
+        int leftWidth = this.leftWidth();
+        int panelHeight = Math.max(0, this.height - PANEL_TOP - PANEL_BOTTOM);
+        RenderUtils.drawRect(ctx, 8, PANEL_TOP, leftWidth - 12, panelHeight, 0x70000000);
+        RenderUtils.drawRect(ctx, leftWidth, PANEL_TOP, this.width - leftWidth - 8, panelHeight, 0x50000000);
+    }
+
+    @Override
     protected void drawContents(GuiContext ctx, int mouseX, int mouseY, float partialTicks)
     {
         int leftWidth = this.leftWidth();
-        RenderUtils.drawRect(ctx, 8, 50, leftWidth - 12, this.height - 82, 0x70000000);
-        RenderUtils.drawRect(ctx, leftWidth, 50, this.width - leftWidth - 8, this.height - 82, 0x50000000);
 
         if (this.inspectedSchematic == null)
         {
@@ -167,7 +185,7 @@ public final class CreatorSchematicManagerScreen extends GuiBase
 
         if (!this.status.isEmpty())
         {
-            this.drawString(ctx, this.status, leftWidth + 12, this.height - 46, 0xFFFFFF55);
+            this.drawWrappedStatus(ctx, leftWidth + 12, this.height - 49, this.width - leftWidth - 26);
         }
     }
 
@@ -187,6 +205,18 @@ public final class CreatorSchematicManagerScreen extends GuiBase
     }
 
     @Override
+    public void tick()
+    {
+        super.tick();
+
+        if (this.searchRefreshQueued && Minecraft.getInstance().gui.screen() == this)
+        {
+            this.searchRefreshQueued = false;
+            this.initGui();
+        }
+    }
+
+    @Override
     public void onClose()
     {
         this.releasePreviewTexture();
@@ -195,27 +225,63 @@ public final class CreatorSchematicManagerScreen extends GuiBase
 
     private void createNavigationButtons()
     {
-        int x = 10;
         int y = this.height - 26;
-        x += this.addActionButton(x, y, tr("litematica-creator.gui.manager.nav.main"), () -> this.openPeer(new GuiMainMenu())) + 4;
-        x += this.addActionButton(x, y, tr("litematica-creator.gui.manager.nav.loaded"), () -> this.openPeer(new GuiSchematicLoadedList())) + 4;
-        this.addActionButton(x, y, tr("litematica-creator.gui.manager.nav.placements"), () -> this.openPeer(new GuiSchematicPlacementsList()));
         String close = tr("gui.done");
-        this.addActionButton(this.width - this.getStringWidth(close) - 24, y, close, () -> this.closeGui(true));
+        int right = this.width - 10;
+        int doneWidth = this.getStringWidth(close) + 16;
+        int doneX = right - doneWidth;
+        this.addActionButton(doneX, y, doneWidth, close, "litematica-creator.gui.manager.hover.done", () -> this.closeGui(true));
+
+        String clearSelectedLabel = tr("litematica-creator.gui.manager.clear_selected");
+        int clearSelectedWidth = this.getStringWidth(clearSelectedLabel) + 16;
+        int clearSelectedX = doneX - CONTROL_GAP - clearSelectedWidth;
+        ButtonGeneric clearSelected = this.addActionButton(
+                clearSelectedX, y, clearSelectedWidth, clearSelectedLabel,
+                "litematica-creator.gui.manager.hover.clear_selected", this::clearSelected
+        );
+        clearSelected.setEnabled(DataManager.getSchematicPlacementManager().getSelectedSchematicPlacement() != null);
+
+        String clearFocusLabel = tr("litematica-creator.gui.manager.clear_focus");
+        int clearFocusWidth = this.getStringWidth(clearFocusLabel) + 16;
+        int clearFocusX = clearSelectedX - CONTROL_GAP - clearFocusWidth;
+        ButtonGeneric clearFocus = this.addActionButton(
+                clearFocusX, y, clearFocusWidth, clearFocusLabel,
+                "litematica-creator.gui.manager.hover.clear_focus", this::clearCreatorFocus
+        );
+        clearFocus.setEnabled(CreatorManager.getInstance().getFocus() != null);
+
+        String[] labels = {
+                tr("litematica-creator.gui.manager.nav.main"),
+                tr("litematica-creator.gui.manager.nav.loaded"),
+                tr("litematica-creator.gui.manager.nav.placements")
+        };
+        int naturalWidth = Math.max(this.getStringWidth(labels[0]), Math.max(this.getStringWidth(labels[1]), this.getStringWidth(labels[2]))) + 16;
+        int availableWidth = Math.max(90, clearFocusX - 18);
+        int navWidth = Math.max(28, Math.min(naturalWidth, (availableWidth - CONTROL_GAP * 2) / 3));
+        int x = 10;
+        this.addActionButton(x, y, navWidth, this.clampLabel(labels[0], navWidth - 8), "litematica-creator.gui.manager.hover.nav.main", () -> this.openPeer(new GuiMainMenu()));
+        x += navWidth + CONTROL_GAP;
+        this.addActionButton(x, y, navWidth, this.clampLabel(labels[1], navWidth - 8), "litematica-creator.gui.manager.hover.nav.loaded", () -> this.openPeer(new GuiSchematicLoadedList()));
+        x += navWidth + CONTROL_GAP;
+        this.addActionButton(x, y, navWidth, this.clampLabel(labels[2], navWidth - 8), "litematica-creator.gui.manager.hover.nav.placements", () -> this.openPeer(new GuiSchematicPlacementsList()));
     }
 
     private void createSearchAndList()
     {
         int leftWidth = this.leftWidth();
-        this.searchField = new GuiTextFieldGeneric(10, 29, leftWidth - 92, 16, this.font);
+        this.searchField = new GuiTextFieldGeneric(10, 29, leftWidth - 20, 16, this.font);
         this.searchField.setMaxLengthWrapper(128);
         this.searchField.setValueWrapper(this.searchQuery);
-        this.addTextField(this.searchField, null, TextFieldType.STRING);
-        this.addActionButton(leftWidth - 76, 27, 66, tr("litematica-creator.gui.manager.filter"), () -> {
-            this.searchQuery = Objects.requireNonNull(this.searchField).getValueWrapper();
-            this.listScroll = 0;
-            this.initGui();
-        });
+        this.searchField.setSuggestion(tr("litematica-creator.gui.manager.search_hint"));
+        this.searchField.setHoverTooltip("litematica-creator.gui.manager.hover.search");
+        this.addTextField(this.searchField, this::onSearchChanged, TextFieldType.STRING);
+
+        if (this.restoreSearchFocus)
+        {
+            this.searchField.setFocusedWrapper(true);
+            this.searchField.setCursorPosition(Math.min(this.searchCursor, this.searchQuery.length()));
+            this.restoreSearchFocus = false;
+        }
 
         List<ManagerRow> rows = this.filteredRows();
         this.listScroll = Math.min(this.listScroll, Math.max(0, rows.size() - this.visibleRows()));
@@ -226,11 +292,12 @@ public final class CreatorSchematicManagerScreen extends GuiBase
         {
             ManagerRow row = rows.get(index);
             int rowWidth = leftWidth - 22;
-            ButtonGeneric button = new ButtonGeneric(12, y, rowWidth, 20, this.rowLabel(row));
+            ButtonGeneric button = new ButtonGeneric(12, y, rowWidth, 20, this.rowLabel(row, rowWidth - 10));
             boolean selected = row.placement != null ? row.placement == this.inspectedPlacement :
                     row.schematic == this.inspectedSchematic && this.inspectedPlacement == null;
             button.setEnabled(!selected);
             this.addButton(button, (pressed, mouseButton) -> this.inspect(row));
+            this.addWidget(new WidgetHoverInfo(12, y, rowWidth, 20, this.rowHoverText(row)));
             y += ROW_HEIGHT;
         }
     }
@@ -243,32 +310,46 @@ public final class CreatorSchematicManagerScreen extends GuiBase
         for (ManagerTab value : ManagerTab.values())
         {
             ButtonGeneric button = new ButtonGeneric(x, y, -1, 20, value.displayName());
-            button.setEnabled(this.tab != value && (value != ManagerTab.PLACEMENT || this.inspectedPlacement != null));
+            boolean available = value != ManagerTab.PLACEMENT || this.hasPlacements(this.inspectedSchematic);
+            button.setEnabled(this.tab != value && available);
             this.addButton(button, (pressed, mouseButton) -> {
+                if (value == ManagerTab.PLACEMENT && this.inspectedPlacement == null)
+                {
+                    this.inspectedPlacement = this.preferredPlacement(this.inspectedSchematic);
+                }
                 this.tab = value;
                 this.status = "";
                 this.initGui();
             });
+            this.addWidget(new WidgetHoverInfo(
+                    x, y, button.getWidth(), 20,
+                    "litematica-creator.gui.manager.hover.tab." + value.key
+            ));
             x += button.getWidth() + 3;
         }
     }
 
     private void createOverviewControls()
     {
-        int x = this.leftWidth() + 118;
-        int y = 61;
-        int width = Math.max(120, Math.min(360, this.width - x - 24));
+        PageLayout layout = this.pageLayout(ManagerTab.OVERVIEW);
+        int x = layout.controlX;
+        int y = 60;
+        int width = layout.controlWidth;
         SchematicMetadata metadata = this.inspectedSchematic.getMetadata();
-        this.nameField = this.addField(x, y, width, metadata.getName(), 256);
-        this.authorField = this.addField(x, y + 24, width, metadata.getAuthor(), 256);
-        this.descriptionField = this.addField(x, y + 48, width, metadata.getDescription(), 1024);
-        y += 76;
-        this.addActionButton(x, y, 78, tr("litematica-creator.gui.manager.apply"), this::applyMetadata);
-        this.addActionButton(x + 82, y, 106, tr("litematica-creator.gui.manager.thumbnail.update"), this::captureThumbnail);
-        this.addActionButton(x + 192, y, 92, tr("litematica-creator.gui.manager.thumbnail.clear"), this::clearThumbnail);
-        y += 24;
-        this.addActionButton(x, y, 86, tr("litematica-creator.gui.manager.reload"), this::reloadSchematic);
-        this.addActionButton(x + 90, y, 86, tr("litematica-creator.gui.manager.unload"), this::confirmUnload);
+        this.nameField = this.addField(x, y, width, metadata.getName(), 256, "litematica-creator.gui.manager.hover.field.name");
+        this.authorField = this.addField(x, y + 24, width, metadata.getAuthor(), 256, "litematica-creator.gui.manager.hover.field.author");
+        this.descriptionField = this.addField(x, y + 48, width, metadata.getDescription(), 1024, "litematica-creator.gui.manager.hover.field.description");
+        y += 74;
+        y = this.addButtonGrid(x, y, width, List.of(
+                new ButtonSpec(tr("litematica-creator.gui.manager.apply"), "litematica-creator.gui.manager.hover.apply", this::applyMetadata, true),
+                new ButtonSpec(tr("litematica-creator.gui.manager.thumbnail.capture"), "litematica-creator.gui.manager.hover.thumbnail.capture", this::captureThumbnail, true),
+                new ButtonSpec(tr("litematica-creator.gui.manager.thumbnail.clear"), "litematica-creator.gui.manager.hover.thumbnail.clear", this::clearThumbnail, this.previewTexture != null)
+        ));
+        y = this.addButtonGrid(x, y, width, List.of(
+                new ButtonSpec(tr("litematica-creator.gui.manager.reload"), "litematica-creator.gui.manager.hover.reload", this::reloadSchematic, this.inspectedSchematic.getFile() != null),
+                new ButtonSpec(tr("litematica-creator.gui.manager.unload"), "litematica-creator.gui.manager.hover.unload", this::confirmUnload, !this.exportRunning)
+        ));
+        this.overviewDetailsY = y + 4;
     }
 
     private void createPlacementControls()
@@ -278,86 +359,143 @@ public final class CreatorSchematicManagerScreen extends GuiBase
             return;
         }
 
-        int x = this.leftWidth() + 118;
-        int y = 61;
-        int width = Math.max(120, Math.min(360, this.width - x - 24));
-        this.placementNameField = this.addField(x, y, width, this.inspectedPlacement.getName(), 256);
+        PageLayout layout = this.pageLayout(ManagerTab.PLACEMENT);
+        int x = layout.controlX;
+        int y = 60;
+        int width = layout.controlWidth;
+        this.placementNameField = this.addField(
+                x, y, width, this.inspectedPlacement.getName(), 256,
+                "litematica-creator.gui.manager.hover.field.placement_name"
+        );
         y += 26;
-        this.addActionButton(x, y, 82, tr("litematica-creator.gui.manager.rename"), this::renamePlacement);
-        this.addActionButton(x + 86, y, 90, tr("litematica-creator.gui.manager.toggle_enabled"), () -> {
-            this.inspectedPlacement.toggleEnabled();
-            this.initGui();
-        });
-        this.addActionButton(x + 180, y, 90, tr("litematica-creator.gui.manager.toggle_render"), () -> {
-            this.inspectedPlacement.setRenderSchematic(!this.inspectedPlacement.isRenderingEnabled());
-            this.initGui();
-        });
-        y += 24;
-        this.addActionButton(x, y, 104, tr("litematica-creator.gui.manager.toggle_focus"), this::toggleFocus);
-        this.addActionButton(x + 108, y, 112, tr("litematica-creator.gui.manager.toggle_selected"), this::toggleSelected);
-        y += 24;
-        this.addActionButton(x, y, 150, tr("litematica-creator.gui.manager.native_config"), this::openPlacementConfiguration);
-        this.addActionButton(x + 154, y, 96, tr("litematica-creator.gui.manager.remove_placement"), this::confirmRemovePlacement);
+        String enabledLabel = tr(this.inspectedPlacement.isEnabled() ?
+                "litematica-creator.gui.manager.disable_placement" : "litematica-creator.gui.manager.enable_placement");
+        String renderLabel = tr(this.inspectedPlacement.isRenderingEnabled() ?
+                "litematica-creator.gui.manager.hide_placement" : "litematica-creator.gui.manager.show_placement");
+        y = this.addButtonGrid(x, y, width, List.of(
+                new ButtonSpec(tr("litematica-creator.gui.manager.rename"), "litematica-creator.gui.manager.hover.rename", this::renamePlacement, true),
+                new ButtonSpec(enabledLabel, "litematica-creator.gui.manager.hover.enabled", () -> {
+                    this.inspectedPlacement.toggleEnabled();
+                    this.status = tr(this.inspectedPlacement.isEnabled() ?
+                            "litematica-creator.gui.manager.placement_enabled" : "litematica-creator.gui.manager.placement_disabled");
+                    this.initGui();
+                }, true),
+                new ButtonSpec(renderLabel, "litematica-creator.gui.manager.hover.render", () -> {
+                    this.inspectedPlacement.setRenderSchematic(!this.inspectedPlacement.isRenderingEnabled());
+                    this.status = tr(this.inspectedPlacement.isRenderingEnabled() ?
+                            "litematica-creator.gui.manager.placement_shown" : "litematica-creator.gui.manager.placement_hidden");
+                    this.initGui();
+                }, true)
+        ));
+        CreatorFocus focus = CreatorManager.getInstance().getFocus();
+        SchematicPlacement selected = DataManager.getSchematicPlacementManager().getSelectedSchematicPlacement();
+        y = this.addButtonGrid(x, y, width, List.of(
+                new ButtonSpec(tr("litematica-creator.gui.manager.set_focus"), "litematica-creator.gui.manager.hover.set_focus", this::setFocus, focus == null || focus.placement() != this.inspectedPlacement),
+                new ButtonSpec(tr("litematica-creator.gui.manager.set_selected"), "litematica-creator.gui.manager.hover.set_selected", this::setSelected, selected != this.inspectedPlacement)
+        ));
+        y = this.addButtonGrid(x, y, width, List.of(
+                new ButtonSpec(tr("litematica-creator.gui.manager.native_config"), "litematica-creator.gui.manager.hover.native_config", this::openPlacementConfiguration, true),
+                new ButtonSpec(tr("litematica-creator.gui.manager.remove_placement"), "litematica-creator.gui.manager.hover.remove_placement", this::confirmRemovePlacement, !this.exportRunning)
+        ));
+        this.placementDetailsY = y + 4;
     }
 
     private void createSaveControls()
     {
-        int x = this.leftWidth() + 118;
-        int y = 61;
-        int width = Math.max(140, Math.min(420, this.width - x - 24));
-        this.directoryField = this.addField(x, y, width, this.saveDirectory, 2048);
-        this.fileNameField = this.addField(x, y + 24, width, this.saveFileName, 256);
-        this.exportNameField = this.addField(x, y + 48, width, this.saveInternalName, 256);
-        this.exportAuthorField = this.addField(x, y + 72, width, this.saveAuthor, 256);
-        this.exportDescriptionField = this.addField(x, y + 96, width, this.saveDescription, 1024);
-        y += 122;
+        PageLayout layout = this.pageLayout(ManagerTab.SAVE_EXPORT);
+        int x = layout.controlX;
+        int y = 60;
+        int width = layout.controlWidth;
+        this.directoryField = this.addField(x, y, width, this.saveDirectory, 2048, "litematica-creator.gui.manager.hover.field.directory");
+        this.fileNameField = this.addField(x, y + 24, width, this.saveFileName, 256, "litematica-creator.gui.manager.hover.field.file_name");
+        this.exportNameField = this.addField(x, y + 48, width, this.saveInternalName, 256, "litematica-creator.gui.manager.hover.field.export_name");
+        this.exportAuthorField = this.addField(x, y + 72, width, this.saveAuthor, 256, "litematica-creator.gui.manager.hover.field.export_author");
+        this.exportDescriptionField = this.addField(x, y + 96, width, this.saveDescription, 1024, "litematica-creator.gui.manager.hover.field.export_description");
+        y += 120;
         CreatorExportRegionMode mode = this.exportMode();
-        int halfWidth = Math.max(68, (width - 4) / 2);
-        this.addActionButton(x, y, halfWidth, mode.getDisplayName(), () -> {
+        ButtonGeneric modeButton = this.addActionButton(
+                x, y, width, mode.getDisplayName(),
+                "litematica-creator.gui.manager.hover.export_mode." + mode.getStringValue(), () -> {
             CreatorExportRegionMode next = mode.cycle(true);
             Configs.Generic.CREATOR_EXPORT_REGION_MODE.setOptionListValue(next);
             this.exportPreview = null;
+            this.status = tr("litematica-creator.gui.manager.mode_changed", next.getDisplayName());
             this.initGui();
         });
-        this.addActionButton(x + halfWidth + 4, y, halfWidth, this.samplingPlacementLabel(), this::cycleSamplingPlacement);
+        modeButton.setEnabled(!this.exportRunning);
         y += 24;
-        this.addActionButton(x, y, 92, tr("litematica-creator.gui.manager.preview"), this::refreshExportPreview);
+
+        if (mode == CreatorExportRegionMode.ENCLOSING_WITH_WORLD)
+        {
+            ButtonGeneric sampling = this.addActionButton(
+                    x, y, width, this.samplingPlacementLabel(),
+                    "litematica-creator.gui.manager.hover.sampling", this::cycleSamplingPlacement
+            );
+            sampling.setEnabled(!this.exportRunning && this.hasPlacements(this.inspectedSchematic));
+            y += 24;
+        }
+
+        int previewWidth = Math.min(width, Math.max(108, this.getStringWidth(tr("litematica-creator.gui.manager.preview")) + 16));
+        ButtonGeneric preview = this.addActionButton(
+                x, y, previewWidth, tr("litematica-creator.gui.manager.preview"),
+                "litematica-creator.gui.manager.hover.preview", this::refreshExportPreview
+        );
+        preview.setEnabled(!this.exportRunning);
         y += 24;
-        int buttonX = x;
-        buttonX += this.addActionButton(buttonX, y, tr("litematica-creator.gui.manager.save"), () -> this.beginExport(CreatorExportOperation.SAVE)) + 4;
-        buttonX += this.addActionButton(buttonX, y, tr("litematica-creator.gui.manager.save_bind"), () -> this.beginExport(CreatorExportOperation.SAVE_AS_AND_BIND)) + 4;
-        this.addActionButton(buttonX, y, tr("litematica-creator.gui.manager.export_copy"), () -> this.beginExport(CreatorExportOperation.EXPORT_COPY));
+        y = this.addButtonGrid(x, y, width, List.of(
+                new ButtonSpec(tr("litematica-creator.gui.manager.save"), "litematica-creator.gui.manager.hover.save", () -> this.beginExport(CreatorExportOperation.SAVE), !this.exportRunning),
+                new ButtonSpec(tr("litematica-creator.gui.manager.save_bind"), "litematica-creator.gui.manager.hover.save_bind", () -> this.beginExport(CreatorExportOperation.SAVE_AS_AND_BIND), !this.exportRunning),
+                new ButtonSpec(tr("litematica-creator.gui.manager.export_copy"), "litematica-creator.gui.manager.hover.export_copy", () -> this.beginExport(CreatorExportOperation.EXPORT_COPY), !this.exportRunning)
+        ));
+        this.savePreviewY = y + 4;
     }
 
     private void drawOverview(GuiContext ctx, int leftWidth)
     {
         SchematicMetadata metadata = this.inspectedSchematic.getMetadata();
-        int x = leftWidth + 14;
-        int y = 65;
-        this.drawString(ctx, tr("litematica-creator.gui.manager.name"), x, y, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.author"), x, y + 24, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.description"), x, y + 48, COLOR_WHITE);
-        y = 194;
-        this.drawString(ctx, tr("litematica-creator.gui.manager.path", displayPath(this.inspectedSchematic.getFile())), x, y, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.created", formatTime(metadata.getTimeCreated())), x, y + 12, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.modified", formatTime(metadata.getTimeModified())), x, y + 24, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.state", this.stateText(this.inspectedSchematic)), x, y + 36, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.counts", metadata.getRegionCount(), metadata.getTotalBlocks(), metadata.getTotalVolume()), x, y + 48, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.enclosing", metadata.getEnclosingSizeAsBlockPos().toShortString()), x, y + 60, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.attached", this.entityCount(), this.blockEntityCount()), x, y + 72, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.placements", this.placementCount()), x, y + 84, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.ticks", this.blockTickCount(), this.fluidTickCount()), x, y + 96, COLOR_WHITE);
+        PageLayout layout = this.pageLayout(ManagerTab.OVERVIEW);
+        int x = layout.labelX;
+        this.drawString(ctx, tr("litematica-creator.gui.manager.name"), x, 64, COLOR_WHITE);
+        this.drawString(ctx, tr("litematica-creator.gui.manager.author"), x, 88, COLOR_WHITE);
+        this.drawString(ctx, tr("litematica-creator.gui.manager.description"), x, 112, COLOR_WHITE);
 
-        if (this.previewTexture != null)
+        int previewSize = Math.max(64, Math.min(96, layout.contentWidth / 5));
+        boolean showThumbnail = layout.contentWidth >= 360;
+        int previewX = layout.right - previewSize;
+        int textWidth = showThumbnail ? Math.max(80, previewX - x - 12) : layout.right - x;
+        int y = this.overviewDetailsY;
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.path", displayPath(this.inspectedSchematic.getFile())), x, y, textWidth, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.created", formatTime(metadata.getTimeCreated())), x, y + 12, textWidth, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.modified", formatTime(metadata.getTimeModified())), x, y + 24, textWidth, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.state", this.stateText(this.inspectedSchematic)), x, y + 36, textWidth, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.counts", metadata.getRegionCount(), metadata.getTotalBlocks(), metadata.getTotalVolume()), x, y + 48, textWidth, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.enclosing", metadata.getEnclosingSizeAsBlockPos().toShortString()), x, y + 60, textWidth, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.attached", this.entityCount(), this.blockEntityCount()), x, y + 72, textWidth, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.placements", this.placementCount()), x, y + 84, textWidth, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.ticks", this.blockTickCount(), this.fluidTickCount()), x, y + 96, textWidth, COLOR_WHITE);
+
+        if (showThumbnail)
         {
-            int previewSize = Math.min(120, Math.max(48, this.width - leftWidth - 430));
-            ctx.blit(RenderPipelines.GUI_TEXTURED, PREVIEW_TEXTURE, this.width - previewSize - 18, 60, 0, 0, previewSize, previewSize, previewSize, previewSize);
+            this.drawString(ctx, tr("litematica-creator.gui.manager.thumbnail.title"), previewX, y, COLOR_WHITE);
+            int imageY = y + 14;
+            RenderUtils.drawRect(ctx, previewX - 1, imageY - 1, previewSize + 2, previewSize + 2, 0xFF8A8A8A);
+            RenderUtils.drawRect(ctx, previewX, imageY, previewSize, previewSize, 0xCC101010);
+
+            if (this.previewTexture != null)
+            {
+                ctx.blit(RenderPipelines.GUI_TEXTURED, PREVIEW_TEXTURE, previewX, imageY, 0, 0, previewSize, previewSize, previewSize, previewSize);
+            }
+            else
+            {
+                this.drawClampedString(ctx, tr("litematica-creator.gui.manager.thumbnail.none"), previewX + 5, imageY + previewSize / 2 - 4, previewSize - 10, 0xFFAAAAAA);
+            }
         }
     }
 
     private void drawPlacement(GuiContext ctx, int leftWidth)
     {
-        int x = leftWidth + 14;
+        PageLayout layout = this.pageLayout(ManagerTab.PLACEMENT);
+        int x = layout.labelX;
 
         if (this.inspectedPlacement == null)
         {
@@ -366,42 +504,71 @@ public final class CreatorSchematicManagerScreen extends GuiBase
         }
 
         SchematicPlacement placement = this.inspectedPlacement;
-        this.drawString(ctx, tr("litematica-creator.gui.manager.placement_name"), x, 65, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.origin", placement.getOrigin().toShortString()), x, 152, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.transform", placement.getRotation(), placement.getMirror()), x, 164, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.placement_state", placement.isEnabled(), placement.isRenderingEnabled()), x, 176, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.subregions", placement.getSubRegionCount()), x, 188, COLOR_WHITE);
+        int maxWidth = layout.right - x;
+        int y = this.placementDetailsY;
+        CreatorFocus focus = CreatorManager.getInstance().getFocus();
+        SchematicPlacement selected = DataManager.getSchematicPlacementManager().getSelectedSchematicPlacement();
+        this.drawString(ctx, tr("litematica-creator.gui.manager.placement_name"), x, 64, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.origin", placement.getOrigin().toShortString()), x, y, maxWidth, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.transform", placement.getRotation(), placement.getMirror()), x, y + 12, maxWidth, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.placement_state", this.yesNo(placement.isEnabled()), this.yesNo(placement.isRenderingEnabled())), x, y + 24, maxWidth, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.focus_state", this.yesNo(focus != null && focus.placement() == placement)), x, y + 36, maxWidth, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.selected_state", this.yesNo(selected == placement)), x, y + 48, maxWidth, COLOR_WHITE);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.subregions", placement.getSubRegionCount()), x, y + 60, maxWidth, COLOR_WHITE);
     }
 
     private void drawSave(GuiContext ctx, int leftWidth)
     {
-        int x = leftWidth + 14;
+        PageLayout layout = this.pageLayout(ManagerTab.SAVE_EXPORT);
+        int x = layout.labelX;
         this.drawString(ctx, tr("litematica-creator.gui.manager.directory"), x, 65, COLOR_WHITE);
         this.drawString(ctx, tr("litematica-creator.gui.manager.file_name"), x, 89, COLOR_WHITE);
         this.drawString(ctx, tr("litematica-creator.gui.manager.export_name"), x, 113, COLOR_WHITE);
         this.drawString(ctx, tr("litematica-creator.gui.manager.author"), x, 137, COLOR_WHITE);
         this.drawString(ctx, tr("litematica-creator.gui.manager.description"), x, 161, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.export_mode"), x, 187, COLOR_WHITE);
-        this.drawString(ctx, tr("litematica-creator.gui.manager.sampling"), x, 211, COLOR_WHITE);
+        this.drawString(ctx, tr("litematica-creator.gui.manager.export_mode"), x, 185, COLOR_WHITE);
 
-        if (this.exportPreview != null)
+        if (this.exportMode() == CreatorExportRegionMode.ENCLOSING_WITH_WORLD)
         {
-            int y = 280;
-            this.drawString(ctx, tr("litematica-creator.gui.manager.preview_regions", this.exportPreview.regionCount()), x, y, COLOR_WHITE);
-            this.drawString(ctx, tr("litematica-creator.gui.manager.preview_blocks", this.exportPreview.totalBlocks()), x, y + 12, COLOR_WHITE);
-            this.drawString(ctx, tr("litematica-creator.gui.manager.preview_volume", this.exportPreview.totalVolume()), x, y + 24, COLOR_WHITE);
-            this.drawString(ctx, tr("litematica-creator.gui.manager.preview_size", this.exportPreview.enclosingSize().toShortString()), x, y + 36, COLOR_WHITE);
-            this.drawString(ctx, tr("litematica-creator.gui.manager.preview_version", LitematicaSchematic.SCHEMATIC_VERSION), x, y + 48, COLOR_WHITE);
-            this.drawString(ctx, this.bindingPreviewText(), x, y + 60, COLOR_WHITE);
+            this.drawString(ctx, tr("litematica-creator.gui.manager.sampling"), x, 209, COLOR_WHITE);
         }
+
+        int y = this.savePreviewY;
+        int maxWidth = layout.right - x;
+        this.drawString(ctx, tr("litematica-creator.gui.manager.preview_heading"), x, y, 0xFFFFFFFF);
+        y += 14;
+
+        if (this.previewRunning)
+        {
+            this.drawClampedString(ctx, tr("litematica-creator.gui.manager.previewing"), x, y, maxWidth, 0xFFFFFF55);
+            y += 12;
+        }
+        else if (this.exportPreview == null)
+        {
+            this.drawClampedString(ctx, tr("litematica-creator.gui.manager.preview_empty"), x, y, maxWidth, 0xFFAAAAAA);
+            y += 12;
+        }
+        else
+        {
+            this.drawClampedString(ctx, tr("litematica-creator.gui.manager.preview_regions", this.exportPreview.regionCount()), x, y, maxWidth, COLOR_WHITE);
+            this.drawClampedString(ctx, tr("litematica-creator.gui.manager.preview_blocks", this.exportPreview.totalBlocks()), x, y + 12, maxWidth, COLOR_WHITE);
+            this.drawClampedString(ctx, tr("litematica-creator.gui.manager.preview_volume", this.exportPreview.totalVolume()), x, y + 24, maxWidth, COLOR_WHITE);
+            this.drawClampedString(ctx, tr("litematica-creator.gui.manager.preview_size", this.exportPreview.enclosingSize().toShortString()), x, y + 36, maxWidth, COLOR_WHITE);
+            this.drawClampedString(ctx, tr("litematica-creator.gui.manager.preview_version", LitematicaSchematic.SCHEMATIC_VERSION), x, y + 48, maxWidth, COLOR_WHITE);
+            y += 60;
+        }
+
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.current_binding", displayPath(this.inspectedSchematic.getFile())), x, y, maxWidth, 0xFFCCCCCC);
+        this.drawClampedString(ctx, tr("litematica-creator.gui.manager.output_target", this.displayOutputTarget()), x, y + 12, maxWidth, 0xFFCCCCCC);
     }
 
     private void inspect(ManagerRow row)
     {
         this.captureSaveForm();
         this.inspectedSchematic = row.schematic;
-        this.inspectedPlacement = row.placement;
-        this.samplingPlacement = this.defaultSamplingPlacement(row.schematic, row.placement);
+        this.inspectedPlacement = row.placement != null ? row.placement :
+                (this.tab == ManagerTab.PLACEMENT ? this.preferredPlacement(row.schematic) : null);
+        this.samplingPlacement = this.defaultSamplingPlacement(row.schematic, this.inspectedPlacement);
         this.saveFormSchematic = null;
         this.exportPreview = null;
         this.pendingConfirmation = null;
@@ -465,7 +632,7 @@ public final class CreatorSchematicManagerScreen extends GuiBase
             }
             catch (Exception exception)
             {
-                this.status = errorMessage(exception);
+                this.status = localizedErrorMessage(exception);
             }
             finally
             {
@@ -484,26 +651,39 @@ public final class CreatorSchematicManagerScreen extends GuiBase
         }
     }
 
-    private void toggleFocus()
+    private void setFocus()
     {
-        CreatorFocus focus = CreatorManager.getInstance().getFocus();
-
-        if (focus != null && focus.placement() == this.inspectedPlacement)
-        {
-            CreatorManager.getInstance().clearFocus();
-        }
-        else
+        if (this.inspectedPlacement != null)
         {
             CreatorManager.getInstance().focusPlacement(this.inspectedPlacement);
+            this.status = tr("litematica-creator.gui.manager.focus_set", this.inspectedPlacement.getName());
         }
 
         this.initGui();
     }
 
-    private void toggleSelected()
+    private void clearCreatorFocus()
     {
-        SchematicPlacementManager manager = DataManager.getSchematicPlacementManager();
-        manager.setSelectedSchematicPlacement(manager.getSelectedSchematicPlacement() == this.inspectedPlacement ? null : this.inspectedPlacement);
+        CreatorManager.getInstance().clearFocus();
+        this.status = tr("litematica-creator.gui.manager.focus_cleared");
+        this.initGui();
+    }
+
+    private void setSelected()
+    {
+        if (this.inspectedPlacement != null)
+        {
+            DataManager.getSchematicPlacementManager().setSelectedSchematicPlacement(this.inspectedPlacement);
+            this.status = tr("litematica-creator.gui.manager.selected_set", this.inspectedPlacement.getName());
+        }
+
+        this.initGui();
+    }
+
+    private void clearSelected()
+    {
+        DataManager.getSchematicPlacementManager().setSelectedSchematicPlacement(null);
+        this.status = tr("litematica-creator.gui.manager.selected_cleared");
         this.initGui();
     }
 
@@ -593,17 +773,20 @@ public final class CreatorSchematicManagerScreen extends GuiBase
         {
             this.captureSaveForm();
             this.exportRunning = true;
+            this.previewRunning = true;
             this.status = tr("litematica-creator.gui.manager.previewing");
+            this.initGui();
             CreatorSchematicExportService.getInstance().previewAsync(
                     this.inspectedSchematic,
                     this.exportMode(),
                     this.samplingPlacement
             ).whenComplete((preview, error) -> Minecraft.getInstance().execute(() -> {
                 this.exportRunning = false;
+                this.previewRunning = false;
 
                 if (error != null)
                 {
-                    this.status = errorMessage(error);
+                    this.status = localizedErrorMessage(error);
                 }
                 else
                 {
@@ -617,7 +800,8 @@ public final class CreatorSchematicManagerScreen extends GuiBase
         catch (Exception exception)
         {
             this.exportRunning = false;
-            this.status = errorMessage(exception);
+            this.previewRunning = false;
+            this.status = localizedErrorMessage(exception);
         }
     }
 
@@ -643,7 +827,7 @@ public final class CreatorSchematicManagerScreen extends GuiBase
 
             if (conflict != null)
             {
-                this.status = conflict;
+                this.status = localizeKnownMessage(conflict);
                 return;
             }
 
@@ -667,7 +851,9 @@ public final class CreatorSchematicManagerScreen extends GuiBase
 
             CreatorBindingReservation activeReservation = reservation;
             this.exportRunning = true;
+            this.previewRunning = false;
             this.status = tr("litematica-creator.gui.manager.preparing");
+            this.initGui();
             CreatorSchematicExportService service = CreatorSchematicExportService.getInstance();
             service.prepareAsync(
                     this.inspectedSchematic,
@@ -688,7 +874,7 @@ public final class CreatorSchematicManagerScreen extends GuiBase
                     {
                         activeReservation.close();
                     }
-                    this.status = tr("litematica-creator.gui.manager.save_failed", errorMessage(error));
+                    this.status = tr("litematica-creator.gui.manager.save_failed", localizedErrorMessage(error));
                     this.refreshIfOpen();
                     return;
                 }
@@ -707,7 +893,7 @@ public final class CreatorSchematicManagerScreen extends GuiBase
                         tr(binding.bound() ?
                                 (binding.clean() ? "litematica-creator.gui.manager.saved_bound" : "litematica-creator.gui.manager.saved_bound_dirty") :
                                 "litematica-creator.gui.manager.exported", completion.result().target().getFileName()) :
-                        tr("litematica-creator.gui.manager.save_failed", binding.error());
+                        tr("litematica-creator.gui.manager.save_failed", localizeKnownMessage(binding.error()));
                 this.refreshIfOpen();
             }));
         }
@@ -718,7 +904,8 @@ public final class CreatorSchematicManagerScreen extends GuiBase
                 reservation.close();
             }
             this.exportRunning = false;
-            this.status = errorMessage(exception);
+            this.previewRunning = false;
+            this.status = localizedErrorMessage(exception);
         }
     }
 
@@ -729,10 +916,16 @@ public final class CreatorSchematicManagerScreen extends GuiBase
             return this.inspectedSchematic.getFile().toAbsolutePath().normalize();
         }
 
+        return this.resolveFormTarget(this.saveDirectory, this.saveFileName);
+    }
+
+    private Path resolveFormTarget(String directoryValue, String fileNameValue)
+    {
+
         try
         {
-            Path directory = Path.of(this.saveDirectory);
-            String fileName = FileNameUtils.generateSimpleUnicodeSafeFileName(this.saveFileName);
+            Path directory = Path.of(directoryValue);
+            String fileName = FileNameUtils.generateSimpleUnicodeSafeFileName(fileNameValue);
 
             if (fileName.isBlank())
             {
@@ -763,6 +956,9 @@ public final class CreatorSchematicManagerScreen extends GuiBase
         }
 
         this.exportPreview = null;
+        this.status = this.samplingPlacement != null ?
+                tr("litematica-creator.gui.manager.sampling_changed", this.samplingPlacement.getName()) :
+                tr("litematica-creator.gui.manager.no_sampling");
         this.initGui();
     }
 
@@ -789,14 +985,21 @@ public final class CreatorSchematicManagerScreen extends GuiBase
             this.samplingPlacement = this.inspectedSchematic != null ? this.defaultSamplingPlacement(this.inspectedSchematic, null) : null;
         }
 
-        if (this.inspectedPlacement != null && !DataManager.getSchematicPlacementManager().getAllSchematicsPlacements().contains(this.inspectedPlacement))
+        if (this.inspectedPlacement != null &&
+            (!DataManager.getSchematicPlacementManager().getAllSchematicsPlacements().contains(this.inspectedPlacement) ||
+             this.inspectedPlacement.getSchematic() != this.inspectedSchematic))
         {
             this.inspectedPlacement = null;
         }
 
         if (this.tab == ManagerTab.PLACEMENT && this.inspectedPlacement == null)
         {
-            this.tab = ManagerTab.OVERVIEW;
+            this.inspectedPlacement = this.preferredPlacement(this.inspectedSchematic);
+        }
+
+        if (this.samplingPlacement != null && this.samplingPlacement.getSchematic() != this.inspectedSchematic)
+        {
+            this.samplingPlacement = this.defaultSamplingPlacement(this.inspectedSchematic, this.inspectedPlacement);
         }
     }
 
@@ -830,24 +1033,114 @@ public final class CreatorSchematicManagerScreen extends GuiBase
         return rows;
     }
 
-    private String rowLabel(ManagerRow row)
+    private String rowLabel(ManagerRow row, int maxWidth)
+    {
+        CreatorFocus focus = CreatorManager.getInstance().getFocus();
+        SchematicPlacement selected = DataManager.getSchematicPlacementManager().getSelectedSchematicPlacement();
+        List<String> states = new ArrayList<>();
+
+        if (row.placement == null)
+        {
+            states.add(tr(row.schematic.getFile() == null ?
+                    "litematica-creator.gui.manager.row.memory" : "litematica-creator.gui.manager.row.file"));
+            if (row.schematic.getMetadata().wasModifiedSinceSaved())
+            {
+                states.add(tr("litematica-creator.gui.manager.row.dirty"));
+            }
+            if (CreatorRecoveryManager.getInstance().hasRecoveryEntry(row.schematic))
+            {
+                states.add(tr("litematica-creator.gui.manager.row.recovery"));
+            }
+            if (focus != null && focus.schematic() == row.schematic)
+            {
+                states.add("Focus");
+            }
+            if (selected != null && selected.getSchematic() == row.schematic)
+            {
+                states.add(tr("litematica-creator.gui.manager.row.selected"));
+            }
+            return this.clampLabel(String.join(" | ", states) + " | " + row.schematic.getMetadata().getName(), maxWidth);
+        }
+
+        if (focus != null && focus.placement() == row.placement)
+        {
+            states.add("Focus");
+        }
+        if (selected == row.placement)
+        {
+            states.add(tr("litematica-creator.gui.manager.row.selected"));
+        }
+        if (!row.placement.isEnabled())
+        {
+            states.add(tr("litematica-creator.gui.manager.row.disabled"));
+        }
+        if (!row.placement.isRenderingEnabled())
+        {
+            states.add(tr("litematica-creator.gui.manager.row.hidden"));
+        }
+        String prefix = states.isEmpty() ? tr("litematica-creator.gui.manager.row.placement") : String.join(" | ", states);
+        return this.clampLabel("  " + prefix + " | " + row.placement.getName(), maxWidth);
+    }
+
+    private String rowHoverText(ManagerRow row)
     {
         CreatorFocus focus = CreatorManager.getInstance().getFocus();
         SchematicPlacement selected = DataManager.getSchematicPlacementManager().getSelectedSchematicPlacement();
 
         if (row.placement == null)
         {
-            String file = row.schematic.getFile() == null ? "MEM" : "FILE";
-            String dirty = row.schematic.getMetadata().wasModifiedSinceSaved() ? " *" : "";
-            String recovery = CreatorRecoveryManager.getInstance().hasRecoveryEntry(row.schematic) ? " R" : "";
-            return "[" + file + dirty + recovery + "] " + row.schematic.getMetadata().getName();
+            return tr(
+                    "litematica-creator.gui.manager.hover.row.schematic",
+                    row.schematic.getMetadata().getName(),
+                    displayPath(row.schematic.getFile()),
+                    this.stateText(row.schematic),
+                    DataManager.getSchematicPlacementManager().getAllPlacementsOfSchematic(row.schematic).size(),
+                    this.yesNo(focus != null && focus.schematic() == row.schematic),
+                    this.yesNo(selected != null && selected.getSchematic() == row.schematic)
+            );
         }
 
-        String markers = (focus != null && focus.placement() == row.placement ? "F" : "-") +
-                (selected == row.placement ? "S" : "-") +
-                (row.placement.isEnabled() ? "E" : "-") +
-                (row.placement.isRenderingEnabled() ? "R" : "-");
-        return "  [" + markers + "] " + row.placement.getName();
+        return tr(
+                "litematica-creator.gui.manager.hover.row.placement",
+                row.placement.getName(),
+                row.schematic.getMetadata().getName(),
+                row.placement.getOrigin().toShortString(),
+                this.yesNo(row.placement.isEnabled()),
+                this.yesNo(row.placement.isRenderingEnabled()),
+                this.yesNo(focus != null && focus.placement() == row.placement),
+                this.yesNo(selected == row.placement)
+        );
+    }
+
+    @Nullable
+    private SchematicPlacement preferredPlacement(@Nullable LitematicaSchematic schematic)
+    {
+        if (schematic == null)
+        {
+            return null;
+        }
+
+        List<SchematicPlacement> placements = DataManager.getSchematicPlacementManager().getAllPlacementsOfSchematic(schematic);
+        CreatorFocus focus = CreatorManager.getInstance().getFocus();
+
+        if (focus != null && focus.schematic() == schematic && placements.contains(focus.placement()))
+        {
+            return focus.placement();
+        }
+
+        SchematicPlacement selected = DataManager.getSchematicPlacementManager().getSelectedSchematicPlacement();
+
+        if (selected != null && selected.getSchematic() == schematic && placements.contains(selected))
+        {
+            return selected;
+        }
+
+        return placements.isEmpty() ? null : placements.getFirst();
+    }
+
+    private boolean hasPlacements(@Nullable LitematicaSchematic schematic)
+    {
+        return schematic != null && !DataManager.getSchematicPlacementManager().getAllPlacementsOfSchematic(schematic).isEmpty();
     }
 
     @Nullable
@@ -875,7 +1168,9 @@ public final class CreatorSchematicManagerScreen extends GuiBase
 
     private String samplingPlacementLabel()
     {
-        return this.samplingPlacement != null ? this.samplingPlacement.getName() : tr("litematica-creator.gui.manager.no_sampling");
+        return this.samplingPlacement != null ?
+                tr("litematica-creator.gui.manager.sampling_value", this.samplingPlacement.getName()) :
+                tr("litematica-creator.gui.manager.no_sampling");
     }
 
     private String stateText(LitematicaSchematic schematic)
@@ -973,28 +1268,17 @@ public final class CreatorSchematicManagerScreen extends GuiBase
         this.saveDescription = metadata.getDescription();
     }
 
-    private String bindingPreviewText()
+    private String displayOutputTarget()
     {
         try
         {
-            Path target = CreatorSchematicExportService.ensureExtension(this.resolveTarget(CreatorExportOperation.SAVE_AS_AND_BIND));
-            Path current = this.inspectedSchematic.getFile();
-
-            if (current == null)
-            {
-                return tr("litematica-creator.gui.manager.preview_bind_new", target);
-            }
-
-            if (current.toAbsolutePath().normalize().equals(target))
-            {
-                return tr("litematica-creator.gui.manager.preview_overwrite_binding", target);
-            }
-
-            return tr("litematica-creator.gui.manager.preview_rebind", target);
+            String directory = this.directoryField != null ? this.directoryField.getValueWrapper() : this.saveDirectory;
+            String fileName = this.fileNameField != null ? this.fileNameField.getValueWrapper() : this.saveFileName;
+            return CreatorSchematicExportService.ensureExtension(this.resolveFormTarget(directory, fileName)).toString();
         }
         catch (Exception exception)
         {
-            return errorMessage(exception);
+            return localizedErrorMessage(exception);
         }
     }
 
@@ -1004,30 +1288,126 @@ public final class CreatorSchematicManagerScreen extends GuiBase
         GuiBase.openGui(gui);
     }
 
-    private GuiTextFieldGeneric addField(int x, int y, int width, String value, int maxLength)
+    private GuiTextFieldGeneric addField(int x, int y, int width, String value, int maxLength, String hoverKey)
     {
         GuiTextFieldGeneric field = new GuiTextFieldGeneric(x, y, width, 16, this.font);
         field.setMaxLengthWrapper(maxLength);
         field.setValueWrapper(value != null ? value : "");
+        field.setHoverTooltip(hoverKey);
         this.addTextField(field, null, TextFieldType.STRING);
         return field;
     }
 
-    private int addActionButton(int x, int y, String label, Runnable action)
+    private ButtonGeneric addActionButton(int x, int y, int width, String label, String hoverKey, Runnable action)
     {
-        return this.addActionButton(x, y, this.getStringWidth(label) + 12, label, action);
+        ButtonGeneric button = new ButtonGeneric(x, y, width, 20, this.clampLabel(label, width - 8));
+        this.addButton(button, (pressed, mouseButton) -> action.run());
+        this.addWidget(new WidgetHoverInfo(x, y, width, 20, hoverKey));
+        return button;
     }
 
-    private int addActionButton(int x, int y, int width, String label, Runnable action)
+    private int addButtonGrid(int x, int y, int width, List<ButtonSpec> specs)
     {
-        ButtonGeneric button = new ButtonGeneric(x, y, width, 20, label);
-        this.addButton(button, (pressed, mouseButton) -> action.run());
-        return button.getWidth();
+        if (specs.isEmpty())
+        {
+            return y;
+        }
+
+        int widest = specs.stream().mapToInt(spec -> this.getStringWidth(spec.label) + 16).max().orElse(width);
+        int columns = CreatorManagerLayout.buttonColumns(width, specs.size(), widest, CONTROL_GAP);
+        int cellWidth = CreatorManagerLayout.buttonCellWidth(width, columns, CONTROL_GAP);
+
+        for (int index = 0; index < specs.size(); index++)
+        {
+            ButtonSpec spec = specs.get(index);
+            int column = index % columns;
+            int row = index / columns;
+            ButtonGeneric button = this.addActionButton(
+                    x + column * (cellWidth + CONTROL_GAP), y + row * 24,
+                    cellWidth, spec.label, spec.hoverKey, spec.action
+            );
+            button.setEnabled(spec.enabled);
+        }
+
+        return y + ((specs.size() + columns - 1) / columns) * 24;
+    }
+
+    private PageLayout pageLayout(ManagerTab page)
+    {
+        int left = this.leftWidth() + 14;
+        int right = this.width - 18;
+        String[] labels = switch (page)
+        {
+            case OVERVIEW -> new String[] {
+                    tr("litematica-creator.gui.manager.name"),
+                    tr("litematica-creator.gui.manager.author"),
+                    tr("litematica-creator.gui.manager.description")
+            };
+            case PLACEMENT -> new String[] { tr("litematica-creator.gui.manager.placement_name") };
+            case SAVE_EXPORT -> new String[] {
+                    tr("litematica-creator.gui.manager.directory"),
+                    tr("litematica-creator.gui.manager.file_name"),
+                    tr("litematica-creator.gui.manager.export_name"),
+                    tr("litematica-creator.gui.manager.author"),
+                    tr("litematica-creator.gui.manager.description"),
+                    tr("litematica-creator.gui.manager.export_mode"),
+                    tr("litematica-creator.gui.manager.sampling")
+            };
+        };
+        int contentWidth = Math.max(160, right - left);
+        int widestLabel = 0;
+
+        for (String label : labels)
+        {
+            widestLabel = Math.max(widestLabel, this.getStringWidth(label));
+        }
+
+        int labelWidth = CreatorManagerLayout.labelColumnWidth(contentWidth, widestLabel);
+        int controlX = left + labelWidth;
+        return new PageLayout(left, right, contentWidth, controlX, Math.max(80, right - controlX));
+    }
+
+    private boolean onSearchChanged(GuiTextFieldGeneric field)
+    {
+        this.searchQuery = field.getValueWrapper();
+        this.searchCursor = field.getCursorWrapper();
+        this.listScroll = 0;
+        this.restoreSearchFocus = true;
+
+        this.searchRefreshQueued = true;
+
+        return true;
+    }
+
+    private void drawWrappedStatus(GuiContext ctx, int x, int y, int maxWidth)
+    {
+        List<String> lines = new ArrayList<>();
+        StringUtils.splitTextToLines(lines, this.status, Math.max(40, maxWidth));
+
+        for (int index = 0; index < Math.min(2, lines.size()); index++)
+        {
+            this.drawClampedString(ctx, lines.get(index), x, y + index * 10, maxWidth, 0xFFFFFF55);
+        }
+    }
+
+    private void drawClampedString(GuiContext ctx, String text, int x, int y, int maxWidth, int color)
+    {
+        this.drawString(ctx, this.clampLabel(text, maxWidth), x, y, color);
+    }
+
+    private String clampLabel(String text, int maxWidth)
+    {
+        return StringUtils.clampTextToRenderLength(text, Math.max(8, maxWidth), LeftRight.RIGHT, "...");
+    }
+
+    private String yesNo(boolean value)
+    {
+        return tr(value ? "litematica-creator.gui.manager.yes" : "litematica-creator.gui.manager.no");
     }
 
     private int leftWidth()
     {
-        return Math.max(230, Math.min(360, this.width * 2 / 5));
+        return CreatorManagerLayout.leftPaneWidth(this.width);
     }
 
     private int visibleRows()
@@ -1112,6 +1492,51 @@ public final class CreatorSchematicManagerScreen extends GuiBase
         return current.getMessage() != null ? current.getMessage() : current.getClass().getSimpleName();
     }
 
+    private static String localizedErrorMessage(Throwable error)
+    {
+        return localizeKnownMessage(errorMessage(error));
+    }
+
+    private static String localizeKnownMessage(@Nullable String message)
+    {
+        if (message == null || message.isBlank())
+        {
+            return tr("litematica-creator.gui.manager.error.unknown");
+        }
+
+        String targetBoundPrefix = "Target file is already bound to loaded schematic '";
+        if (message.startsWith(targetBoundPrefix) && message.endsWith("'"))
+        {
+            return tr("litematica-creator.gui.manager.error.target_bound", message.substring(targetBoundPrefix.length(), message.length() - 1));
+        }
+        if (message.equals("Another Creator save is already using the target file"))
+        {
+            return tr("litematica-creator.gui.manager.error.target_busy");
+        }
+        if (message.equals("Sampling placement belongs to a different schematic"))
+        {
+            return tr("litematica-creator.gui.manager.error.sampling_wrong_schematic");
+        }
+        if (message.equals("World-backed export requires a sampling placement"))
+        {
+            return tr("litematica-creator.gui.manager.error.sampling_required");
+        }
+        if (message.startsWith("World sampling reached an unloaded chunk at "))
+        {
+            return tr("litematica-creator.gui.manager.error.unloaded_chunk", message.substring("World sampling reached an unloaded chunk at ".length()));
+        }
+        if (message.startsWith("Export bounds are too large: "))
+        {
+            return tr("litematica-creator.gui.manager.error.bounds_too_large", message.substring("Export bounds are too large: ".length()));
+        }
+        if (message.equals("The client world changed during schematic sampling"))
+        {
+            return tr("litematica-creator.gui.manager.error.world_changed");
+        }
+
+        return message;
+    }
+
     private void refreshIfOpen()
     {
         if (Minecraft.getInstance().gui.screen() == this)
@@ -1129,6 +1554,14 @@ public final class CreatorSchematicManagerScreen extends GuiBase
     }
 
     private record Confirmation(String action, String identity)
+    {
+    }
+
+    private record ButtonSpec(String label, String hoverKey, Runnable action, boolean enabled)
+    {
+    }
+
+    private record PageLayout(int labelX, int right, int contentWidth, int controlX, int controlWidth)
     {
     }
 
