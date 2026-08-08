@@ -1,6 +1,6 @@
 # Litematica Creator TODO
 
-最后更新：2026-08-07
+最后更新：2026-08-08
 
 ## 已完成
 
@@ -14,7 +14,7 @@
 - [x] #8 原版创造栏式虚拟物品栏
 - [x] #9 Creator HUD 使用虚拟快捷栏和副手
 - [x] #10 placement 移动后投影方块编辑位置异常
-- [x] #11 稀疏草稿中未编辑位置被声明为空气
+- [x] #11 稀疏草稿编辑模型与 Litematica 集成基础
 - [x] #12 投影方块使用原版式选中框
 - [x] #13 Tweakeroo `freeCameraPlayerInputs` 兼容处理时机
 - [x] #14 面向空气放置时提示刷屏
@@ -70,10 +70,6 @@
 - [x] #75 可配置是否允许在空中放置投影方块
 - [x] #76 Creator 物品栏替身预览使用半透明渲染
 - [x] #78 投影楼梯空缺部分不再误触发匍匐姿态
-- [x] Creator 与 Litematica 的完成编辑/卸载命令边界
-- [x] 坐标、目标解析和稀疏 region 核心单元测试
-- [x] Focus、稀疏 subregion 和生命周期设计文档同步
-
 实现细节和历史验收记录见 [`docs/completed-tasks.md`](docs/completed-tasks.md)。
 
 ## 已取消
@@ -85,6 +81,24 @@
 - [ ] 未开始
 - [~] 进行中或已部分实现
 - [!] 需要设计决策
+
+## 原理图导出与数据模型
+
+- [ ] #79 Creator 草稿导出 metadata 规范化
+  - Litematica 的“保存到文件”区分文件名与 schematic metadata name；Creator 临时草稿首次导出时需要消除 `creator-draft-*` 占位名称。
+  - 仅对仍使用 Creator 临时名称的草稿，把导出文件内的 metadata name 设为最终文件名 stem；已有正式名称的普通 schematic 保持原样。
+  - 保留有效的 `timeCreated`；旧草稿的创建时间小于等于 0 时，优先从 `creator-draft-yyyyMMdd-HHmmss` 恢复，无法解析时再回退到导出时间。
+  - `timeModified` 继续表示最后编辑时间，author 和普通 file-backed schematic 的重命名语义不变。
+  - 验收：Creator 新旧草稿导出后名称与创建时间正确；普通 Litematica schematic 的“重命名原理图/重命名文件”边界不受影响。
+
+- [ ] #80 导出时压缩稀疏 Creator cell subregions
+  - 当前 `1x1x1` Creator cell 是编辑态和 recovery cache 的稀疏表示；导出普通 `.litematic` 时生成独立规范化快照，不实时改写当前 schematic 或 placements。
+  - 只压缩带 Creator 保留前缀的 cell regions，原有普通 Litematica regions 保持名称、边界和内容不变。
+  - 将面相邻 cells 确定性地合并/分割为无空洞、完全填满的 cuboid regions；不得用包含未编辑位置的包围盒，避免重新引入 #11 的显式空气问题。
+  - L 形、中空或其他非长方体结构保留为多个 cuboids；相距较远及仅边/角接触的 cells 不合并。
+  - 搬移并重定位 BlockState、block entity NBT、entities、scheduled block ticks 和 scheduled fluid ticks，随后重新计算 region count、total volume、total blocks 和 enclosing size。
+  - Recovery cache 继续保存未经压缩的稀疏编辑状态；压缩仅作用于玩家通过 Litematica 明确导出的文件。
+  - 验收：相邻实心结构导出后 region 数显著减少且语义不变；不规则结构不产生额外显式空气，保存重载后方块、附属数据和 metadata 保持正确。
 
 ## 虚拟物品栏与输入
 
@@ -99,7 +113,9 @@
 - [~] #70、#77 Creator 相机虚拟鞘翅模型与滑翔姿态同步
   - 已确认此前只替换了虚拟胸甲和纹理相关 render state，却没有补回跳过 `LivingEntity.tick()` 后缺失的 `fallFlyTicks` 与 `ElytraAnimationState.tick()`。
   - `fallFlyTicks` 未推进会让 `AvatarRenderState.fallFlyingScale()` 始终为 0，因此替身保持直立；翼动画未推进会让左右翼角始终为 0，因此两片翼重叠成使用默认鞘翅纹理的竖直矩形。
-  - 当前实现已按原版生命周期推进滑翔计时和翼动画，代码测试及 Mixin 初始化完成后仍需游戏内确认整身水平滑翔、左右翼展开及动画过渡。
+  - 当前实现已按原版生命周期推进滑翔计时和翼动画；游戏内已确认鞘翅模型、替身模型和滑翔动作正常。
+  - 剩余问题：虚拟鞘翅错误地抑制了原版 `showCape`，导致 `WingsLayer` 无法选择玩家披风纹理；应恢复原版披风显示状态，由原版 `CapeLayer` 在胸甲为 wings 时自行跳过矩形披风渲染。
+  - 验收：启用玩家披风时虚拟鞘翅使用玩家披风纹理，关闭披风显示时使用默认鞘翅纹理，且不会额外渲染固定矩形披风。
 
 - [!] #42 Creator Camera 预览模式
   - 目标是把投影按普通世界方块的模型、纹理、流体和 block entity 方式不透明渲染，并隐藏缺失/错误方块的彩色 overlay 与轮廓。

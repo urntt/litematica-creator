@@ -100,6 +100,10 @@ Creator 模式下的左右键由 `litematica-creator` 消费，不能落到真�
 
 当前实现使用稀疏 subregion 模型：边界外每个明确编辑的位置创建一个 `1x1x1` Creator cell；普通 Litematica region 内的编辑继续写入原 container。
 
+`1x1x1` Creator cell 是编辑态与 recovery cache 的表示，不是最终导出格式。#80 将在玩家通过 Litematica 明确导出 `.litematic` 时创建独立规范化快照，把面相邻 cells 压缩为不包含未编辑位置的实心 cuboid regions；当前内存 schematic、placements 和 recovery cache 继续保持稀疏，避免编辑期间频繁调整 region 边界。
+
+压缩不能简单采用连通结构的包围盒：Litematica region 内的空气同样具有 schematic 语义，L 形、中空结构或其他不规则结构必须分割为多个无空洞 cuboids，否则会重新引入未编辑位置被声明为空气的问题。
+
 玩家在新区域放置方块时，自动创建对应 subregion。扩容后需要：
 
 - 创建新的 schematic subregion/container。

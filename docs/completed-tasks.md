@@ -37,6 +37,10 @@
 - `hideSubregionBoxesInCreatorMode` 默认开启，只在 Creator 模式抑制密集 subregion box，不改写 Litematica 全局渲染配置。
 - 删除保留 Creator cell 中的方块时，会移除该 cell region、更新 metadata 并重建相关 placements。
 - #35 已将清理规则扩展到任意经 Creator 删除后彻底为空的 subregion。
+- Creator 的完成编辑/卸载命令已与 Litematica 原生导出和 selected-placement 行为分离。
+- 单元测试覆盖坐标旋转/镜像往返、候选身份合并、目标决策、放置占用策略、通用 region 空状态和 focus 通知决策。
+- `docs/creator-design-and-roadmap.md` 已同步当前 focus、稀疏 subregion 和生命周期模型。
+- 本项完成的是稳定、语义正确的稀疏编辑表示；导出时把相邻 Creator cells 压缩为无空洞 cuboids 的后续工作单独由 #80 跟踪。
 
 ## 世界生命周期（#31、#32）
 
@@ -282,14 +286,10 @@
 
 > 2026-08-07 复测更正：上述 #70、#77 的 render-state 补丁只改变了鞘翅纹理选择，没有补回 Creator 轻量 tick 跳过的原版滑翔动画生命周期，因此不能视为完成。后续修复改为每 tick 推进 `fallFlyTicks` 和 `ElytraAnimationState`；最终状态以 `todo.md` 和新的游戏内验收为准。
 
+> 2026-08-08 复测：鞘翅模型、替身模型和滑翔动作已正常；此前为避免固定矩形披风而关闭 `showCape` 的处理同时阻止了 `WingsLayer` 使用玩家披风纹理，因此 #70 仍保留该项纹理修复。
+
 ## Recovery cache 实例迁移修复（#18）
 
 - Placement JSON 由 Litematica 序列化时会冗余保存 recovery `.litematic` 的绝对路径。复制或重命名 Minecraft 实例后，该字段仍指向旧实例目录，旧恢复逻辑因而会把完整有效的 cache 误判为路径无效。
 - 恢复时继续严格验证 manifest 的 entry ID、generation 和 `cache_file`，但不再要求 placement JSON 内的旧绝对路径等于当前路径。通过验证后，会在内存副本中将其重新绑定到当前 recovery 文件，再交给 `SchematicPlacement.fromJson()`；磁盘上的 manifest、cache 和原始 schematic 均不修改。
 - 结构验证仍要求 placement JSON 具有非空的 `schematic` 字段和数组形式的 `placements`，损坏数据继续按失败路径保留。回归测试覆盖实例目录迁移、外部旧路径重绑定、源 JSON 不变和畸形字段拒绝；本批完成后共有 132 项测试通过。
-
-## 配套工作
-
-- Creator 的完成编辑/卸载命令已与 Litematica 原生导出和 selected-placement 行为分离。
-- 单元测试覆盖坐标旋转/镜像往返、候选身份合并、目标决策、放置占用策略、通用 region 空状态和 focus 通知决策。
-- `docs/creator-design-and-roadmap.md` 已同步当前 focus、稀疏 subregion 和生命周期模型。
