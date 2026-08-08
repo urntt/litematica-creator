@@ -95,13 +95,16 @@
   - 与 #80 的边界：region 压缩后磁盘快照和稀疏内存表示可以结构不同；这里的“对应”至少要求文件身份、metadata、dirty/recovery 语义和重新加载入口一致。
 
 - [ ] #80 可配置的草稿导出 region 规范化方式
-  - 新增三态设置，默认“稀疏压缩”；只影响玩家明确保存/导出的 `.litematic` 副本，不实时改写当前 schematic、placements 或 recovery cache。
+  - 新增四态设置，默认“稀疏压缩”；只影响玩家明确保存/导出的 `.litematic` 副本，不实时改写当前 schematic、placements 或 recovery cache。
   - “原样保存”：保留当前 region 拓扑和全部 `1x1x1` Creator cells，不合并、不展平。
   - “稀疏压缩”：保留原有普通 Litematica regions，只把带 Creator 保留前缀的面相邻 cells 确定性地合并/分割为无空洞、完全填满的 cuboid regions。L 形、中空、远离及仅边/角接触的 cells 保持为多个 cuboids。
-  - “按外边界”：把整个逻辑 schematic 展平为一个最小 enclosing cuboid；未被草稿显式写入的位置保存为 AIR，即使该位置当前存在真实世界方块也不抓取其状态，因此 verifier 可以把这些真实方块报告为 extra。
-  - 三种模式都要正确搬移和重定位 BlockState、block entity NBT、entities、scheduled block ticks、scheduled fluid ticks，并重新计算 region count、total volume、total blocks 和 enclosing size。
+  - “外边界（仅投影）”：把整个逻辑 schematic 展平为一个最小 enclosing cuboid；未被任何原 region/cell 覆盖的位置保存为 AIR，即使该位置当前存在真实世界方块也不抓取其状态，因此 verifier 可以把这些真实方块报告为 extra。
+  - “外边界（补入真实世界）”：同样生成一个最小 enclosing cuboid，但在未被任何原 region/cell 覆盖的位置读取真实客户端世界的方块状态（包括 AIR）和可用的 block entity NBT；原 schematic 已覆盖的位置（包括其中的显式 AIR）始终优先，不被真实世界覆盖。
+  - 补入真实世界时必须使用当前 Creator focus placement 把世界坐标、旋转和镜像反向映射到 schematic 本地坐标；同一 schematic 有多个 placements 时只采样 focus 所指向的实例。没有对应 focus placement 时拒绝该模式的导出并给出明确提示，不能猜测或自动选择。
+  - 真实世界补入只采集方块、流体状态及客户端已同步的 block entity 数据，不采集真实实体，也不伪造客户端无法取得的服务端 scheduled ticks。
+  - 四种模式都要正确搬移和重定位已有的 BlockState、block entity NBT、entities、scheduled block ticks、scheduled fluid ticks，并重新计算 region count、total volume、total blocks 和 enclosing size。
   - 模式切换只影响下一次导出；不改变当前 focus、dirty/recovery 状态，也不自动重写已经保存的文件。
-  - 验收：原样模式保持编辑拓扑；稀疏压缩显著减少规则结构的 region 数且不引入显式空气；外边界模式只生成一个包含显式空气的长方体 region；三者保存重载后各自语义稳定。
+  - 验收：原样模式保持编辑拓扑；稀疏压缩显著减少规则结构的 region 数且不引入显式空气；两个外边界模式都只生成一个长方体 region，并分别以 AIR 或 focus 实例的真实世界快照填充未覆盖位置；四者保存重载后各自语义稳定。
 
 ## Litematica 工具兼容
 
