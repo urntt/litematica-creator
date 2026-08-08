@@ -143,6 +143,21 @@
   - 重新梳理 Creator HUD、设置分组、物品栏入口、focus/draft/recovery 状态以及 Camera 的地面/飞行/碰撞状态，不用单纯堆叠更多常驻文本。
   - 先通过实际工作流确定需要常驻、按需显示和仅在错误时提示的信息，再统一视觉层级和交互入口。
 
+- [ ] #89 Creator 原理图管理器与 Litematica 页面互通
+  - 新增独立的 Creator 原理图管理页面，使用 MaLiLib/Litematica 风格的全屏列表界面；左侧按 schematic 分组显示其 placements，包含搜索，并标出内存/文件绑定、dirty、recovery、启用/隐藏、Creator focus 和 Litematica selected placement 状态。没有 placement 的已加载 schematic 也要显示。
+  - 页面内的“当前查看项”、Creator focus 和 Litematica selected placement 是三套独立状态。单击列表只切换右侧查看对象；placement 详情中分别提供“设为/取消 Focus”和“设为/取消 Selected”，任一操作都不得隐式改变另一状态。
+  - 保留现有 Focus Switcher 作为快速入口，`M+F` 继续只快速切换/清除 Creator focus；重叠 placement 仍打开仅包含冲突 candidates 的精简选择器。Switcher 可显示 selected placement 标记，但不接管 selected placement。新增可配置的管理器热键，默认 `M+G`。
+  - 通过 Creator 自己的 Litematica GUI Mixins 在 `GuiMainMenu`、`GuiSchematicLoadedList` 和 `GuiSchematicPlacementsList` 的 `initGui()` 末尾添加“Creator 管理”入口，采用与 Syncmatica 同类的注入方式，不修改 Litematica 源码、菜单枚举、原生保存监听器或页面语义，并避免与其他附属注入的按钮重叠。
+  - Creator 管理页提供快速切换至 Litematica 主菜单、已加载原理图和原理图放置列表的入口。Creator 与原版页面按同级页面切换并继承共同 parent，不能反复套娃形成 GUI parent 循环；从原版页面进入 Creator 后也能正确返回此前的上级页面。
+  - “概览”标签显示并编辑 schematic 内部名称、作者、描述和缩略图，同时显示绑定路径、创建/修改时间、dirty/recovery、region、方块、实体、block entity、总体积和 enclosing size。文本修改经明确“应用”后才更新 metadata、`TimeModified`、dirty 和 recovery；支持从当前画面更新或清除标准 `.litematic` 缩略图。
+  - “Placement”标签显示 placement 名称、原点、旋转、镜像和启用/渲染摘要，支持重命名 placement、切换启用状态、设置/取消 Focus、设置/取消 Selected，以及打开 Litematica 原生 placement 配置。原理图内部名称、placement 名称和文件名必须分别处理。
+  - “保存与导出”标签统一承载 #79/#80：编辑导出 metadata，切换原样保存、稀疏压缩、外边界（仅投影）和外边界（补入真实世界）四种模式，并预览预计 region 数、方块数、外边界、文件版本及当前绑定结果。导出模式作为全局默认配置持久化，但不写入 `.litematic` 私有字段。
+  - “补入真实世界”模式显式选择世界采样 placement；默认优先使用属于当前 schematic 的 Creator focus，其次使用当前查看的 placement，玩家可以改选同一 schematic 的其他实例。采样选择不得改变 focus 或 selected placement。
+  - 文件操作明确分为“保存”“另存并绑定”和“导出副本”：保存覆盖当前绑定文件，未绑定时进入另存并绑定；另存并绑定写入新文件并按 #79 原子更新当前内存 schematic 及其全部 placements；导出副本不改变绑定、dirty 或 recovery。目标路径已被另一个已加载 schematic 绑定时拒绝重新绑定。
+  - `M+Left Shift+S` 继续表示“结束编辑”并只清除 focus，不承担文件写入；卸载 schematic、移除 placement 和删除 recovery 等破坏性操作继续遵循既有主动卸载语义并提供明确确认。
+  - 实现按职责拆分为管理 GUI、保存/导出服务和成功写盘后的绑定服务；文件选择器可以复用 MaLiLib/Litematica 控件，但不得通过 Mixin 改写 `GuiSchematicSave` 的行为。
+  - 验收：可在 Creator 管理页、Litematica 主菜单、已加载原理图和放置列表之间往返；Focus/Selected/查看项互不串改；快捷 Switcher 行为不回归；metadata、缩略图、重命名、四种导出模式和三种文件操作语义明确；保存失败或页面切换不会改变绑定、dirty、recovery、focus、selected placement 或对象身份。
+
 ## 文档
 
 - [ ] #67 补齐用户文档与 Wiki
