@@ -14,6 +14,7 @@ import io.github.urntt.litematicacreator.data.DataManager;
 import io.github.urntt.litematicacreator.gui.GuiConfigs;
 import io.github.urntt.litematicacreator.gui.GuiCreatorInventory;
 import io.github.urntt.litematicacreator.gui.GuiFocusSwitcher;
+import io.github.urntt.litematicacreator.gui.CreatorSchematicManagerScreen;
 
 public class CreatorHotkeyCallbacks implements IHotkeyCallback
 {
@@ -33,6 +34,7 @@ public class CreatorHotkeyCallbacks implements IHotkeyCallback
         Hotkeys.DISCARD_DRAFT.getKeybind().setCallback(INSTANCE);
         Hotkeys.OPEN_FOCUS_SWITCHER.getKeybind().setCallback(INSTANCE);
         Hotkeys.NEW_BLANK.getKeybind().setCallback(INSTANCE);
+        Hotkeys.OPEN_SCHEMATIC_MANAGER.getKeybind().setCallback(INSTANCE);
     }
 
     @Override
@@ -76,6 +78,10 @@ public class CreatorHotkeyCallbacks implements IHotkeyCallback
             {
                 CreatorManager.getInstance().createBlank(CreatorCameraCompat.getCameraEntity().blockPosition());
             }
+        }
+        else if (key == Hotkeys.OPEN_SCHEMATIC_MANAGER.getKeybind())
+        {
+            CreatorSchematicManagerScreen.open(null);
         }
         else
         {

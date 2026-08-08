@@ -35,6 +35,9 @@ public class Hotkeys
     public static final ConfigHotkey NEW_BLANK = new ConfigHotkey(
             "newBlank", CreatorConfigDefaults.NEW_BLANK, KeybindSettings.PRESS_ALLOWEXTRA
     ).apply(HOTKEYS_KEY);
+    public static final ConfigHotkey OPEN_SCHEMATIC_MANAGER = new ConfigHotkey(
+            "openSchematicManager", CreatorConfigDefaults.OPEN_SCHEMATIC_MANAGER, KeybindSettings.PRESS_ALLOWEXTRA
+    ).apply(HOTKEYS_KEY);
 
     public static final List<ConfigHotkey> HOTKEY_LIST = ImmutableList.of(
             TOGGLE_CREATOR_MODE,
@@ -44,6 +47,7 @@ public class Hotkeys
             SAVE_DRAFT,
             DISCARD_DRAFT,
             OPEN_FOCUS_SWITCHER,
-            NEW_BLANK
+            NEW_BLANK,
+            OPEN_SCHEMATIC_MANAGER
     );
 }
