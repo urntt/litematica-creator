@@ -71,5 +71,12 @@ class ConfigDefaultsTest
         assertEquals("M,LEFT_SHIFT,D", CreatorConfigDefaults.DISCARD_DRAFT);
         assertEquals("M,F", CreatorConfigDefaults.OPEN_FOCUS_SWITCHER);
         assertEquals("M,N", CreatorConfigDefaults.NEW_BLANK);
+        assertEquals("M,G", CreatorConfigDefaults.OPEN_SCHEMATIC_MANAGER);
+    }
+
+    @Test
+    void creatorExportsDefaultToSparseCompaction()
+    {
+        assertEquals(CreatorExportRegionMode.SPARSE_COMPACT, CreatorConfigDefaults.CREATOR_EXPORT_REGION_MODE);
     }
 }
