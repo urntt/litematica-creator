@@ -94,14 +94,14 @@
   - 普通已有 file-backed schematic、downgrade/export 等非首次 Creator 保存路径不能被误接管。
   - 与 #80 的边界：region 压缩后磁盘快照和稀疏内存表示可以结构不同；这里的“对应”至少要求文件身份、metadata、dirty/recovery 语义和重新加载入口一致。
 
-- [ ] #80 导出时压缩稀疏 Creator cell subregions
-  - 当前 `1x1x1` Creator cell 是编辑态和 recovery cache 的稀疏表示；导出普通 `.litematic` 时生成独立规范化快照，不实时改写当前 schematic 或 placements。
-  - 只压缩带 Creator 保留前缀的 cell regions，原有普通 Litematica regions 保持名称、边界和内容不变。
-  - 将面相邻 cells 确定性地合并/分割为无空洞、完全填满的 cuboid regions；不得用包含未编辑位置的包围盒，避免重新引入 #11 的显式空气问题。
-  - L 形、中空或其他非长方体结构保留为多个 cuboids；相距较远及仅边/角接触的 cells 不合并。
-  - 搬移并重定位 BlockState、block entity NBT、entities、scheduled block ticks 和 scheduled fluid ticks，随后重新计算 region count、total volume、total blocks 和 enclosing size。
-  - Recovery cache 继续保存未经压缩的稀疏编辑状态；压缩仅作用于玩家通过 Litematica 明确导出的文件。
-  - 验收：相邻实心结构导出后 region 数显著减少且语义不变；不规则结构不产生额外显式空气，保存重载后方块、附属数据和 metadata 保持正确。
+- [ ] #80 可配置的草稿导出 region 规范化方式
+  - 新增三态设置，默认“稀疏压缩”；只影响玩家明确保存/导出的 `.litematic` 副本，不实时改写当前 schematic、placements 或 recovery cache。
+  - “原样保存”：保留当前 region 拓扑和全部 `1x1x1` Creator cells，不合并、不展平。
+  - “稀疏压缩”：保留原有普通 Litematica regions，只把带 Creator 保留前缀的面相邻 cells 确定性地合并/分割为无空洞、完全填满的 cuboid regions。L 形、中空、远离及仅边/角接触的 cells 保持为多个 cuboids。
+  - “按外边界”：把整个逻辑 schematic 展平为一个最小 enclosing cuboid；未被草稿显式写入的位置保存为 AIR，即使该位置当前存在真实世界方块也不抓取其状态，因此 verifier 可以把这些真实方块报告为 extra。
+  - 三种模式都要正确搬移和重定位 BlockState、block entity NBT、entities、scheduled block ticks、scheduled fluid ticks，并重新计算 region count、total volume、total blocks 和 enclosing size。
+  - 模式切换只影响下一次导出；不改变当前 focus、dirty/recovery 状态，也不自动重写已经保存的文件。
+  - 验收：原样模式保持编辑拓扑；稀疏压缩显著减少规则结构的 region 数且不引入显式空气；外边界模式只生成一个包含显式空气的长方体 region；三者保存重载后各自语义稳定。
 
 ## Litematica 工具兼容
 
@@ -157,14 +157,15 @@
 
 - [!] #82 客户端原版式交互事务层
   - 当前实现仅调用 `Block#getStateForPlacement()` 并向一个预先确定的格子写入单个 BlockState，无法承载原版 `Item#useOn`、`BlockItem#place` 和方块交互产生的多位置、副数据或实体变更。
-  - 建立纯客户端事务世界视图：读取目标 placement、事务内先前写入和可作为依附环境的真实世界方块；捕获方块、block entity NBT、实体和 scheduled ticks 变更，但不修改真实世界、不发送包、不消耗或损伤虚拟物品。
+  - 建立纯客户端事务世界视图：读取目标 placement 和事务内先前写入；真实世界只提供射线命中位置/面等操作上下文，不作为投影占用或方块生存条件。捕获方块、block entity NBT、实体和 scheduled ticks 变更，但不修改真实世界、不发送包、不消耗或损伤虚拟物品。
   - 最终写入位置必须来自原版 context，包括替换命中格、写相邻格和一次写多个格；事务全部验证成功后再原子提交到 schematic，失败时不创建草稿/subregion、不切 focus、不标 dirty。
   - 与重叠 placement、旋转/镜像、多 placements、recovery、最小 chunk rebuild 以及未来 #30 undo transaction 保持一致。
 
 - [ ] #83 完整 BlockItem 放置语义
-  - 多格放置：门、床、大型花丛及其他一次放置多个 BlockState 的方块必须完整写入。
-  - 依附与生存条件：梯子、藤蔓、发光地衣、幽匿脉络、按钮、灯笼、滴水石锥、硫磺尖锥、竹子、海草、海带、拉杆、钟等应能读取真实/投影支撑环境并按原版决定状态。
+  - 多格放置：门、床、大型花丛及其他一次放置多个 BlockState 的方块必须完整写入；事务中任一目标格已有不可替换的非空气投影时整次放置失败，不能只放一半或静默顶掉已有设计。
+  - 依附与生存条件：梯子、藤蔓、发光地衣、幽匿脉络、按钮、灯笼、滴水石锥、硫磺尖锥、竹子、海草、海带、拉杆、钟等忽略真实/投影支撑与生存判定，依据点击面、相机朝向和物品类型生成可保存的目标状态。
   - 原地合并与累加：半砖合成双半砖；蜡烛、花簇、海龟蛋及其他可在同一格重复放置的方块更新命中格，而不是把结果错误写到相邻格。
+  - 原地合并属于对命中状态的明确变换，可以替换该格；除此之外所有写入都先按目标 placement 的投影状态统一做 replaceable/占用检查，真实世界方块不阻止投影写入。
   - 保留水含状态、朝向、连接状态和 placement context 产生的其他属性；以代表性方块矩阵测试，而不是维护按方块硬编码的例外列表。
 
 - [ ] #84 投影实体放置
@@ -174,13 +175,23 @@
 
 - [!] #85 桶与投影流体
   - 支持水桶、岩浆桶及其他标准流体容器放置静态投影流体源，并持久化对应 BlockState/FluidState。
+  - 对支持含水的投影方块优先修改 `WATERLOGGED`/对应含流体状态，而不是用流体方块覆盖原方块；空桶操作需要对称地清除含水状态。
   - 需要确定空桶清除投影流体源与细雪时的虚拟物品结果，以及不模拟流动情况下是否支持 pickup；该决策不能影响真实流体。
-  - 投影流动、scheduled fluid ticks 和 Creator Camera 流体物理仍分别由 #65 或后续任务处理，不因桶放置自动扩散。
+  - #85 基础范围只提交静态结果，不传播流体、不执行邻居更新；focus 中的流动、scheduled fluid ticks 和方块更新统一交给 #88 的可选模拟运行时，Creator Camera 流体物理由 #65 跟踪。
 
 - [!] #86 通用物品使用与持久化结果
   - 在 #82 上接入会产生可持久化 schematic 结果的非 BlockItem 使用，例如末影之眼写入末地传送门框架，以及后续蜡化/除蜡、点燃、施肥等明确可映射为 BlockState/NBT 的行为。
   - 区分“对投影方块使用物品”“空手使用投影方块”和“只影响玩家或真实实体、无法写入 schematic”的物品；后者不能假装成功或向服务器发送操作。
   - 与 #22 的状态/NBT 编辑和 #29 的虚拟方块交互共用同一事务层，逐类增加能力测试，不按一长串物品 ID 写特判。
+
+## 投影运行时模拟
+
+- [!] #88 Focus 投影的隔离局部世界模拟
+  - 普通 Creator 编辑只提交玩家明确产生的状态变更，不自动运行流体、红石、侦测器、邻居更新、scheduled ticks、random ticks 或 block entity tick。
+  - 若要支持流体扩散、开门触发侦测器、红石信号传播等行为，需要为 focused schematic 建立独立、有限边界且不接入真实 `ClientLevel` 的模拟运行时；这不是给 #29/#85 增加一个布尔开关即可安全完成的功能。
+  - 需要先确定模拟边界、tick 速率、暂停/单步、流体/红石/方块实体等子系统开关、未显式草稿位置的 AIR 语义，以及模拟结果如何分组进入 recovery 和未来 #30 undo history。
+  - 运行时应在 schematic 本地坐标中维护权威状态，再通过 focus placement 映射交互和渲染；多个 placements 继续共享同一 schematic 结果。
+  - 默认关闭；关闭或退出时不得影响真实世界、服务端、真实实体或玩家物品栏。是否能可靠复用原版服务端逻辑需先做独立技术验证。
 
 ## 方块状态、NBT 与交互
 
@@ -190,11 +201,19 @@
   - 将 block entity NBT 持久化到 schematic tile-entity 数据。
   - 验收：常见 BlockState 属性和 NBT 保存重载后保持一致。
 
+- [ ] #87 Creator 虚拟调试棒编辑投影状态
+  - Creator 虚拟主手或副手持有原版调试棒时，对投影方块复用原版的属性选择、属性值循环和潜行反向循环语义，并绕过真实玩家的权限/创造模式限制。
+  - 调试棒输入优先于 Creator 删除、放置和 pick block；一次按键只能执行一次调试棒操作，不触碰被投影覆盖的真实方块。
+  - 当前选中的属性继续保存在虚拟调试棒 ItemStack 的 components 中，并随 Creator 虚拟物品栏配置持久化。
+  - 状态变更通过 Creator 事务、focus、metadata、recovery 和最小 chunk rebuild 提交；重叠 placement 仍先进入 Focus Switcher。
+  - 验收：虚拟任一只手中的调试棒可以稳定修改常见 BlockState，重开物品栏和重启客户端后保留所选属性，真实世界与服务器不变化。
+
 - [ ] #29 与投影方块交互
   - 区分空手/持物右键交互和相邻放置；门、活板门、拉杆、按钮等原版交互应修改对应投影状态。
   - 对可交互投影方块打开虚拟 UI 或状态/NBT 编辑器。
   - 不向服务器发送交互。
   - 箱子等容器使用虚拟 block entity inventory，告示牌等进入专用编辑；末影之眼等持物交互由 #86 处理。
+  - 基础 #29 只提交直接结果及同一多方块结构的必要一致性变更，例如同步门的上下半部；不会触发邻近侦测器、红石传播或其他世界更新。动态传播统一属于 #88。
   - 验收：右键常见状态方块、容器和告示牌时进入正确 Creator 编辑流程，结果保存重载后保持一致。
 
 ## 撤销、重做与历史
