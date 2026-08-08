@@ -88,10 +88,6 @@ public abstract class AvatarRendererMixin
             state.elytraRotX = entity.elytraAnimationState.getRotX(partialTicks);
             state.elytraRotY = entity.elytraAnimationState.getRotY(partialTicks);
             state.elytraRotZ = entity.elytraAnimationState.getRotZ(partialTicks);
-            state.showCape = CreatorCameraAvatarRenderPolicy.showCapeWithVirtualChest(
-                    state.showCape,
-                    state.chestEquipment.has(DataComponents.GLIDER)
-            );
         }
 
         state.isUsingItem = false;

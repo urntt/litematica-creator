@@ -16,11 +16,4 @@ class CreatorCameraAvatarRenderPolicyTest
         assertFalse(CreatorCameraAvatarRenderPolicy.renderAsFallFlying(false, Pose.STANDING));
     }
 
-    @Test
-    void virtualGliderDoesNotReuseThePlayerCapeTexture()
-    {
-        assertFalse(CreatorCameraAvatarRenderPolicy.showCapeWithVirtualChest(true, true));
-        assertTrue(CreatorCameraAvatarRenderPolicy.showCapeWithVirtualChest(true, false));
-        assertFalse(CreatorCameraAvatarRenderPolicy.showCapeWithVirtualChest(false, false));
-    }
 }

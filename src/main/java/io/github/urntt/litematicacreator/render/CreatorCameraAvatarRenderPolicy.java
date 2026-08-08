@@ -12,9 +12,4 @@ public final class CreatorCameraAvatarRenderPolicy
     {
         return fallFlying || pose == Pose.FALL_FLYING;
     }
-
-    public static boolean showCapeWithVirtualChest(boolean originalShowCape, boolean virtualChestHasGlider)
-    {
-        return originalShowCape && !virtualChestHasGlider;
-    }
 }
