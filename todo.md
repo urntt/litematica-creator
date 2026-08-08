@@ -72,6 +72,9 @@
 - [x] #76 Creator 物品栏替身预览使用半透明渲染
 - [x] #77 Creator 相机替身鞘翅滑翔模型与动作同步
 - [x] #78 投影楼梯空缺部分不再误触发匍匐姿态
+- [x] #79 保存后绑定当前内存 schematic 与全部 placements
+- [x] #80 四种可配置的草稿导出 region 规范化方式
+- [x] #89 Creator 原理图管理器与 Litematica 页面互通
 实现细节和历史验收记录见 [`docs/completed-tasks.md`](docs/completed-tasks.md)。
 
 ## 已取消
@@ -83,28 +86,6 @@
 - [ ] 未开始
 - [~] 进行中或已部分实现
 - [!] 需要设计决策
-
-## 原理图导出与数据模型
-
-- [~] #79 Creator 草稿导出 metadata 规范化与内存对象文件绑定
-  - 已完成：仅对 `creator-draft-yyyyMMdd-HHmmss` 占位名称规范化导出副本，文件内名称和旧草稿创建时间正确，普通 schematic Save As 不受影响。
-  - 剩余：首次成功保存后，继续使用当前内存 schematic 和 placements，但将其绑定到实际 `.litematic` 路径并同步正式名称、创建时间和文件类型；“重新加载”必须能读取刚保存的文件。
-  - 同一 schematic 的全部 placements 都要更新缓存的文件路径，focus、selected placement、placement hash 和对象身份保持不变，不卸载再重新加载出一份重复对象。
-  - 只有写盘成功后才能提交绑定、清除对应 recovery entry 并转为 clean file-backed；后续再次编辑应按 dirty file-backed 重新建立 recovery。保存失败不能改变内存状态。
-  - 普通已有 file-backed schematic、downgrade/export 等非首次 Creator 保存路径不能被误接管。
-  - 与 #80 的边界：region 压缩后磁盘快照和稀疏内存表示可以结构不同；这里的“对应”至少要求文件身份、metadata、dirty/recovery 语义和重新加载入口一致。
-
-- [ ] #80 可配置的草稿导出 region 规范化方式
-  - 新增四态设置，默认“稀疏压缩”；只影响玩家明确保存/导出的 `.litematic` 副本，不实时改写当前 schematic、placements 或 recovery cache。
-  - “原样保存”：保留当前 region 拓扑和全部 `1x1x1` Creator cells，不合并、不展平。
-  - “稀疏压缩”：保留原有普通 Litematica regions，只把带 Creator 保留前缀的面相邻 cells 确定性地合并/分割为无空洞、完全填满的 cuboid regions。L 形、中空、远离及仅边/角接触的 cells 保持为多个 cuboids。
-  - “外边界（仅投影）”：把整个逻辑 schematic 展平为一个最小 enclosing cuboid；未被任何原 region/cell 覆盖的位置保存为 AIR，即使该位置当前存在真实世界方块也不抓取其状态，因此 verifier 可以把这些真实方块报告为 extra。
-  - “外边界（补入真实世界）”：同样生成一个最小 enclosing cuboid，但在未被任何原 region/cell 覆盖的位置读取真实客户端世界的方块状态（包括 AIR）和可用的 block entity NBT；原 schematic 已覆盖的位置（包括其中的显式 AIR）始终优先，不被真实世界覆盖。
-  - 补入真实世界时必须使用当前 Creator focus placement 把世界坐标、旋转和镜像反向映射到 schematic 本地坐标；同一 schematic 有多个 placements 时只采样 focus 所指向的实例。没有对应 focus placement 时拒绝该模式的导出并给出明确提示，不能猜测或自动选择。
-  - 真实世界补入只采集方块、流体状态及客户端已同步的 block entity 数据，不采集真实实体，也不伪造客户端无法取得的服务端 scheduled ticks。
-  - 四种模式都要正确搬移和重定位已有的 BlockState、block entity NBT、entities、scheduled block ticks、scheduled fluid ticks，并重新计算 region count、total volume、total blocks 和 enclosing size。
-  - 模式切换只影响下一次导出；不改变当前 focus、dirty/recovery 状态，也不自动重写已经保存的文件。
-  - 验收：原样模式保持编辑拓扑；稀疏压缩显著减少规则结构的 region 数且不引入显式空气；两个外边界模式都只生成一个长方体 region，并分别以 AIR 或 focus 实例的真实世界快照填充未覆盖位置；四者保存重载后各自语义稳定。
 
 ## Litematica 工具兼容
 
@@ -142,21 +123,6 @@
 - [!] #66 UI 不清晰、状态信息不足
   - 重新梳理 Creator HUD、设置分组、物品栏入口、focus/draft/recovery 状态以及 Camera 的地面/飞行/碰撞状态，不用单纯堆叠更多常驻文本。
   - 先通过实际工作流确定需要常驻、按需显示和仅在错误时提示的信息，再统一视觉层级和交互入口。
-
-- [ ] #89 Creator 原理图管理器与 Litematica 页面互通
-  - 新增独立的 Creator 原理图管理页面，使用 MaLiLib/Litematica 风格的全屏列表界面；左侧按 schematic 分组显示其 placements，包含搜索，并标出内存/文件绑定、dirty、recovery、启用/隐藏、Creator focus 和 Litematica selected placement 状态。没有 placement 的已加载 schematic 也要显示。
-  - 页面内的“当前查看项”、Creator focus 和 Litematica selected placement 是三套独立状态。单击列表只切换右侧查看对象；placement 详情中分别提供“设为/取消 Focus”和“设为/取消 Selected”，任一操作都不得隐式改变另一状态。
-  - 保留现有 Focus Switcher 作为快速入口，`M+F` 继续只快速切换/清除 Creator focus；重叠 placement 仍打开仅包含冲突 candidates 的精简选择器。Switcher 可显示 selected placement 标记，但不接管 selected placement。新增可配置的管理器热键，默认 `M+G`。
-  - 通过 Creator 自己的 Litematica GUI Mixins 在 `GuiMainMenu`、`GuiSchematicLoadedList` 和 `GuiSchematicPlacementsList` 的 `initGui()` 末尾添加“Creator 管理”入口，采用与 Syncmatica 同类的注入方式，不修改 Litematica 源码、菜单枚举、原生保存监听器或页面语义，并避免与其他附属注入的按钮重叠。
-  - Creator 管理页提供快速切换至 Litematica 主菜单、已加载原理图和原理图放置列表的入口。Creator 与原版页面按同级页面切换并继承共同 parent，不能反复套娃形成 GUI parent 循环；从原版页面进入 Creator 后也能正确返回此前的上级页面。
-  - “概览”标签显示并编辑 schematic 内部名称、作者、描述和缩略图，同时显示绑定路径、创建/修改时间、dirty/recovery、region、方块、实体、block entity、总体积和 enclosing size。文本修改经明确“应用”后才更新 metadata、`TimeModified`、dirty 和 recovery；支持从当前画面更新或清除标准 `.litematic` 缩略图。
-  - “Placement”标签显示 placement 名称、原点、旋转、镜像和启用/渲染摘要，支持重命名 placement、切换启用状态、设置/取消 Focus、设置/取消 Selected，以及打开 Litematica 原生 placement 配置。原理图内部名称、placement 名称和文件名必须分别处理。
-  - “保存与导出”标签统一承载 #79/#80：编辑导出 metadata，切换原样保存、稀疏压缩、外边界（仅投影）和外边界（补入真实世界）四种模式，并预览预计 region 数、方块数、外边界、文件版本及当前绑定结果。导出模式作为全局默认配置持久化，但不写入 `.litematic` 私有字段。
-  - “补入真实世界”模式显式选择世界采样 placement；默认优先使用属于当前 schematic 的 Creator focus，其次使用当前查看的 placement，玩家可以改选同一 schematic 的其他实例。采样选择不得改变 focus 或 selected placement。
-  - 文件操作明确分为“保存”“另存并绑定”和“导出副本”：保存覆盖当前绑定文件，未绑定时进入另存并绑定；另存并绑定写入新文件并按 #79 原子更新当前内存 schematic 及其全部 placements；导出副本不改变绑定、dirty 或 recovery。目标路径已被另一个已加载 schematic 绑定时拒绝重新绑定。
-  - `M+Left Shift+S` 继续表示“结束编辑”并只清除 focus，不承担文件写入；卸载 schematic、移除 placement 和删除 recovery 等破坏性操作继续遵循既有主动卸载语义并提供明确确认。
-  - 实现按职责拆分为管理 GUI、保存/导出服务和成功写盘后的绑定服务；文件选择器可以复用 MaLiLib/Litematica 控件，但不得通过 Mixin 改写 `GuiSchematicSave` 的行为。
-  - 验收：可在 Creator 管理页、Litematica 主菜单、已加载原理图和放置列表之间往返；Focus/Selected/查看项互不串改；快捷 Switcher 行为不回归；metadata、缩略图、重命名、四种导出模式和三种文件操作语义明确；保存失败或页面切换不会改变绑定、dirty、recovery、focus、selected placement 或对象身份。
 
 ## 文档
 

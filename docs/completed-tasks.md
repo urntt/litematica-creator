@@ -298,3 +298,31 @@
 - Placement JSON 由 Litematica 序列化时会冗余保存 recovery `.litematic` 的绝对路径。复制或重命名 Minecraft 实例后，该字段仍指向旧实例目录，旧恢复逻辑因而会把完整有效的 cache 误判为路径无效。
 - 恢复时继续严格验证 manifest 的 entry ID、generation 和 `cache_file`，但不再要求 placement JSON 内的旧绝对路径等于当前路径。通过验证后，会在内存副本中将其重新绑定到当前 recovery 文件，再交给 `SchematicPlacement.fromJson()`；磁盘上的 manifest、cache 和原始 schematic 均不修改。
 - 结构验证仍要求 placement JSON 具有非空的 `schematic` 字段和数组形式的 `placements`，损坏数据继续按失败路径保留。回归测试覆盖实例目录迁移、外部旧路径重绑定、源 JSON 不变和畸形字段拒绝；本批完成后共有 132 项测试通过。
+
+## 保存后的文件绑定（#79）
+
+- Creator 管理器将文件操作明确分为“保存”“另存并绑定”和“导出副本”。保存覆盖当前绑定文件，未绑定时按另存并绑定处理；另存并绑定可用于新草稿或已有 file-backed schematic；导出副本只写文件，不改变当前编辑对象。
+- 写盘与绑定采用两阶段提交：先把不可变 NBT 快照写入同目录临时文件并原子替换目标，成功后才更新内存。目标路径已被另一个已加载 schematic 绑定、写盘失败或源 schematic 在异步任务期间被卸载时，内存绑定保持不变。
+- 绑定提交原地更新当前 `LitematicaSchematic` 的文件路径、文件类型和导出 identity metadata，并更新它的全部 placements 缓存路径；schematic、placement 对象身份、placement hash、Focus、Selected、位置、旋转、镜像和启用/渲染状态均保持不变。
+- 保存快照后没有新编辑时，schematic 转为 clean file-backed 并清除 recovery entry；保存期间又有编辑时仍完成新路径绑定，但保留 dirty，并按新文件路径继续建立 recovery。导出 metadata 仅在对应内存字段未被后续编辑时回写，避免覆盖并发修改。
+- 管理器的“重新加载”先完整验证新文件，再原地替换当前 schematic 数据并协调全部 placements 的 subregion 状态和 touched chunks。重新加载不创建重复 schematic 或 placement；已移除 region 的 placement 状态会清理，保留 region 的自定义变换和开关保持不变。
+- Litematica 原生保存页面、降级导出和其他原生写盘入口仍使用原有语义；Creator 的绑定服务只由管理器的明确文件操作调用。
+
+## 四种导出 Region 模式（#80）
+
+- 新增全局持久化的四态导出设置，默认“稀疏压缩”。模式只作用于明确保存或导出的不可变快照，不实时压缩当前 schematic 或 recovery cache。
+- “原样保存”保留原 region 名称、位置、尺寸和 Creator `1x1x1` cells；“稀疏压缩”保留普通 Litematica regions，仅把带 Creator 保留前缀、面相邻的 unit cells 确定性分割为无空洞且完全填满的 cuboids。边/角接触、L 形、中空和分离结构不会引入隐式 AIR。
+- “外边界（仅投影）”把逻辑 schematic 展平为一个最小 enclosing cuboid，未覆盖位置写 AIR；“外边界（补入真实世界）”使用玩家明确选择的同 schematic placement，将未覆盖位置从客户端世界反向采样为方块、流体状态和可用 block entity NBT。原 schematic 的显式 AIR 也属于覆盖内容并始终优先。
+- 真实世界采样 placement 默认优先 Creator Focus，其次为管理器当前查看的 placement，也可手动改选；该选择不会改变 Focus 或 Litematica Selected。没有可用实例时拒绝世界补入，不采集真实实体，也不伪造服务端 scheduled ticks。
+- 所有规范化路径都会迁移 BlockState、block entity NBT、schematic entities、scheduled block ticks 和 fluid ticks，重写随 region 原点变化的位置，并重新计算 region 数、非空气方块数、总体积和 enclosing size。
+- 世界采样在客户端线程按时间预算分批执行，压缩与文件 I/O 进入单线程后台任务。管理器可在写盘前预览输出 region、方块数、体积、外边界、文件版本和绑定结果。
+- 单元测试覆盖规则立方体、L 形、中空、远离、边角接触、普通 region 混合、负方向尺寸、附属 NBT、实体、两类 scheduled ticks、两个外边界 AIR 语义以及旋转/镜像世界采样。
+
+## Creator 原理图管理器（#89）
+
+- 新增默认 `M+G` 的 Creator 原理图管理器；进入客户端世界后可独立于 Creator 模式打开。左侧按 schematic 分组显示已加载对象及 placements，支持搜索，并标识内存/文件绑定、dirty、recovery、启用/渲染、Focus 和 Selected 状态；没有 placement 的 schematic 也会列出。
+- 管理器的当前查看项、Creator Focus 和 Litematica Selected Placement 是三套独立状态。Placement 页可分别设置或清除 Focus/Selected、重命名、切换启用及渲染状态，并打开 Litematica 原生 placement 配置页；原有 `M+F` Focus Switcher 和重叠候选选择器保持不变。
+- 概览页可查看完整统计与绑定/recovery 状态，编辑内部名称、作者和描述，并从当前画面更新或清除标准 `.litematic` 缩略图。metadata 只有点击“应用”后才写回、更新时间并标记 dirty。
+- 保存与导出页提供独立的目录、文件名、输出 metadata、四种 region 模式、世界采样 placement、异步预览，以及“保存”“另存并绑定”“导出副本”和“重新加载”。覆盖已有目标及丢弃 dirty 内存状态前会要求明确确认。
+- 通过可选 GUI Mixin 在 Litematica 主菜单、已加载原理图和 placement 列表追加 Creator 管理入口；管理器也可直接切回这三个原生页面。页面共享原始 parent，按同级页面切换，不形成返回循环，也不修改 Litematica 菜单枚举或原生保存监听器。
+- `M+Left Shift+S` 仍只结束编辑并清除 Focus，不执行保存；主动卸载、移除 placement、Creator 丢弃和 recovery 清理继续沿用既有语义。

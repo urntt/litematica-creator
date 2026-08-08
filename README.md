@@ -30,6 +30,8 @@ Litematica Creator 让玩家在生存模式中直接放置、删除和拾取“�
 - **Creator Focus**：编辑目标独立于 Litematica selected placement；同一 schematic 的任意 placement 都可以作为编辑入口，修改会反映到它的全部 placements。
 - **Creator Camera**：纯客户端地面/飞行相机，支持双击空格飞行、穿墙、速度调节和可选投影碰撞；真实玩家本体保持独立，继续受重力、惯性和服务端校正影响。
 - **安全恢复**：未落盘或修改后未保存的 schematic 会写入 recovery cache，可在重新进入同一世界后恢复 placement、selected placement 和 Creator focus。
+- **原理图管理器**：集中管理 schematic metadata、缩略图、placements、Creator Focus、Litematica Selected Placement、文件绑定和重新加载，并可与 Litematica 原生页面直接切换。
+- **可控保存与导出**：区分保存、另存并绑定和导出副本，支持原样、稀疏压缩、仅投影外边界和补入真实世界外边界四种 region 模式。
 - **旋转与镜像感知**：编辑坐标和方块状态会根据 placement 与 subregion 的旋转、镜像正确换算。
 
 ### 运行要求
@@ -59,7 +61,7 @@ Tweakeroo 不是硬依赖。检测到其 Free Camera 时，Creator 会临时协�
 3. 右键放置投影方块，左键删除，中键拾取；数字键和滚轮切换虚拟快捷栏。
 4. 在空气中右键时，投影会按配置的固定距离放置；编辑距离和连续放置/删除间隔可以在设置中调整。
 5. 对已有投影操作会切换 Creator focus；发生重叠或需要主动切换时，使用 `M + F` 打开 Focus Switcher。
-6. 使用 Litematica 原生界面把编辑结果导出为 `.litematic` 文件。
+6. 按 `M + G` 打开 Creator 原理图管理器，检查 metadata 和导出预览，然后选择保存、另存并绑定或导出副本；也可以从管理器切换到 Litematica 原生页面。
 
 默认快捷键：
 
@@ -72,9 +74,10 @@ Tweakeroo 不是硬依赖。检测到其 Free Camera 时，Creator 会临时协�
 | 结束编辑并清空 focus | `M + Left Shift + S` |
 | 卸载 focus 对应的原理图及其 placements | `M + Left Shift + D` |
 | 打开 Focus Switcher | `M + F` |
+| 打开 Creator 原理图管理器 | `M + G` |
 | 新建空白原理图 | `M + N` |
 
-“结束编辑”不会导出文件或卸载原理图；“卸载当前原理图”也不会删除磁盘上的 `.litematic` 文件。正式保存和导出应继续在 Litematica 界面完成。
+“结束编辑”不会保存、导出或卸载原理图；“卸载当前原理图”也不会删除磁盘上的 `.litematic` 文件。“保存”覆盖当前绑定文件，“另存并绑定”让当前内存对象继续编辑新文件，“导出副本”则完全不改变当前绑定和编辑状态。
 
 ### Recovery Cache
 
@@ -140,6 +143,8 @@ The result remains a normal Litematica schematic and can use Litematica's render
 - **Creator Focus**: the edit target is independent from Litematica's selected placement. Any placement of the same schematic can be used as an edit entry point, and every placement reflects the same schematic changes.
 - **Creator Camera**: a client-only ground/flight camera with double-tap flight, noclip while flying, speed controls, and optional projection collision. The real player remains behind and continues normal gravity, momentum, and server corrections.
 - **Recovery cache**: schematics without a backing file, and modified file-backed schematics, can be restored with their placements, Litematica selection, and Creator focus.
+- **Schematic manager**: manage metadata, thumbnails, placements, Creator Focus, Litematica Selected Placement, file binding, and reloads from one screen, with direct navigation to Litematica's native screens.
+- **Controlled save and export**: distinguish Save, Save As and Bind, and Export Copy, with raw, sparse compact, projection bounds, and world-filled bounds region modes.
 - **Transform-aware editing**: placement and subregion rotation and mirroring are respected for coordinates and block states.
 
 ### Requirements
@@ -169,7 +174,7 @@ This is a client-only mod; the server does not need it.
 3. Right-click to place a projected block, left-click to remove one, and middle-click to pick one. Number keys and the mouse wheel select the virtual hotbar slot.
 4. Right-clicking air uses the configured fixed placement distance. Edit range and continuous placement/removal intervals are configurable.
 5. Editing an existing projection changes Creator focus. Use `M + F` when projections overlap or when you want to select a focus explicitly.
-6. Export the result as a `.litematic` through Litematica's native screens.
+6. Press `M + G` to open the Creator schematic manager, review metadata and the export preview, then Save, Save As and Bind, or Export Copy. The manager also links directly to Litematica's native screens.
 
 Default keybinds:
 
@@ -182,9 +187,10 @@ Default keybinds:
 | Finish editing and clear focus | `M + Left Shift + S` |
 | Unload the focused schematic and its placements | `M + Left Shift + D` |
 | Open Focus Switcher | `M + F` |
+| Open Creator schematic manager | `M + G` |
 | Create an empty schematic | `M + N` |
 
-"Finish editing" does not export or unload anything. "Unload current schematic" never deletes the original `.litematic` file. Use Litematica's own screens for permanent saves and exports.
+"Finish editing" does not save, export, or unload anything. "Unload current schematic" never deletes the original `.litematic` file. Save overwrites the bound file, Save As and Bind keeps editing the same in-memory object under a new file, and Export Copy leaves the current binding and edit state untouched.
 
 ### Recovery Cache
 
