@@ -46,20 +46,19 @@ public class CreatorEditService
         this.lastNoTargetWarning = 0L;
     }
 
-    @Nullable
-    CreatorEditTarget tracePlacementTarget()
+    CreatorPlacementTrace tracePlacementTarget()
     {
         Minecraft mc = Minecraft.getInstance();
 
         if (!this.canEdit(mc))
         {
-            return null;
+            return CreatorPlacementTrace.noTarget();
         }
 
         return this.getPlacementTarget(mc);
     }
 
-    CreatorEditOutcome placeProjectionBlock(@Nullable CreatorEditTarget target, boolean showWarnings)
+    CreatorEditOutcome placeProjectionBlock(CreatorPlacementTrace placementTrace, boolean showWarnings)
     {
         Minecraft mc = Minecraft.getInstance();
 
@@ -67,6 +66,13 @@ public class CreatorEditService
         {
             return CreatorEditOutcome.NO_CHANGE;
         }
+
+        if (placementTrace.kind() == CreatorPlacementTrace.Kind.BLOCKED_BY_ENTITY)
+        {
+            return CreatorEditOutcome.NO_CHANGE;
+        }
+
+        CreatorEditTarget target = placementTrace.target();
 
         if (target == null)
         {
@@ -318,35 +324,50 @@ public class CreatorEditService
         }
     }
 
-    @Nullable
-    private CreatorEditTarget getPlacementTarget(Minecraft mc)
+    private CreatorPlacementTrace getPlacementTarget(Minecraft mc)
     {
-        RayTraceWrapper trace = this.trace(mc);
+        CreatorTargeting.TraceResult result = CreatorTargeting.traceResult(mc);
+        CreatorPlacementTracePolicy.Action action = CreatorPlacementTracePolicy.decide(
+                result.source(),
+                Configs.Generic.ENABLE_AIR_PLACEMENT.getBooleanValue()
+        );
 
-        if (trace != null && trace.getBlockHitResult() != null)
+        if (action == CreatorPlacementTracePolicy.Action.BLOCKED_BY_ENTITY)
         {
-            BlockHitResult hit = trace.getBlockHitResult();
-
-            if (trace.getHitType() == RayTraceWrapper.HitType.SCHEMATIC_BLOCK)
-            {
-                return new CreatorEditTarget(hit.getBlockPos().relative(hit.getDirection()), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), true, false);
-            }
-            else if (trace.getHitType() == RayTraceWrapper.HitType.VANILLA_BLOCK)
-            {
-                return new CreatorEditTarget(hit.getBlockPos().relative(hit.getDirection()), hit.getBlockPos(), hit.getDirection(), hit.getLocation(), false, false);
-            }
+            return CreatorPlacementTrace.blockedByEntity();
         }
 
-        if (!Configs.Generic.ENABLE_AIR_PLACEMENT.getBooleanValue())
+        if (action == CreatorPlacementTracePolicy.Action.USE_BLOCK_TARGET)
         {
-            return null;
+            @Nullable RayTraceWrapper trace = result.trace();
+            @Nullable BlockHitResult hit = trace != null ? trace.getBlockHitResult() : null;
+
+            if (hit == null)
+            {
+                return CreatorPlacementTrace.noTarget();
+            }
+
+            boolean schematic = result.source() == CreatorTargetingPolicy.Source.SCHEMATIC_BLOCK;
+            return CreatorPlacementTrace.target(new CreatorEditTarget(
+                    hit.getBlockPos().relative(hit.getDirection()),
+                    hit.getBlockPos(),
+                    hit.getDirection(),
+                    hit.getLocation(),
+                    schematic,
+                    false
+            ));
+        }
+
+        if (action == CreatorPlacementTracePolicy.Action.NO_TARGET)
+        {
+            return CreatorPlacementTrace.noTarget();
         }
 
         Entity camera = CreatorCameraCompat.getCameraEntity();
 
         if (camera == null)
         {
-            return null;
+            return CreatorPlacementTrace.noTarget();
         }
 
         int distance = CreatorAirPlacementTarget.effectiveDistance(
@@ -358,14 +379,14 @@ public class CreatorEditService
                 camera.getViewVector(1.0F),
                 distance
         );
-        return new CreatorEditTarget(
+        return CreatorPlacementTrace.target(new CreatorEditTarget(
                 airTarget.blockPos(),
                 airTarget.blockPos(),
                 airTarget.side(),
                 airTarget.hitPosition(),
                 false,
                 true
-        );
+        ));
     }
 
     @Nullable

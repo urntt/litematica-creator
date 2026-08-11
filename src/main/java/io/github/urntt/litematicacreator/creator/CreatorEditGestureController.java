@@ -108,8 +108,8 @@ public final class CreatorEditGestureController
         while (this.placeInput.consumePress())
         {
             freshPlace = true;
-            CreatorEditTarget target = edits.tracePlacementTarget();
-            CreatorEditOutcome outcome = edits.placeProjectionBlock(target, true);
+            CreatorPlacementTrace trace = edits.tracePlacementTarget();
+            CreatorEditOutcome outcome = edits.placeProjectionBlock(trace, true);
             this.nextPlaceTick = tick + placeInterval;
 
             if (outcome == CreatorEditOutcome.OVERLAP)
@@ -127,8 +127,8 @@ public final class CreatorEditGestureController
 
         if (!freshPlace && this.placeInput.isHeld() && tick >= this.nextPlaceTick)
         {
-            CreatorEditTarget target = edits.tracePlacementTarget();
-            CreatorEditOutcome outcome = edits.placeProjectionBlock(target, false);
+            CreatorPlacementTrace trace = edits.tracePlacementTarget();
+            CreatorEditOutcome outcome = edits.placeProjectionBlock(trace, false);
             this.nextPlaceTick = tick + placeInterval;
 
             if (outcome == CreatorEditOutcome.OVERLAP)
