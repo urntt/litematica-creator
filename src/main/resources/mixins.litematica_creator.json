@@ -10,6 +10,7 @@
 		"ChunkRenderWorkerLitematicaMixin",
 		"EntityCollisionMixin",
 		"EntityTurnMixin",
+		"GameRendererMixin",
 		"HudMixin",
 		"InventoryScreenMixin",
 		"ItemInHandRendererMixin",

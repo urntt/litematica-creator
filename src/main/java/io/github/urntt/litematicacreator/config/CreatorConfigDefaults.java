@@ -34,9 +34,15 @@ final class CreatorConfigDefaults
     static final String DISCARD_DRAFT = "M,LEFT_SHIFT,D";
     static final String OPEN_FOCUS_SWITCHER = "M,F";
     static final String NEW_BLANK = "M,N";
-    static final String OPEN_SCHEMATIC_MANAGER = "M,G";
+    static final String OPEN_SCHEMATIC_MANAGER = "M,J";
+    private static final String LEGACY_OPEN_SCHEMATIC_MANAGER = "M,G";
 
     private CreatorConfigDefaults()
     {
+    }
+
+    static String migrateOpenSchematicManagerHotkey(String value)
+    {
+        return LEGACY_OPEN_SCHEMATIC_MANAGER.equals(value) ? OPEN_SCHEMATIC_MANAGER : value;
     }
 }

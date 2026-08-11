@@ -136,6 +136,10 @@ public class Configs implements IConfigHandler
                 JsonObject root = element.getAsJsonObject();
                 ConfigUtils.readConfigBase(root, "Generic", Generic.OPTIONS);
                 ConfigUtils.readConfigBase(root, "Hotkeys", Hotkeys.HOTKEY_LIST);
+                String managerHotkey = CreatorConfigDefaults.migrateOpenSchematicManagerHotkey(
+                        Hotkeys.OPEN_SCHEMATIC_MANAGER.getStringValue()
+                );
+                Hotkeys.OPEN_SCHEMATIC_MANAGER.setValueFromString(managerHotkey);
                 LitematicaCreator.debugLog("Loaded config file '{}'.", configFile.toAbsolutePath());
             }
             else
