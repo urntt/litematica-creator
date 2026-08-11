@@ -81,7 +81,7 @@ public final class CreatorSchematicExportService
         }
 
         return CreatorSchematicEditGuard.readSnapshot(() -> {
-            CompoundTag sourceNbt = schematic.writeToNBT();
+            CompoundTag sourceNbt = CreatorSchematicMetadataCopies.writeSchematicToNbt(schematic);
             CreatorSchematicSnapshot source = CreatorSchematicSnapshot.capture(schematic);
             CreatorSchematicSnapshot output = source.normalize(mode, world, samplingPlacement);
             String fileName = normalizedTarget.getFileName().toString();
@@ -225,7 +225,7 @@ public final class CreatorSchematicExportService
         CreatorWorldSamplingTransform transform = samplingPlacement != null ?
                 CreatorWorldSamplingTransform.capture(samplingPlacement) : null;
         return CreatorSchematicEditGuard.readSnapshot(() -> new CapturedSnapshot(
-                schematic.writeToNBT(),
+                CreatorSchematicMetadataCopies.writeSchematicToNbt(schematic),
                 CreatorSchematicSnapshot.capture(schematic),
                 world,
                 transform

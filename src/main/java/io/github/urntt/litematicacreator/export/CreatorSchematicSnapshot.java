@@ -55,7 +55,7 @@ final class CreatorSchematicSnapshot
     {
         LitematicaSchematicAccessor accessor = (LitematicaSchematicAccessor) schematic;
         SchematicMetadata metadata = new SchematicMetadata();
-        metadata.copyFrom(schematic.getMetadata());
+        CreatorSchematicMetadataCopies.copy(metadata, schematic.getMetadata());
         List<CreatorRegionSnapshot> regions = new ArrayList<>();
 
         accessor.litematicacreator$getBlockContainers().keySet().stream().sorted().forEach(name -> {
@@ -128,7 +128,7 @@ final class CreatorSchematicSnapshot
     CompoundTag toNbt(String finalFileName)
     {
         LitematicaSchematic schematic = this.toSchematic();
-        CompoundTag nbt = schematic.writeToNBT();
+        CompoundTag nbt = CreatorSchematicMetadataCopies.writeSchematicToNbt(schematic);
         return CreatorSchematicExportNormalizer.normalizeForExport(nbt, finalFileName);
     }
 
@@ -307,7 +307,7 @@ final class CreatorSchematicSnapshot
     {
         LitematicaSchematic schematic = LitematicaSchematicAccessor.litematicacreator$create(null);
         LitematicaSchematicAccessor accessor = (LitematicaSchematicAccessor) schematic;
-        schematic.getMetadata().copyFrom(this.metadata);
+        CreatorSchematicMetadataCopies.copy(schematic.getMetadata(), this.metadata);
 
         for (CreatorRegionSnapshot region : this.regions)
         {
@@ -561,7 +561,7 @@ final class CreatorSchematicSnapshot
     private static SchematicMetadata copyMetadata(SchematicMetadata source)
     {
         SchematicMetadata copy = new SchematicMetadata();
-        copy.copyFrom(source);
+        CreatorSchematicMetadataCopies.copy(copy, source);
         return copy;
     }
 

@@ -136,7 +136,7 @@ public final class CreatorSchematicBindingService
             }
 
             LitematicaSchematic schematic = prepared.source();
-            boolean unchanged = schematic.writeToNBT().equals(prepared.sourceNbt());
+            boolean unchanged = CreatorSchematicMetadataCopies.writeSchematicToNbt(schematic).equals(prepared.sourceNbt());
             CompoundTag sourceMetadata = prepared.sourceNbt().getCompoundOrEmpty("Metadata");
             CompoundTag outputMetadata = prepared.outputNbt().getCompoundOrEmpty("Metadata");
 
@@ -330,7 +330,7 @@ public final class CreatorSchematicBindingService
         targetAccessor.litematicacreator$getSubRegionPositions().putAll(loadedAccessor.litematicacreator$getSubRegionPositions());
         targetAccessor.litematicacreator$getSubRegionSizes().clear();
         targetAccessor.litematicacreator$getSubRegionSizes().putAll(loadedAccessor.litematicacreator$getSubRegionSizes());
-        target.getMetadata().copyFrom(loaded.getMetadata());
+        CreatorSchematicMetadataCopies.copy(target.getMetadata(), loaded.getMetadata());
         targetAccessor.litematicacreator$setSchematicFile(file);
         targetAccessor.litematicacreator$setSchematicType(FileType.LITEMATICA_SCHEMATIC);
     }
@@ -365,7 +365,7 @@ public final class CreatorSchematicBindingService
             metadata.setTimeModified(output.getLongOr("TimeModified", metadata.getTimeModified()));
         }
 
-        int[] currentPreview = metadata.getPreviewImagePixelData();
+        int[] currentPreview = CreatorSchematicMetadataCopies.snapshotPreview(metadata);
         int[] sourcePreview = source.getIntArray("PreviewImageData").orElse(null);
 
         if (Arrays.equals(currentPreview, sourcePreview))

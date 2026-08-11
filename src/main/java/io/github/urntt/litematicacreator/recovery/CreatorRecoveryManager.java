@@ -47,6 +47,7 @@ import io.github.urntt.litematicacreator.creator.CreatorFocus;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.creator.CreatorPlacementIndex;
 import io.github.urntt.litematicacreator.event.CreatorClientTickHandler;
+import io.github.urntt.litematicacreator.export.CreatorSchematicMetadataCopies;
 import io.github.urntt.litematicacreator.mixin.LitematicaSchematicAccessor;
 import io.github.urntt.litematicacreator.mixin.SchematicPlacementAccessor;
 
@@ -476,7 +477,7 @@ public final class CreatorRecoveryManager implements ISchematicPlacementEventLis
 
         trackedEntry.lastGeneration = generation;
         trackedEntry.signature = RecoverySignature.from(schematic);
-        CompoundTag nbt = schematic.writeToNBT();
+        CompoundTag nbt = CreatorSchematicMetadataCopies.writeSchematicToNbt(schematic);
         return new RecoverySnapshot(manifest, nbt);
     }
 
