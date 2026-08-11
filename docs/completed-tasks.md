@@ -1,6 +1,6 @@
 # Litematica Creator 已完成工作记录
 
-最后更新：2026-08-09
+最后更新：2026-08-11
 
 本文档保存已完成工作的实现细节和历史验收记录。当前和部分完成的工作统一维护在 [`../todo.md`](../todo.md)。
 
@@ -320,7 +320,7 @@
 
 ## Creator 原理图管理器（#89）
 
-- 新增默认 `M+G` 的 Creator 原理图管理器；进入客户端世界后可独立于 Creator 模式打开。左侧按 schematic 分组显示已加载对象及 placements，支持搜索，并标识内存/文件绑定、dirty、recovery、启用/渲染、Focus 和 Selected 状态；没有 placement 的 schematic 也会列出。
+- 新增默认 `M+J` 的 Creator 原理图管理器；进入客户端世界后可独立于 Creator 模式打开。旧版默认值 `M+G` 会自动迁移以避开 Litematica 的投影显示快捷键，其他自定义绑定保持不变。左侧按 schematic 分组显示已加载对象及 placements，支持搜索，并标识内存/文件绑定、dirty、recovery、启用/渲染、Focus 和 Selected 状态；没有 placement 的 schematic 也会列出。
 - 管理器的当前查看项、Creator Focus 和 Litematica Selected Placement 是三套独立状态。Placement 页可分别设置或清除 Focus/Selected、重命名、切换启用及渲染状态，并打开 Litematica 原生 placement 配置页；原有 `M+F` Focus Switcher 和重叠候选选择器保持不变。
 - 概览页可查看完整统计与绑定/recovery 状态，编辑内部名称、作者和描述，并从当前画面更新或清除标准 `.litematic` 缩略图。metadata 只有点击“应用”后才写回、更新时间并标记 dirty。
 - 保存与导出页提供独立的目录、文件名、输出 metadata、四种 region 模式、世界采样 placement、异步预览，以及“保存”“另存并绑定”“导出副本”和“重新加载”。覆盖已有目标及丢弃 dirty 内存状态前会要求明确确认。
@@ -330,3 +330,8 @@
 - 搜索框改为随输入即时筛选并保持输入焦点；切换 schematic 时保留当前 Placement 标签页并自动查看该 schematic 的 Focus、Selected 或首个 placement。左侧不再使用不明缩写，而以完整状态显示内存/文件、未保存、recovery、Focus、Selected、禁用和隐藏信息。
 - Focus 与 Litematica Selected 在列表、Placement 详情和底部操作区中明确区分；Placement 操作改为“设为”语义，底部提供互不影响的独立清除按钮。全部字段、标签页、列表项和操作按钮补齐中英文 hover 说明。
 - 缩略图固定显示在概览统计区并明确标注为从当前游戏画面居中截取的标准 `.litematic` 预览图。保存页移除无语义的辅助按钮，只在“外边界（补入真实世界）”模式显示来源 Placement；结构预览、输入目标、当前绑定和三种写盘操作均改用明确标签与状态提示，已知导出错误在界面中本地化显示。
+- 默认管理器热键由与 Litematica 投影显示开关冲突的 `M+G` 改为 `M+J`；配置加载时只迁移旧默认值，玩家已经设置的其他组合键不受影响。
+- 左侧列表对只有一个 placement 的 schematic 使用单个组合行；存在多个 placements 时才展开明确标注为 Placement 的子行，避免草稿名与唯一 placement 同名时看起来像重复加载了两份原理图。
+- “更新结构预览”改为“刷新导出信息”。玩家切换导出区域模式或真实世界来源 Placement 后会立即异步刷新一次，手动按钮仍可在编辑内容变化后重新计算，且不会写文件。
+- 从当前画面捕获缩略图不再在按钮回调中读取仍包含管理器的旧帧；管理器先关闭，再由 `GameRenderer.render()` 完成下一帧真实游戏画面后截图，随后自动返回原页面。
+- Creator 的 schematic metadata 快照不再直接调用会消费源 `IntStream` 的 Litematica `copyFrom()`。缩略图在复制前后被独立恢复，管理器读取也能清理旧版本留下的已消费流，从而避免界面重建、导出预览和 recovery 序列化反复抛出 `stream has already been operated upon or closed`。
