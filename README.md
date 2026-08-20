@@ -2,22 +2,21 @@
 
 [中文](#中文) | [English](#english)
 
-Litematica Creator is a client-side Litematica addon for building schematic drafts as naturally as placing blocks in Creative mode, without changing the real world.
+Litematica Creator is a Fabric client-side Litematica addon for building schematic drafts as naturally as placing blocks in Creative mode, without changing the real world.
+
+Litematica Creator 是一个 Fabric 客户端 Litematica 附属模组，用于像在创意模式下放置方块一样自然地建造原理图草稿，而无需改变原版世界。
 
 > Development status: `0.1.0-dev` for Minecraft/Fabric `26.2`. Back up important schematics before editing them with a development build.
+>
+> 开发状态: 适配 Minecraft/Fabric `26.2`，版本为 `0.1.0-dev`。若要使用该模组的开发版编辑重要投影，请提前备份。
 
 ## 中文
 
 ### 简介
 
-Litematica Creator 让玩家在生存模式中直接放置、删除和拾取“投影方块”，从零搭建或继续编辑 Litematica 原理图。
+Litematica Creator 让玩家在获取对应原材料前从零搭建或继续编辑 Litematica 原理图。
 
-它只修改客户端中的 `LitematicaSchematic` 和 `SchematicPlacement`：
-
-- 不放置或破坏真实方块。
-- 不消耗真实背包中的物品。
-- 不发送对应的真实攻击或放置数据包。
-- 不绕过服务器权限或生存限制。
+全部操作均在客户端完成，不修改任何原版数据，不向服务端额外发包。
 
 编辑结果仍是普通 Litematica 原理图，可以继续使用 Litematica 的渲染、材料列表、Verifier、保存和后续建造流程。
 
@@ -26,9 +25,10 @@ Litematica Creator 让玩家在生存模式中直接放置、删除和拾取“�
 - **直接编辑投影**：右键放置、左键删除、中键拾取投影或真实方块。
 - **从零创建草稿**：在没有可编辑 placement 时自动创建草稿，也可主动新建空白原理图。
 - **稀疏动态扩展**：在原理图边界外编辑时按需创建 `1x1x1` subregion，不用频繁扩张一个巨大 region，也不会声明大片隐式空气。
-- **虚拟创造物品栏**：具有独立的虚拟快捷栏、背包、副手、盔甲和丢弃栏，支持创造分类、搜索和原版式 pick block；数据仅保存在客户端。
+- **虚拟创造物品栏**：具有独立的虚拟快捷栏、背包、副手、盔甲和丢弃栏，支持创造分类、中英双语搜索和原版式 pick block；数据仅保存在客户端。
 - **Creator Focus**：编辑目标独立于 Litematica selected placement；同一 schematic 的任意 placement 都可以作为编辑入口，修改会反映到它的全部 placements。
 - **Creator Camera**：纯客户端地面/飞行相机，支持双击空格飞行、穿墙、速度调节和可选投影碰撞；真实玩家本体保持独立，继续受重力、惯性和服务端校正影响。
+  - 同时兼容 Tweakeroo 的 Free Camera。
 - **安全恢复**：未落盘或修改后未保存的 schematic 会写入 recovery cache，可在重新进入同一世界后恢复 placement、selected placement 和 Creator focus。
 - **原理图管理器**：集中管理 schematic metadata、缩略图、placements、Creator Focus、Litematica Selected Placement、文件绑定和重新加载，并可与 Litematica 原生页面直接切换。
 - **可控保存与导出**：区分保存、另存并绑定和导出副本，支持原样、稀疏压缩、仅投影外边界和补入真实世界外边界四种 region 模式。
@@ -41,10 +41,10 @@ Litematica Creator 让玩家在生存模式中直接放置、删除和拾取“�
 | Minecraft | `26.2` |
 | Java | `25` |
 | Fabric Loader | 已测试 `0.19.3` |
-| MaLiLib | `>=0.29.2` 且 `<0.30.0`；开发基线为 `0.29.2-sakura.4` |
-| Litematica | `>=0.28.2` 且 `<0.29.0`；开发基线为 `0.28.2-sakura.1` |
+| MaLiLib | `>=0.29.2` 且 `<0.29.3`；开发基线为 `0.29.2-sakura.4` |
+| Litematica | `>=0.28.2` 且 `<0.28.4`；开发基线为 `0.28.2-sakura.1` |
 
-Tweakeroo 不是硬依赖。检测到其 Free Camera 时，Creator 会临时协调相机状态并在退出后恢复。Syncmatica 集成尚未实现。
+Tweakeroo：可选；Syncmatica 集成尚未实现。
 
 ### 安装
 
@@ -57,7 +57,7 @@ Tweakeroo 不是硬依赖。检测到其 Free Camera 时，Creator 会临时协�
 ### 快速上手
 
 1. 按 `Y` 开启 Creator 模式。默认会同时开启 Creator Camera。
-2. 按原版物品栏键或 `M + E` 打开 Creator 物品栏，选择要放置的方块。
+2. 按原版物品栏键（默认为 `E`）或 `M + E` 打开 Creator 物品栏，选择要放置的方块。
 3. 右键放置投影方块，左键删除，中键拾取；数字键和滚轮切换虚拟快捷栏。
 4. 在空气中右键时，投影会按配置的固定距离放置；编辑距离和连续放置/删除间隔可以在设置中调整。
 5. 对已有投影操作会切换 Creator focus；发生重叠或需要主动切换时，使用 `M + F` 打开 Focus Switcher。
@@ -79,7 +79,7 @@ Tweakeroo 不是硬依赖。检测到其 Free Camera 时，Creator 会临时协�
 
 “结束编辑”不会保存、导出或卸载原理图；“卸载当前原理图”也不会删除磁盘上的 `.litematic` 文件。“保存”覆盖当前绑定文件，“另存并绑定”让当前内存对象继续编辑新文件，“导出副本”则完全不改变当前绑定和编辑状态。
 
-### Recovery Cache
+### 恢复缓存
 
 Recovery cache 位于 `config/litematica-creator/recovery/`，用于恢复：
 
@@ -123,14 +123,9 @@ Linux/macOS：
 
 ### Overview
 
-Litematica Creator lets survival players place, remove, and pick projected blocks directly, making it possible to draft a new Litematica schematic or continue editing an existing one in-world.
+Litematica Creator makes it possible for players to draft a new Litematica schematic or continue editing an existing one in-world, even before actually having the materials.
 
-It only changes client-side `LitematicaSchematic` and `SchematicPlacement` data:
-
-- It does not place or break real blocks.
-- It does not consume items from the real inventory.
-- It does not send the corresponding real attack or placement packets.
-- It does not bypass server permissions or survival restrictions.
+All things in this mod happen client-sided, not changing vanilla data or behavior and won't send any extra packs to the server.
 
 The result remains a normal Litematica schematic and can use Litematica's rendering, material list, Verifier, save, and later construction workflows.
 
@@ -142,6 +137,7 @@ The result remains a normal Litematica schematic and can use Litematica's render
 - **Virtual Creative inventory**: separate virtual hotbar, inventory, offhand, armor, and trash slots with Creative tabs, search, and vanilla-style pick block. All data stays client-side.
 - **Creator Focus**: the edit target is independent from Litematica's selected placement. Any placement of the same schematic can be used as an edit entry point, and every placement reflects the same schematic changes.
 - **Creator Camera**: a client-only ground/flight camera with double-tap flight, noclip while flying, speed controls, and optional projection collision. The real player remains behind and continues normal gravity, momentum, and server corrections.
+  - Also compatible with Free Camera from Tweakeroo.
 - **Recovery cache**: schematics without a backing file, and modified file-backed schematics, can be restored with their placements, Litematica selection, and Creator focus.
 - **Schematic manager**: manage metadata, thumbnails, placements, Creator Focus, Litematica Selected Placement, file binding, and reloads from one screen, with direct navigation to Litematica's native screens.
 - **Controlled save and export**: distinguish Save, Save As and Bind, and Export Copy, with raw, sparse compact, projection bounds, and world-filled bounds region modes.
@@ -157,7 +153,7 @@ The result remains a normal Litematica schematic and can use Litematica's render
 | MaLiLib | `>=0.29.2` and `<0.30.0`; development baseline `0.29.2-sakura.4` |
 | Litematica | `>=0.28.2` and `<0.29.0`; development baseline `0.28.2-sakura.1` |
 
-Tweakeroo is optional. When its Free Camera is detected, Creator temporarily coordinates the external camera state and restores it afterward. Syncmatica integration is not implemented yet.
+Tweakeroo is optional; Syncmatica integration is not implemented yet.
 
 ### Installation
 
@@ -234,4 +230,4 @@ Artifacts are written to `build/libs/`. The project uses the official Minecraft 
 
 ## License
 
-All rights reserved (`ARR`).
+All rights reserved (`ARR`). May change in the future.
