@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import javax.annotation.Nullable;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
@@ -44,7 +43,7 @@ public interface LitematicaSchematicAccessor
     Map<String, LitematicaBlockStateContainer> litematicacreator$getBlockContainers();
 
     @Accessor("tileEntities")
-    Map<String, Map<BlockPos, CompoundTag>> litematicacreator$getTileEntities();
+    Map<String, Map<BlockPos, Object>> litematicacreator$getTileEntities();
 
     @Accessor("pendingBlockTicks")
     Map<String, Map<BlockPos, ScheduledTick<Block>>> litematicacreator$getPendingBlockTicks();

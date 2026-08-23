@@ -28,6 +28,7 @@ import fi.dy.masa.litematica.schematic.SchematicMetadata;
 import fi.dy.masa.litematica.schematic.container.LitematicaBlockStateContainer;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
 import fi.dy.masa.malilib.util.nbt.NbtUtils;
+import io.github.urntt.litematicacreator.compat.litematica.CreatorLitematicaDataAdapter;
 import io.github.urntt.litematicacreator.config.CreatorExportRegionMode;
 import io.github.urntt.litematicacreator.creator.CreatorSchematicEditor;
 import io.github.urntt.litematicacreator.mixin.LitematicaSchematicAccessor;
@@ -68,8 +69,12 @@ final class CreatorSchematicSnapshot
                 return;
             }
 
-            Map<BlockPos, CompoundTag> blockEntities = accessor.litematicacreator$getTileEntities().getOrDefault(name, Map.of());
-            List<LitematicaSchematic.EntityInfo> entities = accessor.litematicacreator$getEntities().getOrDefault(name, List.of());
+            Map<BlockPos, CompoundTag> blockEntities = CreatorLitematicaDataAdapter.snapshotBlockEntities(
+                    accessor.litematicacreator$getTileEntities().getOrDefault(name, Map.of())
+            );
+            List<CreatorEntitySnapshot> entities = snapshotEntities(
+                    accessor.litematicacreator$getEntities().getOrDefault(name, List.of())
+            );
             Map<BlockPos, ScheduledTick<Block>> blockTicks = accessor.litematicacreator$getPendingBlockTicks().getOrDefault(name, Map.of());
             Map<BlockPos, ScheduledTick<Fluid>> fluidTicks = accessor.litematicacreator$getPendingFluidTicks().getOrDefault(name, Map.of());
             regions.add(new CreatorRegionSnapshot(
@@ -77,8 +82,8 @@ final class CreatorSchematicSnapshot
                     position,
                     size,
                     CreatorRegionSnapshot.copyContainer(container),
-                    CreatorRegionSnapshot.copyBlockEntities(blockEntities),
-                    CreatorRegionSnapshot.copyEntities(entities),
+                    blockEntities,
+                    entities,
                     new HashMap<>(blockTicks),
                     new HashMap<>(fluidTicks)
             ));
@@ -312,8 +317,11 @@ final class CreatorSchematicSnapshot
         for (CreatorRegionSnapshot region : this.regions)
         {
             accessor.litematicacreator$getBlockContainers().put(region.name(), CreatorRegionSnapshot.copyContainer(region.blocks()));
-            accessor.litematicacreator$getTileEntities().put(region.name(), CreatorRegionSnapshot.copyBlockEntities(region.blockEntities()));
-            accessor.litematicacreator$getEntities().put(region.name(), CreatorRegionSnapshot.copyEntities(region.entities()));
+            accessor.litematicacreator$getTileEntities().put(
+                    region.name(),
+                    CreatorLitematicaDataAdapter.restoreBlockEntities(region.blockEntities())
+            );
+            accessor.litematicacreator$getEntities().put(region.name(), restoreEntities(region.entities()));
             accessor.litematicacreator$getPendingBlockTicks().put(region.name(), new HashMap<>(region.blockTicks()));
             accessor.litematicacreator$getPendingFluidTicks().put(region.name(), new HashMap<>(region.fluidTicks()));
             accessor.litematicacreator$getSubRegionPositions().put(region.name(), region.position());
@@ -365,13 +373,13 @@ final class CreatorSchematicSnapshot
             target.blockEntities().put(targetPos, copy);
         });
 
-        for (LitematicaSchematic.EntityInfo info : source.entities())
+        for (CreatorEntitySnapshot info : source.entities())
         {
             Vec3 targetPos = info.posVec().add(offset.getX(), offset.getY(), offset.getZ());
             CompoundTag copy = info.nbt().copy();
             NbtUtils.writeEntityPositionToTag(targetPos, copy);
             relocateAttachedEntityBlockPos(copy, offset);
-            target.entities().add(new LitematicaSchematic.EntityInfo(targetPos, copy));
+            target.entities().add(new CreatorEntitySnapshot(targetPos, copy));
         }
 
         source.blockTicks().forEach((pos, tick) -> {
@@ -496,6 +504,33 @@ final class CreatorSchematicSnapshot
                 new HashMap<>(),
                 new HashMap<>()
         );
+    }
+
+    private static List<CreatorEntitySnapshot> snapshotEntities(List<LitematicaSchematic.EntityInfo> source)
+    {
+        List<CreatorEntitySnapshot> snapshots = new ArrayList<>(source.size());
+
+        for (LitematicaSchematic.EntityInfo entity : source)
+        {
+            snapshots.add(new CreatorEntitySnapshot(
+                    entity.posVec(),
+                    CreatorLitematicaDataAdapter.snapshotEntityNbt(entity)
+            ));
+        }
+
+        return snapshots;
+    }
+
+    private static List<LitematicaSchematic.EntityInfo> restoreEntities(List<CreatorEntitySnapshot> source)
+    {
+        List<LitematicaSchematic.EntityInfo> entities = new ArrayList<>(source.size());
+
+        for (CreatorEntitySnapshot snapshot : source)
+        {
+            entities.add(CreatorLitematicaDataAdapter.createEntity(snapshot.posVec(), snapshot.nbt()));
+        }
+
+        return entities;
     }
 
     private static CreatorSchematicSnapshot withRecalculatedMetadata(

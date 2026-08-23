@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import fi.dy.masa.litematica.schematic.LitematicaSchematic;
 import fi.dy.masa.litematica.schematic.SchematicMetadata;
 import io.github.urntt.litematicacreator.LitematicaCreator;
+import io.github.urntt.litematicacreator.compat.litematica.CreatorLitematicaDataAdapter;
 
 public final class CreatorSchematicMetadataCopies
 {
@@ -66,7 +67,7 @@ public final class CreatorSchematicMetadataCopies
         {
             // Clear preview streams left consumed by older Creator builds before serialization.
             snapshotPreview(metadata);
-            return schematic.writeToNBT();
+            return CreatorLitematicaDataAdapter.writeSchematicToNbt(schematic);
         }
     }
 

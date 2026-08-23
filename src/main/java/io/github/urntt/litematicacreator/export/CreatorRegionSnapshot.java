@@ -10,10 +10,8 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.ScheduledTick;
 
-import fi.dy.masa.litematica.schematic.LitematicaSchematic;
 import fi.dy.masa.litematica.schematic.container.LitematicaBlockStateContainer;
 
 record CreatorRegionSnapshot(
@@ -22,7 +20,7 @@ record CreatorRegionSnapshot(
         BlockPos signedSize,
         LitematicaBlockStateContainer blocks,
         Map<BlockPos, CompoundTag> blockEntities,
-        List<LitematicaSchematic.EntityInfo> entities,
+        List<CreatorEntitySnapshot> entities,
         Map<BlockPos, ScheduledTick<Block>> blockTicks,
         Map<BlockPos, ScheduledTick<Fluid>> fluidTicks)
 {
@@ -97,14 +95,13 @@ record CreatorRegionSnapshot(
         return copy;
     }
 
-    static List<LitematicaSchematic.EntityInfo> copyEntities(List<LitematicaSchematic.EntityInfo> source)
+    static List<CreatorEntitySnapshot> copyEntities(List<CreatorEntitySnapshot> source)
     {
-        List<LitematicaSchematic.EntityInfo> copy = new ArrayList<>(source.size());
+        List<CreatorEntitySnapshot> copy = new ArrayList<>(source.size());
 
-        for (LitematicaSchematic.EntityInfo info : source)
+        for (CreatorEntitySnapshot info : source)
         {
-            Vec3 pos = info.posVec();
-            copy.add(new LitematicaSchematic.EntityInfo(new Vec3(pos.x, pos.y, pos.z), info.nbt().copy()));
+            copy.add(info.copy());
         }
 
         return copy;

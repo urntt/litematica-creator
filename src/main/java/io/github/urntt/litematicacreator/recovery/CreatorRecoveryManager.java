@@ -46,6 +46,7 @@ import io.github.urntt.litematicacreator.LitematicaCreator;
 import io.github.urntt.litematicacreator.creator.CreatorFocus;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.creator.CreatorPlacementIndex;
+import io.github.urntt.litematicacreator.compat.litematica.CreatorLitematicaDataAdapter;
 import io.github.urntt.litematicacreator.event.CreatorClientTickHandler;
 import io.github.urntt.litematicacreator.export.CreatorSchematicMetadataCopies;
 import io.github.urntt.litematicacreator.mixin.LitematicaSchematicAccessor;
@@ -631,7 +632,7 @@ public final class CreatorRecoveryManager implements ISchematicPlacementEventLis
 
         FileType originalType = FileType.valueOf(manifest.originalFileType());
         Path expectedCache = stored.cacheFile().toAbsolutePath().normalize();
-        LitematicaSchematic schematic = new LitematicaSchematic(
+        LitematicaSchematic schematic = CreatorLitematicaDataAdapter.readSchematic(
                 expectedCache,
                 stored.schematicNbt().copy(),
                 FileType.LITEMATICA_SCHEMATIC

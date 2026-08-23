@@ -218,11 +218,11 @@ class CreatorExportRegionModesTest
         );
     }
 
-    private static LitematicaSchematic.EntityInfo entity(Vec3 pos)
+    private static CreatorEntitySnapshot entity(Vec3 pos)
     {
         CompoundTag nbt = new CompoundTag();
         NbtUtils.writeEntityPositionToTag(pos, nbt);
-        return new LitematicaSchematic.EntityInfo(pos, nbt);
+        return new CreatorEntitySnapshot(pos, nbt);
     }
 
     private static SchematicMetadata metadata()
