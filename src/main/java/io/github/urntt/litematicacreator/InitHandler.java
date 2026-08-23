@@ -9,6 +9,7 @@ import fi.dy.masa.malilib.interfaces.IInitializationHandler;
 import fi.dy.masa.malilib.registry.Registry;
 import fi.dy.masa.malilib.util.data.ModInfo;
 import io.github.urntt.litematicacreator.config.Configs;
+import io.github.urntt.litematicacreator.compat.CreatorOptionalCompatibility;
 import io.github.urntt.litematicacreator.compat.litematica.CreatorLitematicaDataAdapter;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.creator.CreatorPlacementIndex;
@@ -26,6 +27,7 @@ public class InitHandler implements IInitializationHandler
     public void registerModHandlers()
     {
         CreatorLitematicaDataAdapter.initialize();
+        CreatorOptionalCompatibility.initialize();
         ConfigManager.getInstance().registerConfigHandler(Reference.MOD_ID, new Configs());
         Registry.CONFIG_SCREEN.registerConfigScreenFactory(
                 new ModInfo(Reference.MOD_ID, Reference.MOD_NAME, GuiConfigs::new)

@@ -13,7 +13,7 @@ import io.github.urntt.litematicacreator.camera.CreatorCameraEntity;
 @Mixin(Entity.class)
 public abstract class EntityCollisionMixin
 {
-    @Inject(method = "collide", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "collide", at = @At("HEAD"), cancellable = true, require = 0)
     private void litematicacreator$collideWithProjections(
             Vec3 movement,
             CallbackInfoReturnable<Vec3> cir)
