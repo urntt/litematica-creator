@@ -36,6 +36,7 @@ Litematica Creator 是一个纯客户端 Litematica 附属。它把“编辑原�
 6. `CreatorRecoveryManager` 在客户端生成不可变快照，后台原子提交标准 `.litematic` generation 和 manifest。
 7. `CreatorSchematicExportService` 在不可变快照上执行原样、稀疏压缩或外边界规范化；真实世界补入按选定 placement 反向映射，并在客户端线程分批采样。
 8. `CreatorSchematicBindingService` 只在文件原子写入成功后更新当前 schematic 和全部 placements 的文件身份；重新加载原地协调 region 拓扑，不替换对象或破坏 Focus/Selected。
+9. 可选模组兼容注册表在启动时记录版本并验证必要契约；只有 Tweakeroo 使用缓存后的私有反射桥接，Syncmatica、Lithium 和 Sodium 路径均不链接其私有 API。
 
 这条链路使 Creator 能复用 Litematica 的数据与渲染体系，同时把真实玩家背包、真实世界状态和服务端数据包保持在编辑边界之外。
 

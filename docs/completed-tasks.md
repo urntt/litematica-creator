@@ -352,3 +352,13 @@
 - 默认开发基线更新为 MaLiLib `0.29.4`、Litematica `0.28.5`。Fabric 支持范围收紧为 MaLiLib `>=0.29.2- <0.29.5-`、Litematica `>=0.28.2- <0.28.6-`，未经审计的后续版本会在加载阶段被拒绝。
 - 同一源码分别在 `0.29.2-sakura.4 + 0.28.2-sakura.1` 和 `0.29.4 + 0.28.5` 下执行完整测试与构建。契约测试覆盖运行时模型检测、NBT 无损深复制、block entity 映射、实体往返、schematic 构造/序列化入口及双写盘调用点。
 - 两组 Fabric 开发客户端均启动至主菜单并实际完成 `LitematicaSchematic` Mixin 转换；日志分别确认选择 `CompoundTag` 和 `CompoundData` 兼容分支，未出现 #94 的注入或类加载错误。
+
+## 可选模组组合兼容（#95）
+
+- 新增统一运行时兼容审计，分别识别 Tweakeroo、Syncmatica、Lithium 和 Sodium 的安装版本、支持范围与精确测试版本。初始化日志只输出一条汇总；范围内但未单独测试及范围外版本各给出一次明确警告，不改变 MaLiLib/Litematica 的硬依赖边界。
+- Tweakeroo Free Camera 兼容由每次操作动态查找类和字段，改为启动时一次性验证并缓存完整反射契约。契约覆盖 Free Camera toggle、`freeCameraPlayerInputs`、`freeCameraPlayerMovement` 和原 camera entity；版本或结构不支持时只禁用该桥接，Creator Camera 本身继续工作。
+- Tweakeroo 运行时反射第一次失败后会停止本会话后续桥接调用，避免在每 tick 重复失败。捕获配置后若协调过程只完成一部分，会先尽力恢复两个原值，再进入安全禁用路径。
+- Lithium 与 Sodium 继续保持零私有 API 依赖。Creator Camera 投影碰撞只在原版 `Entity.collide()` 的可选入口处理自身实体，可与 Lithium 的内部碰撞替换共存；相机跨区块刷新仍是 `LevelRenderer.repositionCamera()` 上 `require=0` 的原版可选注入，由 Sodium 自己管理其渲染 camera state。
+- Syncmatica 当前只承诺共同安装与 Litematica GUI Mixin 共存，不将“可加载”误写成实时同步支持。Creator 与 Syncmatica 的主菜单按钮使用独立位置，Creator 不调用其私有 API；未来同步仍按 #27 单独设计协议。
+- 启动矩阵覆盖：无可选模组、四个当前版本分别单独安装、Tweakeroo `0.29.3` + Syncmatica `0.3.20` + Lithium `0.25.3+mc26.2` + Sodium `0.9.2-alpha.4+mc26.2` 常用组合，以及旧硬依赖下 Tweakeroo `0.29.2-sakura.1` + Syncmatica `0.3.18`。所有有效组合均进入主菜单并输出预期审计结果。
+- MaLiLib `0.29.4` 会按其上游 metadata 拒绝 Tweakeroo `<0.29.3`，因此旧 Tweakeroo 只列入旧硬依赖基线，不视为可与新版 MaLiLib 任意混配。详细入口、退化路径、已知 Sodium/Tweakeroo 上游日志和测试矩阵见 `docs/optional-mod-compatibility.md`。

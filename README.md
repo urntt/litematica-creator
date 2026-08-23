@@ -44,7 +44,16 @@ Litematica Creator 让玩家在获取对应原材料前从零搭建或继续编�
 | MaLiLib | `>=0.29.2` 且 `<0.29.5`；开发基线为 `0.29.4` |
 | Litematica | `>=0.28.2` 且 `<0.28.6`；开发基线为 `0.28.5` |
 
-Tweakeroo：可选；Syncmatica 集成尚未实现。
+可选模组兼容矩阵：
+
+| 模组 | 已测试版本 | Creator 行为 |
+| --- | --- | --- |
+| Tweakeroo | `0.29.2-sakura.1`、`0.29.3` | 协调 Free Camera 状态；反射契约不匹配时只禁用该桥接 |
+| Syncmatica | `0.3.18`、`0.3.20` | 可与 Creator/Litematica 管理页面共存；实时同步尚未实现 |
+| Lithium | `0.25.3+mc26.2` | Creator Camera 投影碰撞使用独立的原版 `Entity.collide()` 入口 |
+| Sodium | `0.9.2-alpha.4+mc26.2` | 不引用 Sodium 私有 API；原版渲染刷新注入保持可选 |
+
+旧版 Tweakeroo `0.29.2-sakura.1` 需配合旧硬依赖基线使用；MaLiLib `0.29.4` 会按其自身声明拒绝加载 Tweakeroo `<0.29.3`。完整入口、退化路径和启动矩阵见[可选模组兼容说明](docs/optional-mod-compatibility.md)。
 
 同一个 Creator JAR 已针对 `MaLiLib 0.29.2-sakura.4 + Litematica 0.28.2-sakura.1` 和 `MaLiLib 0.29.4 + Litematica 0.28.5` 两组硬依赖完成构建与测试。未经审计的更高版本会由 Fabric 拒绝加载，而不是在编辑时延迟崩溃。
 
@@ -124,6 +133,7 @@ Linux/macOS：
 ### 文档
 
 - [项目概览](docs/project-overview.md)
+- [可选模组兼容说明](docs/optional-mod-compatibility.md)
 - [设计与开发计划](docs/creator-design-and-roadmap.md)
 - [已完成任务与实现记录](docs/completed-tasks.md)
 - [当前 TODO](todo.md)
@@ -162,7 +172,16 @@ The result remains a normal Litematica schematic and can use Litematica's render
 | MaLiLib | `>=0.29.2` and `<0.29.5`; development baseline `0.29.4` |
 | Litematica | `>=0.28.2` and `<0.28.6`; development baseline `0.28.5` |
 
-Tweakeroo is optional; Syncmatica integration is not implemented yet.
+Optional compatibility matrix:
+
+| Mod | Tested versions | Creator behavior |
+| --- | --- | --- |
+| Tweakeroo | `0.29.2-sakura.1`, `0.29.3` | Coordinates Free Camera state; disables only this bridge when its reflection contract does not match |
+| Syncmatica | `0.3.18`, `0.3.20` | Coexists with the Creator/Litematica management screens; real-time synchronization is not implemented |
+| Lithium | `0.25.3+mc26.2` | Creator Camera projection collision uses an independent vanilla `Entity.collide()` entry point |
+| Sodium | `0.9.2-alpha.4+mc26.2` | Uses no private Sodium API; the vanilla renderer refresh injection remains optional |
+
+Tweakeroo `0.29.2-sakura.1` belongs to the legacy hard-dependency baseline. MaLiLib `0.29.4` rejects Tweakeroo `<0.29.3` through its own incompatibility metadata. See [optional mod compatibility](docs/optional-mod-compatibility.md) for entry points, fallbacks, and the startup matrix.
 
 The same Creator JAR is built and tested against both `MaLiLib 0.29.2-sakura.4 + Litematica 0.28.2-sakura.1` and `MaLiLib 0.29.4 + Litematica 0.28.5`. Fabric rejects unaudited newer versions at load time instead of allowing a delayed editing crash.
 
@@ -242,6 +261,7 @@ The default build uses MaLiLib `0.29.4` and Litematica `0.28.5`. The compatibili
 ### Documentation
 
 - [Project overview](docs/project-overview.md)
+- [Optional mod compatibility](docs/optional-mod-compatibility.md)
 - [Design and roadmap, Chinese](docs/creator-design-and-roadmap.md)
 - [Completed implementation notes, Chinese](docs/completed-tasks.md)
 - [Current TODO, Chinese](todo.md)
