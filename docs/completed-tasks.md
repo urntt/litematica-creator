@@ -342,3 +342,13 @@
 - 放置目标明确区分正常目标、真正无目标和实体阻断。实体最近时静默返回且不进入物品解析、Focus、草稿/subregion、dirty、recovery 或成功动画流程；只有真正 MISS 才能按 #26 生成固定距离空气目标。
 - 放置、删除、pick block 和投影选中框继续共用同一射线，因此不会穿过更近的实体操作后方投影。#56 仍只控制最终写入格的实体碰撞，不改变射线遮挡语义。
 - 单元测试覆盖所有单独候选、真实/投影距离竞争、实体位于投影前后、实体等距优先、投影与真实方块等距优先，以及空中放置开关对 MISS 和实体命中的独立决策。
+
+## MaLiLib / Litematica 双版本兼容（#94）
+
+- 新增集中式 Litematica 数据适配器。Creator 的 export、recovery 和 region snapshot 始终保存标准 `CompoundTag`，只在 Litematica 边界按运行时数据模型转换为旧版 `CompoundTag` 或新版 MaLiLib `CompoundData`。
+- Block entity 映射 accessor 改为类型擦除安全的内部结构；所有读写都会深复制并生成当前 Litematica 版本要求的值类型。实体改用 Creator 自有的 `Vec3 + CompoundTag` 快照，运行时通过检测到的 `EntityInfo` 构造器和 `nbt()` 返回类型转换，避免跨版本描述符链接错误。
+- Recovery schematic 构造与 schematic 序列化统一经过适配器，因此磁盘上的 manifest、压缩 `.litematic` 和 recovery NBT 格式均未改变。旧版生成的缓存可由新版恢复，反向降级也使用相同标准 NBT 边界。
+- Litematica 原生写盘 Mixin 同时声明旧版 `NbtUtils.writeCompoundTagToCompressedFile` 和新版 `DataFileUtils.writeCompoundDataToCompressedNbtFile` 两条可选入口，均复用 Creator metadata normalizer。任一入口缺失不会再导致类转换失败；规范化异常会记录警告并回退原始写盘。
+- 默认开发基线更新为 MaLiLib `0.29.4`、Litematica `0.28.5`。Fabric 支持范围收紧为 MaLiLib `>=0.29.2- <0.29.5-`、Litematica `>=0.28.2- <0.28.6-`，未经审计的后续版本会在加载阶段被拒绝。
+- 同一源码分别在 `0.29.2-sakura.4 + 0.28.2-sakura.1` 和 `0.29.4 + 0.28.5` 下执行完整测试与构建。契约测试覆盖运行时模型检测、NBT 无损深复制、block entity 映射、实体往返、schematic 构造/序列化入口及双写盘调用点。
+- 两组 Fabric 开发客户端均启动至主菜单并实际完成 `LitematicaSchematic` Mixin 转换；日志分别确认选择 `CompoundTag` 和 `CompoundData` 兼容分支，未出现 #94 的注入或类加载错误。

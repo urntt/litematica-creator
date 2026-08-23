@@ -41,10 +41,12 @@ Litematica Creator 让玩家在获取对应原材料前从零搭建或继续编�
 | Minecraft | `26.2` |
 | Java | `25` |
 | Fabric Loader | 已测试 `0.19.3` |
-| MaLiLib | `>=0.29.2` 且 `<0.29.3`；开发基线为 `0.29.2-sakura.4` |
-| Litematica | `>=0.28.2` 且 `<0.28.4`；开发基线为 `0.28.2-sakura.1` |
+| MaLiLib | `>=0.29.2` 且 `<0.29.5`；开发基线为 `0.29.4` |
+| Litematica | `>=0.28.2` 且 `<0.28.6`；开发基线为 `0.28.5` |
 
 Tweakeroo：可选；Syncmatica 集成尚未实现。
+
+同一个 Creator JAR 已针对 `MaLiLib 0.29.2-sakura.4 + Litematica 0.28.2-sakura.1` 和 `MaLiLib 0.29.4 + Litematica 0.28.5` 两组硬依赖完成构建与测试。未经审计的更高版本会由 Fabric 拒绝加载，而不是在编辑时延迟崩溃。
 
 ### 安装
 
@@ -112,6 +114,13 @@ Linux/macOS：
 
 构建产物位于 `build/libs/`。项目使用 Minecraft 官方命名空间、Fabric Loom `1.17.x` 和 Java 25。
 
+默认构建使用 MaLiLib `0.29.4` 和 Litematica `0.28.5`。兼容矩阵可用 Gradle 属性复核：
+
+```powershell
+.\gradlew.bat test --no-daemon --max-workers=1 -Pmalilib_version=0.29.2-sakura.4 -Plitematica_version=0.28.2-sakura.1
+.\gradlew.bat test --no-daemon --max-workers=1 -Pmalilib_version=0.29.4 -Plitematica_version=0.28.5
+```
+
 ### 文档
 
 - [项目概览](docs/project-overview.md)
@@ -150,10 +159,12 @@ The result remains a normal Litematica schematic and can use Litematica's render
 | Minecraft | `26.2` |
 | Java | `25` |
 | Fabric Loader | Tested with `0.19.3` |
-| MaLiLib | `>=0.29.2` and `<0.30.0`; development baseline `0.29.2-sakura.4` |
-| Litematica | `>=0.28.2` and `<0.29.0`; development baseline `0.28.2-sakura.1` |
+| MaLiLib | `>=0.29.2` and `<0.29.5`; development baseline `0.29.4` |
+| Litematica | `>=0.28.2` and `<0.28.6`; development baseline `0.28.5` |
 
 Tweakeroo is optional; Syncmatica integration is not implemented yet.
+
+The same Creator JAR is built and tested against both `MaLiLib 0.29.2-sakura.4 + Litematica 0.28.2-sakura.1` and `MaLiLib 0.29.4 + Litematica 0.28.5`. Fabric rejects unaudited newer versions at load time instead of allowing a delayed editing crash.
 
 ### Installation
 
@@ -220,6 +231,13 @@ Linux/macOS:
 ```
 
 Artifacts are written to `build/libs/`. The project uses the official Minecraft namespace, Fabric Loom `1.17.x`, and Java 25.
+
+The default build uses MaLiLib `0.29.4` and Litematica `0.28.5`. The compatibility matrix can be checked with Gradle properties:
+
+```powershell
+.\gradlew.bat test --no-daemon --max-workers=1 -Pmalilib_version=0.29.2-sakura.4 -Plitematica_version=0.28.2-sakura.1
+.\gradlew.bat test --no-daemon --max-workers=1 -Pmalilib_version=0.29.4 -Plitematica_version=0.28.5
+```
 
 ### Documentation
 

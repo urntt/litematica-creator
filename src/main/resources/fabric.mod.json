@@ -24,8 +24,8 @@
 	"accessWidener": "litematica-creator.accesswidener",
 	"depends": {
 		"minecraft": "~26.2-",
-		"malilib": ">=0.29.2- <0.30.0-",
-		"litematica": ">=0.28.2- <0.29.0-"
+		"malilib": ">=0.29.2- <0.29.5-",
+		"litematica": ">=0.28.2- <0.28.6-"
 	},
 	"suggests": {
 		"tweakeroo": "*",

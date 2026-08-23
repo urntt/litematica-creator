@@ -22,8 +22,8 @@
 - Fabric Loader：`0.19.3`
 - Loom：`net.fabricmc.fabric-loom` `1.17.+`
 - Java：25
-- MaLiLib：`0.29.2-sakura.4`
-- Litematica：`0.28.2-sakura.1`
+- MaLiLib：`0.29.4`（同一 JAR 兼容 `0.29.2-sakura.4`，声明范围 `>=0.29.2- <0.29.5-`）
+- Litematica：`0.28.5`（同一 JAR 兼容 `0.28.2-sakura.1`，声明范围 `>=0.28.2- <0.28.6-`）
 - Tweakeroo：`0.29.2-sakura.1`
 - Access Widener namespace：`official`
 
@@ -33,6 +33,8 @@
 - Mixin target、Access Widener、Minecraft 类名均按 `official` namespace。
 - 优先复用 MaLiLib 的配置、热键、GUI、渲染辅助和输入管理能力。
 - 优先复用 Litematica 的 schematic 数据结构、placement manager、投影世界和渲染管线。
+- Creator 内部的 export/recovery 快照固定使用原版 `CompoundTag`；Litematica `0.28.2` 的 `CompoundTag` 与 `0.28.5` 的 MaLiLib `CompoundData` 只在集中式兼容边界转换。
+- 硬依赖版本必须进入双版本构建矩阵；未审计的后续版本先通过 Fabric 上限拒绝加载。
 
 ## 3. 预期行为
 
