@@ -420,3 +420,23 @@ Source commits `b05f77c` / `10cabae`, checked on 2026-10-02:
 - Both baselines produced the same 407983-byte JAR and the SHA-256 above. Metadata/ranges, exact MIT text, complete bilingual keys, and absence of bundled dependencies/tests passed inspection. The final current package was copied to the project parent.
 - Mixed Codex/Claude cloud instructions share AGENTS through a minimal CLAUDE import. Account connections, environment publication and each provider's first cloud session remain user-side checks; local/CI verification is not claimed as cloud-account setup.
 - No release/tag, version change or release workflow was created. Optional-mod combinations, multiplayer and full input/GUI regressions were not rerun.
+
+## Claude Code Cloud First Session / Claude Code 云端首次验收
+
+2026-10-02，基线 `da4b2e9`（与 `origin/main` 相同），会话开发分支 `urntt/friendly-fermi-qewmet`：
+
+- 会话已通过 `CLAUDE.md` 的 `@AGENTS.md` 引用加载共享规则；仓库为 `urntt/litematica-creator`。镜像为 Ubuntu 24.04、预装 JDK 21，`JAVA_HOME` 同时来自容器变量与 `/etc/profile.d/java.sh`。本会话以 apt 安装 Ubuntu `openjdk-25-jdk` 25.0.4.1，并仅在会话命令中设置 `JAVA_HOME`、`CI=true`、`LIBGL_ALWAYS_SOFTWARE=true`、`ALSOFT_DRIVERS=null`；无头系统库已预装。Gradle wrapper 下载 9.6.0。
+- 会话网络不受限（任意域名可达），因此未验证严格白名单。日志确认 `plugins.gradle.org` 与 `libraries.minecraft.net` 会被访问，已补入云端指南。
+- 冷缓存 current `build` 的前 5 次均在依赖下载阶段收到 Maven Central HTTP 429（同期 curl 也间歇 429，非代理策略拒绝），第 6 次完整通过；之后的 current GameTest 与 legacy 命令均一次通过。重试只针对依赖下载 429，未重试任何编译、测试或 GameTest 失败。
+- 云端指南矩阵全部通过：12 项 Python 策略/产物测试；current 与 legacy 均为 59 suites / 189 JUnit tests、无失败；两组均按 pin 校验上游提交，legacy 实际加载 MaLiLib `0.29.2-sakura.4` 与 Litematica `0.28.2-sakura.1`。两组打包客户端 GameTest 都输出 `Creator client GameTest passed`，截图可见投影方块、选中框与 Creator HUD / 虚拟快捷栏。
+- 两次 JAR 审计均通过；产物为 407983 字节，SHA-256 `860b841f0e606158c52741ccc4da448aef72d81b06afe1a91b31901b59d3365a`，与此前 Temurin Windows/Linux 及 GitHub CI 产物一致。
+- 未执行：CI 中的故意失败门禁（不在云端矩阵内）、Codex Cloud 首次会话、GUI / 输入 / 多人 / 可选模组手工回归。环境 setup script 与环境变量须由用户在 Claude Code 环境设置中保存，并在新会话中复核 JDK；本次未修改代码、版本或发布状态，未创建 release/tag。
+
+Baseline `da4b2e9` (same as `origin/main`) on the session branch above, checked on 2026-10-02:
+
+- The session loaded the shared rules through the `CLAUDE.md` import of `AGENTS.md`. The Ubuntu 24.04 image ships JDK 21, with `JAVA_HOME` exported by both a container variable and `/etc/profile.d/java.sh`. This session installed Ubuntu's `openjdk-25-jdk` 25.0.4.1 with apt and set `JAVA_HOME` plus the three headless variables only for its commands; the headless system libraries were preinstalled. The wrapper downloaded Gradle 9.6.0.
+- Network access was unrestricted, so no strict allowlist was validated. Logs show `plugins.gradle.org` and `libraries.minecraft.net` are contacted; both were added to the cloud guide.
+- The first five cold-cache current `build` attempts hit Maven Central HTTP 429 while downloading dependencies (curl saw intermittent 429 too; not a proxy policy denial). The sixth attempt passed, and the later current GameTest and legacy commands each passed on the first run. Only dependency-download 429 failures were retried.
+- The whole cloud matrix passed: 12 Python checks; 59 suites / 189 JUnit tests with no failures for both profiles; pinned upstream commits verified, with legacy actually loading MaLiLib `0.29.2-sakura.4` and Litematica `0.28.2-sakura.1`. Both packaged client GameTests logged `Creator client GameTest passed`, and the screenshots show the projection block, selection box, Creator HUD and virtual hotbar.
+- Both JAR audits passed. The 407983-byte artifact has the SHA-256 above, identical to the earlier Temurin Windows/Linux and GitHub CI builds.
+- Not run: CI's intentional-failure gate (outside the cloud matrix), the first Codex Cloud session, and manual GUI/input/multiplayer/optional-mod regressions. The user still needs to save the setup script and variables in the Claude Code environment settings and recheck the JDK in a new session. No code, version, release state, release or tag changed.

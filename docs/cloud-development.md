@@ -39,9 +39,30 @@ Configure `JAVA_HOME` and `PATH` in the saved environment, not only an installat
 
 在保存的环境中配置 `JAVA_HOME` 与 `PATH`，不要仅在一次安装 shell 中 export。无头测试使用 `CI=true`、`LIBGL_ALWAYS_SOFTWARE=true` 与 `ALSOFT_DRIVERS=null`。构建与隔离单人测试不需要 Minecraft 账号、PAT 或其他秘密。
 
-Allow HTTPS for the GitHub source pins and artifact/tool downloads: `github.com`, `codeload.github.com`, `release-assets.githubusercontent.com`, `raw.githubusercontent.com`, `services.gradle.org`, `downloads.gradle.org`, `maven.fabricmc.net`, `repo.maven.apache.org`, `maven.terraformersmc.com`, `maven.fallenbreath.me`, `jitpack.io`, `piston-meta.mojang.com`, `piston-data.mojang.com`, and `resources.download.minecraft.net`. Add the selected JDK distributor's official domains when installing it. Keep authentication in the environment's GitHub connection, not repository files.
+The Claude Code cloud Ubuntu 24.04 image checked on 2026-10-02 preinstalls JDK 21 and exports its `JAVA_HOME` both as a container variable and from `/etc/profile.d/java.sh`. Ubuntu's `openjdk-25-jdk` package from `noble-updates` built the same JAR bytes as the Temurin CI build. Put the following in the environment's setup script, keeping the JDK major equal to `java_version`, and also set `JAVA_HOME` plus the three headless variables in the environment's variables:
 
-允许源码、工具与制品下载所需的上述 HTTPS 域名；安装 JDK 时另允许所选发行版的官方域名。GitHub 身份使用环境的连接机制，不把凭据写入仓库。
+2026-10-02 检查的 Claude Code 云端 Ubuntu 24.04 镜像预装 JDK 21，并同时通过容器变量与 `/etc/profile.d/java.sh` 导出其 `JAVA_HOME`。Ubuntu `noble-updates` 的 `openjdk-25-jdk` 构建出的 JAR 与 Temurin CI 产物字节一致。将下列命令放入环境 setup script（JDK 主版本须与 `java_version` 一致），并在环境变量中同时设置 `JAVA_HOME` 和上述三个无头变量：
+
+```bash
+sudo apt-get update
+sudo apt-get install -y openjdk-25-jdk xvfb xauth libgl1-mesa-dri libasound2t64
+printf '%s\n' 'export JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64' 'export PATH=${JAVA_HOME}/bin:${PATH}' | sudo tee /etc/profile.d/java.sh > /dev/null
+```
+
+```text
+JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64
+CI=true
+LIBGL_ALWAYS_SOFTWARE=true
+ALSOFT_DRIVERS=null
+```
+
+Allow HTTPS for the GitHub source pins and artifact/tool downloads: `github.com`, `codeload.github.com`, `release-assets.githubusercontent.com`, `raw.githubusercontent.com`, `services.gradle.org`, `downloads.gradle.org`, `plugins.gradle.org`, `maven.fabricmc.net`, `repo.maven.apache.org`, `maven.terraformersmc.com`, `maven.fallenbreath.me`, `jitpack.io`, `piston-meta.mojang.com`, `piston-data.mojang.com`, `libraries.minecraft.net`, and `resources.download.minecraft.net`. Add the selected JDK distributor's official domains, or the Ubuntu package mirrors for the apt package, when installing it. Keep authentication in the environment's GitHub connection, not repository files.
+
+允许源码、工具与制品下载所需的上述 HTTPS 域名；安装 JDK 时另允许所选发行版的官方域名，或 apt 安装所需的 Ubuntu 软件源。GitHub 身份使用环境的连接机制，不把凭据写入仓库。
+
+`plugins.gradle.org` serves plugin resolution and redirects to Maven Central; Loom downloads Minecraft libraries from `libraries.minecraft.net`. The first Claude Code session ran with unrestricted network access, so this list comes from build configuration and logs rather than a strict-allowlist run. Upstream builds also declare `masa.dy.fi` and `api.modrinth.com`; add them only if a strict policy reports them blocked.
+
+`plugins.gradle.org` 用于插件解析并重定向到 Maven Central；Loom 从 `libraries.minecraft.net` 下载 Minecraft 库。Claude Code 首次会话使用不受限网络，此列表来自构建配置与日志，尚未在严格白名单下实测。上游构建还声明了 `masa.dy.fi` 与 `api.modrinth.com`，仅在严格策略报告被拦截时再添加。
 
 ## Preparation and Checks / 准备与验收
 
@@ -70,6 +91,10 @@ Run a first-session check in each provider: load the shared rules, confirm the r
 
 - Reuse Gradle caches only within the same OS/user. A changed source pin requires moving its old ignored checkout aside; the launcher intentionally refuses to overwrite it. Re-run preparation after a branch/pin change rather than trusting an old environment snapshot.
 - 只在同一 OS/用户内复用 Gradle 缓存。pin 改变时先移走对应旧源码缓存，脚本不会覆盖它；分支或 pin 变化后重新准备，不盲信旧环境快照。
+- On a cold cache, Maven Central may answer shared cloud egress with HTTP 429. Re-run the same command: Gradle keeps completed downloads. Retry only dependency-download 429 failures, never compilation, test or GameTest failures.
+- 冷缓存时 Maven Central 可能对共享云端出口返回 HTTP 429。重新运行同一命令即可，Gradle 会保留已完成的下载；只重试依赖下载的 429，不重试编译、测试或 GameTest 失败。
+- Offline GameTest logs contain expected authlib 401, Realms and Xvfb cursor errors. Judge a run by Gradle's exit code, the `Creator client GameTest passed` log line and the screenshot.
+- 离线 GameTest 日志中的 authlib 401、Realms 与 Xvfb 光标错误属预期；以 Gradle 退出码、`Creator client GameTest passed` 日志行和截图判断结果。
 - Client tests use `build/run/productionClientGameTest`, which is cleared before each run. Never point tests at a personal game directory. Logs/screenshots stay in build outputs, not Git.
 - 客户端测试使用每次清空的 `build/run/productionClientGameTest`，不得指向个人游戏目录；日志与截图只留在构建产物中。
 - These smoke tests do not replace manual GUI, rendering, input, multiplayer, or optional-mod regression. GitHub CI tests the two hard-dependency profiles; optional mod combinations remain separately documented.
