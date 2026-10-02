@@ -8,6 +8,10 @@
 
 **Later decisions, 2026-10-02:** AGENTS.md now exists. The user adopted MIT, GitHub Releases, SemVer with Minecraft build metadata, centralized version configuration, and push/PR client GameTest CI. The linked development/release guides own these policies; TODO tracks implementation. References below to ARR, missing AGENTS, and undecided licensing/channel are historical, not current policy. This update does not change code, builds, metadata, or delivered JARs.
 
+**2026-10-02 工具链落地：** 用户补入的 MIT LICENSE 已打包，版本与资源集中生成，官方依赖从固定提交自动准备，不再依赖手工 sibling 或本地 Maven；Windows 与 Linux 双 profile 构建均通过。使用[开发指南](development.md)中的新入口，来源见[上游依赖](upstream-dependencies.md)，验收见完成记录。下文关于本地依赖、浮动 Loom、wrapper、许可证的旧状态不再适用；CI、发布工作流和 Minecraft build-metadata 后缀仍未落地。
+
+**Toolchain implemented, 2026-10-02:** The user-supplied MIT license is packaged, resource/version configuration is centralized, and fixed official-source profiles replace manual sibling/local Maven dependencies. Both profiles build on Windows and Linux. Use the development guide's new launcher; see provenance and completion notes for details. Historical local-dependency, floating-Loom, wrapper, and license gaps below are obsolete; CI, release automation, and the Minecraft version suffix remain pending.
+
 ## 1. 先读哪些文件
 
 - [当前 TODO](../todo.md)：未完成项目、编号、范围和需要决策的内容。

@@ -1,6 +1,6 @@
 # Litematica Creator 已完成工作记录
 
-最后更新：2026-08-11
+最后更新：2026-10-02
 
 本文档保存已完成工作的实现细节和历史验收记录。当前和部分完成的工作统一维护在 [`../todo.md`](../todo.md)。
 
@@ -362,3 +362,37 @@
 - Syncmatica 当前只承诺共同安装与 Litematica GUI Mixin 共存，不将“可加载”误写成实时同步支持。Creator 与 Syncmatica 的主菜单按钮使用独立位置，Creator 不调用其私有 API；未来同步仍按 #27 单独设计协议。
 - 启动矩阵覆盖：无可选模组、四个当前版本分别单独安装、Tweakeroo `0.29.3` + Syncmatica `0.3.20` + Lithium `0.25.3+mc26.2` + Sodium `0.9.2-alpha.4+mc26.2` 常用组合，以及旧硬依赖下 Tweakeroo `0.29.2-sakura.1` + Syncmatica `0.3.18`。所有有效组合均进入主菜单并输出预期审计结果。
 - MaLiLib `0.29.4` 会按其上游 metadata 拒绝 Tweakeroo `<0.29.3`，因此旧 Tweakeroo 只列入旧硬依赖基线，不视为可与新版 MaLiLib 任意混配。详细入口、退化路径、已知 Sodium/Tweakeroo 上游日志和测试矩阵见 `docs/optional-mod-compatibility.md`。
+
+## Official Sources and Linux Toolchain / 官方源码与 Linux 工具链
+
+2026-10-02，源码提交 `77ff477`：
+
+- 两组硬依赖从 Sakura-Ryoko 官方仓库按完整 SHA 下载并校验，使用独立 profile 目录与 composite substitution；不再读取手工 sibling 或 `mavenLocal()`。URL、版本和提交只在 `gradle.properties` 配置；可选模组的阅读入口见[上游来源](upstream-dependencies.md)，不把其源码加入构建。
+- `scripts/build.py` 使用 Git 与 Python 标准库，Windows/Linux 共用；校验 URL、HEAD、tracked 修改和源文件版本，不覆盖用户修改或不同 pin 的缓存。独立 init script 将根项目与上游 Loom 固定到同一配置版本，不修改上游源码。
+- Java 编译、Minecraft/Loader/硬依赖范围和 Mixin Java 声明由同一属性生成。wrapper 保持既有 Gradle 版本并增加官方 distribution SHA-256，Git 中为 LF / `100755`。
+- 用户提供的 MIT LICENSE 原文未改；mod metadata 和 JAR 许可证同步。JAR 版本与 `mod_version` 一致，不再追加日期时间；archive 排序稳定、不保留源码 mtime。
+
+Source commit `77ff477`, checked on 2026-10-02:
+
+- Both hard-dependency profiles use verified full-SHA official checkouts and composite substitution, not manual sibling sources or local Maven. Configuration stays in `gradle.properties`; optional repositories are reference-only.
+- The standard-library Python launcher validates origin, HEAD, tracked changes, and source versions without overwriting foreign/modified caches. An external init script pins Loom across included builds without patching upstream code.
+- Shared properties generate Java compilation and mod/Mixin compatibility values. The existing Gradle wrapper gains its official distribution checksum, LF, and Git mode `100755`.
+- The user-supplied MIT text is unchanged and packaged with matching metadata. JAR versions match `mod_version`; archives use stable ordering and omit source timestamps.
+
+### Validation / 验证
+
+- Windows 独立源码目录：`current` 与 `legacy` 均通过完整 `build`；最终 current 报告为 59 suites / 189 tests，无失败。
+- Ubuntu / WSL：从 Git archive 解压源码，初始 Gradle 用户缓存为空、无 sibling / 本地 Maven，使用官方 Temurin JDK 并核对官方 SHA-256；两组均通过完整 `build`，各 59 suites / 189 tests，无失败。Git archive 中 wrapper 直接为 LF / `755`，不需手动 chmod。
+- 准备脚本的 8 项策略测试在 Windows 和 Linux 均通过。
+- 最终 current JAR 检查：mod id `litematica-creator`，MIT，client-only，版本和依赖范围正确，许可证原文匹配，无 `fi/dy/masa/` 类或嵌套依赖 JAR。最终包复制到项目父目录。
+- Windows / Linux 最终 current JAR 均为 407943 字节，SHA-256 完全一致。
+- 原工作区直接构建遇到沙箱/当前用户创建的缓存交叉所有权导致 AccessDenied；隔离的当前用户 Windows 目录成功，不修改 ACL、Git 身份或原有参考源码。
+- 本批未启动游戏或执行 GUI/组合回归；JUnit 和构建不等于客户端 GameTest。CI、发布工作流和 Minecraft build-metadata 后缀仍在 TODO，本批没有推送或发布。
+
+- Clean Windows source directory: full `build` passed for both profiles; the final current run reports 59 suites / 189 tests without failures.
+- Ubuntu/WSL: Git-archived source and an initially empty Gradle user home, with no sibling/local Maven state. The official Temurin JDK download was checksum-verified. Both profiles passed full `build`, each with 59 suites / 189 tests and no failures. The archived wrapper was already LF / `755`.
+- All 8 launcher policy tests passed on Windows and Linux.
+- Final current artifact checks confirmed the mod id, client environment, version/ranges, MIT metadata and exact license text, with no MaLiLib/Litematica classes or nested dependency JARs. The JAR was copied to the project parent.
+- Final current Windows/Linux JARs are both 407943 bytes with identical SHA-256 hashes.
+- Mixed sandbox/current-user cache ownership caused AccessDenied in the original workspace; an isolated current-user Windows directory built successfully. No ACL, Git identity, or existing reference-source changes were made.
+- No game startup, GUI/optional-combination regression, or client GameTest ran in this batch. CI, release automation, and the Minecraft build-metadata suffix remain pending; nothing was pushed or published.

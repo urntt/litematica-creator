@@ -63,6 +63,10 @@ The planned `.github/workflows/build.yml` must build and run client GameTests on
 
 ## Remaining Infrastructure / 后续基础设施
 
+2026-10-02 已在独立 Windows 源码目录和 Ubuntu 干净 Gradle 缓存上通过双 profile 完整构建；Linux 两组均为 189 项 JUnit 测试通过。准备脚本 8 项测试在两平台均通过。具体证据和未执行的游戏验收见[完成记录](completed-tasks.md#official-sources-and-linux-toolchain--官方源码与-linux-工具链)。
+
+On 2026-10-02 both profiles passed full builds in isolated Windows and clean-cache Ubuntu directories; Linux reports 189 passing JUnit tests per profile. All 8 preparation tests passed on both platforms. See the completion notes for evidence and unperformed game-level checks.
+
 任务状态见 [TODO 的开发基础设施部分](../todo.md#开发基础设施与发布准备)。固定依赖、资源生成与跨平台构建入口已实现；Fabric API 属性供需要时使用，Creator 没有为了工具链迁移新增运行依赖。上游项目自己的依赖版本继续由各自固定提交管理。
 
 See TODO for remaining work. Pinned dependencies, resource generation, and the cross-platform launcher are implemented. Creator does not add unused Fabric API runtime dependencies; upstream dependency versions remain owned by their pinned source commits.

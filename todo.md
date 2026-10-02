@@ -78,6 +78,10 @@
 - [x] #90 实体命中时禁止误触发空中放置
 - [x] #94 MaLiLib `0.29.2/0.29.4` 与 Litematica `0.28.2/0.28.5` 双版本兼容
 - [x] #95 Tweakeroo、Syncmatica、Lithium、Sodium 可选组合兼容审计
+- [x] 集中版本配置与资源生成 / Centralized versions and generated resources
+- [x] 固定官方源码依赖与双版本构建入口 / Pinned official sources and dual dependency profiles
+- [x] Linux wrapper 与干净跨平台构建验证 / Linux wrapper and clean cross-platform builds
+- [x] MIT LICENSE、metadata 与 JAR 许可证 / MIT license and artifact packaging
 实现细节和历史验收记录见 [`docs/completed-tasks.md`](docs/completed-tasks.md)。
 
 ## 已取消
@@ -92,14 +96,12 @@
 
 ## 开发基础设施与发布准备
 
-以下为已选定政策的待实现部分，本次仅整理文档。详情见[开发指南](docs/development.md)与[发布指南](docs/releasing.md)。
+以下仅保留尚未完成的基础设施。已完成项标题在最前面，细节见完成记录；构建与发布约定分别见[开发指南](docs/development.md)与[发布指南](docs/releasing.md)。
 
-These adopted policies still need implementation; this change only organizes documentation. See the development and release guides for the contracts.
+Only unfinished infrastructure remains here; completed headings are at the top and implementation evidence is in the completion notes. See the development and release guides for the contracts.
 
-- [ ] 集中版本配置与资源生成 / Centralize version configuration and resource generation.
-- [ ] 固定云端依赖来源，接入 push/PR 构建及客户端 GameTest / Pin cloud dependencies and add build/client GameTest CI.
+- [ ] 接入 push/PR 构建及客户端 GameTest CI / Add push/PR build and client GameTest CI.
 - [ ] 落实 SemVer 命名与 GitHub Release 工作流 / Implement version naming and the GitHub release workflow.
-- [ ] 补齐 MIT LICENSE、metadata 与 JAR 许可证 / Add the MIT license, matching metadata, and JAR license packaging.
 
 ## Litematica 工具兼容
 
