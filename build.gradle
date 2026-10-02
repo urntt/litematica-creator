@@ -1,15 +1,10 @@
 plugins {
-	id 'net.fabricmc.fabric-loom' version '1.17.+'
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
 	id 'maven-publish'
 }
 
 repositories {
 	mavenCentral()
-	mavenLocal()
-	maven {
-		url = 'https://masa.dy.fi/maven/sakura-ryoko'
-		content { includeGroupAndSubgroups('fi.dy.masa') }
-	}
 	maven {
 		url = 'https://maven.fallenbreath.me/releases'
 		content { includeGroupAndSubgroups('me.fallenbreath') }
@@ -24,13 +19,16 @@ repositories {
 	}
 }
 
+def dependencyProfile = providers.gradleProperty('dependency_profile').getOrElse('current')
+def dependencyPrefix = dependencyProfile == 'legacy' ? 'legacy_' : ''
+
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
 	implementation "com.google.code.findbugs:jsr305:3.0.2"
 
-	implementation "fi.dy.masa.malilib:malilib-fabric-${project.minecraft_version_out}:${project.malilib_version}"
-	implementation "fi.dy.masa.litematica:litematica-fabric-${project.minecraft_version_out}:${project.litematica_version}"
+	implementation "fi.dy.masa.malilib:malilib-fabric-${project.minecraft_version}:${project.property(dependencyPrefix + 'malilib_version')}"
+	implementation "fi.dy.masa.litematica:litematica-fabric-${project.minecraft_version}:${project.property(dependencyPrefix + 'litematica_version')}"
 
 	compileOnly "com.terraformersmc:modmenu:${project.mod_menu_version}"
 	testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
@@ -43,12 +41,8 @@ tasks.test {
 
 base {
 	group = project.group + "." + project.mod_id
-	archivesName = project.mod_file_name + '-' + project.minecraft_version_out
+	archivesName = project.mod_file_name + '-' + project.minecraft_version
 	version = project.mod_version
-
-	if (version.endsWith('-dev')) {
-		version += "." + new Date().format('yyyyMMdd.HHmmss')
-	}
 }
 
 loom {
@@ -56,25 +50,31 @@ loom {
 }
 
 processResources {
-	inputs.property "mod_version", project.mod_version
-
-	filesMatching("fabric.mod.json") {
-		expand "mod_version": project.mod_version
+	def values = [mod_version: project.mod_version, minecraft_version: project.minecraft_version,
+		fabric_loader_version: project.fabric_loader_version, java_version: project.java_version,
+		malilib_version_range: project.malilib_version_range, litematica_version_range: project.litematica_version_range]
+	inputs.properties(values)
+	filesMatching(['fabric.mod.json', 'mixins.litematica_creator.json']) {
+		expand(values)
 	}
+}
+
+tasks.jar {
+	from('LICENSE') { rename { "LICENSE_${project.mod_id}" } }
 }
 
 tasks.withType(JavaCompile).configureEach {
 	it.options.encoding = "UTF-8"
-	it.options.release = 25
+	it.options.release = Integer.parseInt(project.java_version)
 }
 
 tasks.withType(AbstractArchiveTask).configureEach {
-	preserveFileTimestamps = true
+	preserveFileTimestamps = false
+	reproducibleFileOrder = true
 }
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
+	toolchain.languageVersion = JavaLanguageVersion.of(Integer.parseInt(project.java_version))
 	withSourcesJar()
 }
 

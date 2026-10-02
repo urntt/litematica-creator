@@ -108,7 +108,7 @@ Recovery cache 位于 `config/litematica-creator/recovery/`，用于恢复：
 
 ### 构建
 
-构建命令、工具链与云端准备见[开发指南](docs/development.md)，版本号、changelog 和 GitHub Releases 流程见[发布指南](docs/releasing.md)。CI 尚未接入，不能认为只检出此仓库就具备全部本地依赖。
+构建命令、工具链与云端准备见[开发指南](docs/development.md)，版本号、changelog 和 GitHub Releases 流程见[发布指南](docs/releasing.md)。依赖从固定官方提交自动获取，不再需要本地 sibling 目录；CI 尚未接入。
 
 ### 文档
 
@@ -225,7 +225,7 @@ The latest complete cache can be recovered after a normal exit, disconnect, worl
 
 ### Building
 
-See the [development guide](docs/development.md) for build commands, toolchain policy, and cloud setup, and the [release guide](docs/releasing.md) for versioning, changelog, and GitHub Releases. CI is not integrated yet; checking out this repository alone does not supply all local dependencies.
+See the [development guide](docs/development.md) for build commands, toolchain policy, and cloud setup, and the [release guide](docs/releasing.md) for versioning, changelog, and GitHub Releases. Dependencies are fetched from pinned official sources; local sibling checkouts are no longer required. CI is not integrated yet.
 
 ### Documentation
 
@@ -246,6 +246,6 @@ For developers:
 
 ## License
 
-MIT is the selected licensing policy. License-file and artifact metadata migration is pending; see the [licensing status](docs/releasing.md#license--许可) before redistributing existing builds.
+Licensed under [MIT](LICENSE). Third-party dependencies retain their own licenses; see the [release guide](docs/releasing.md#license--许可) for historical build status.
 
-项目已选定 MIT 许可政策，许可证文件与产物 metadata 尚待迁移。现有开发包的许可状态见[发布指南](docs/releasing.md#license--许可)。
+项目采用 [MIT](LICENSE)。第三方依赖保留各自许可；历史开发包状态见[发布指南](docs/releasing.md#license--许可)。

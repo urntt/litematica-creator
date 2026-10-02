@@ -8,11 +8,35 @@ pluginManagement {
 	}
 }
 
-rootProject.name = 'litematica-creator-26.2'
+def properties = new Properties()
+file('gradle.properties').withInputStream { properties.load(it) }
+rootProject.name = "${properties.mod_id}-${properties.minecraft_version}"
 
-includeBuild('../litematica-26.2') {
-	dependencySubstitution {
-		substitute module('fi.dy.masa.litematica:litematica-fabric-26.2') using project(':')
-		substitute module('fi.dy.masa:litematica-fabric-26.2') using project(':')
+def profile = providers.gradleProperty('dependency_profile').getOrElse('current')
+if (!(profile in ['current', 'legacy'])) {
+	throw new GradleException("Unknown dependency profile: ${profile}")
+}
+def initScript = file('scripts/upstream.init.gradle').canonicalFile
+if (!gradle.startParameter.initScripts.any { it.canonicalFile == initScript }) {
+	throw new GradleException('Use python scripts/build.py to prepare and pin upstream builds, or pass --init-script scripts/upstream.init.gradle after preparation.')
+}
+
+['malilib', 'litematica'].each { mod ->
+	def source = file(".dependencies/${profile}/${mod}")
+	def sourceProperties = new Properties()
+	if (!new File(source, 'gradle.properties').isFile()) {
+		throw new GradleException("Missing official ${mod} source. Run python scripts/build.py --profile ${profile} build")
+	}
+	new File(source, 'gradle.properties').withInputStream { sourceProperties.load(it) }
+	def prefix = profile == 'legacy' ? 'legacy_' : ''
+	if (sourceProperties.mod_version != properties["${prefix}${mod}_version"] || sourceProperties.minecraft_version != properties.minecraft_version) {
+		throw new GradleException("${mod} source does not match the configured dependency profile")
+	}
+	includeBuild(source) {
+		name = "creator-${mod}"
+		dependencySubstitution {
+			substitute module("fi.dy.masa.${mod}:${mod}-fabric-${properties.minecraft_version}") using project(':')
+			substitute module("fi.dy.masa:${mod}-fabric-${properties.minecraft_version}") using project(':')
+		}
 	}
 }

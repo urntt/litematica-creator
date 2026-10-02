@@ -10,9 +10,9 @@ This guide owns versioning, changelog, GitHub release, and licensing conventions
 
 Use [Semantic Versioning](https://semver.org/), starting at `0.1.0` independently of Litematica or predecessor releases. Store the complete version in `mod_version`; `+<Minecraft version>` names the target game as build metadata. Examples such as `0.1.0+26.2` or `0.1.0-dev+26.2` are illustrative, not current configuration.
 
-Minecraft 后缀不影响 SemVer 优先级，也不声明跨 Minecraft 版本兼容。tag、changelog 标题、JAR metadata 和 release 必须使用完全一致的版本字符串；不得发布后覆盖同版本内容。当前开发包命名尚未迁移到这一约定，不能把历史时间戳包当作正式 release。
+Minecraft 后缀不影响 SemVer 优先级，也不声明跨 Minecraft 版本兼容。tag、changelog 标题、JAR metadata 和 release 必须使用完全一致的版本字符串；不得发布后覆盖同版本内容。当前 JAR 名称与 metadata 已统一使用 `mod_version`，不再动态追加时间戳；Minecraft build-metadata 后缀尚待版本迁移任务，不把历史开发包当作正式 release。
 
-Build metadata does not change SemVer precedence or imply cross-Minecraft compatibility. Tags, changelog headings, JAR metadata, and releases must agree on the full version; published versions are immutable. Existing development naming has not yet migrated to this convention.
+Build metadata does not change SemVer precedence or imply cross-Minecraft compatibility. Tags, changelog headings, JAR metadata, and releases must agree on the full version; published versions are immutable. JAR naming now matches `mod_version` without timestamps; the Minecraft build-metadata suffix is still pending.
 
 ## Changelog / 变更记录
 
@@ -53,6 +53,6 @@ The planned `.github/workflows/release.yml` builds and validates the mod, attach
 
 ## License / 许可
 
-用户已选定 MIT 作为项目许可政策，替代此前的 ARR 意向。本次仅整理文档：独立 `LICENSE` 尚未添加，`fabric.mod.json` 仍声明 ARR，历史 JAR 没有被重新许可或重打包。迁移任务须一并补齐 MIT 正文与版权信息、更新 metadata、把许可证打入 JAR，并核查第三方材料保留其原许可；在此之前不能把当前 artifact 标成 MIT 发布。
+项目使用用户提供的 [MIT LICENSE](../LICENSE)，`fabric.mod.json` 声明 MIT，构建将正文打入 Creator JAR。第三方依赖和参考材料保留原许可；依赖实现不捆入 Creator JAR。旧 ARR 开发包没有被重打包，也不视为自动发布的新 MIT 制品。
 
-The user has selected MIT as the project's licensing policy, replacing the earlier ARR intent. This is a documentation-only change: no standalone `LICENSE` has been added, metadata still declares ARR, and historical JARs have not been relicensed or rebuilt. The migration must add the MIT text/copyright information, update metadata, package the license, and retain third-party notices before publishing an artifact as MIT.
+The project uses the user-supplied [MIT LICENSE](../LICENSE); mod metadata declares MIT and the build packages its text in the Creator JAR. Third-party dependencies/references retain their licenses and dependency implementations are not bundled. Historical ARR development JARs are not rebuilt or treated as new published MIT artifacts.

@@ -1,0 +1,21 @@
+// Pin plugins for the root and every included build without patching upstream sources.
+def script = gradle.startParameter.initScripts.find { it.name == 'upstream.init.gradle' }
+def properties = new Properties()
+new File(script.parentFile.parentFile, 'gradle.properties').withInputStream { properties.load(it) }
+
+gradle.beforeSettings { settings ->
+	settings.pluginManagement.resolutionStrategy.eachPlugin {
+		if (requested.id.id == 'net.fabricmc.fabric-loom') {
+			useVersion(properties.loom_version)
+		}
+	}
+}
+
+gradle.beforeProject { project ->
+	project.repositories.whenObjectAdded { repository ->
+		if (repository instanceof org.gradle.api.artifacts.repositories.MavenArtifactRepository &&
+			repository.url.scheme == 'file' && repository.name == 'MavenLocal') {
+			project.repositories.remove(repository)
+		}
+	}
+}

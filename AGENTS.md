@@ -31,11 +31,11 @@
 
 ## 构建与验证
 
-版本集中化规范以 `gradle.properties` 为唯一来源，由构建、资源和 CI 消费；现有迁移缺口见开发指南。遵循目标版本适用的官方 Fabric 模板：`net.fabricmc.fabric-loom`、官方命名、无 `mappings` 依赖，使用 `implementation` 而非 `modImplementation`，不使用 Yarn。不要擅自升级目标版本或重建源码布局。
+版本以 `gradle.properties` 为唯一来源，由构建和资源消费，后续 CI 同样读取；后续基础设施见开发指南。遵循目标版本适用的官方 Fabric 模板：`net.fabricmc.fabric-loom`、官方命名、无 `mappings` 依赖，使用 `implementation` 而非 `modImplementation`，不使用 Yarn。不要擅自升级目标版本或重建源码布局。
 
 在仓库根目录执行开发指南中的完整验证命令，不在本文件重复维护脚本。
 
-- 当前构建依赖 sibling Litematica composite 和本地 Maven 条件；先核实实际解析的版本。只改版本属性不证明测试了另一组依赖，云端可复现构建尚需准备。
+- 使用开发指南中的跨平台构建入口，从固定官方提交准备依赖；不恢复 sibling 或本地 Maven 依赖。双版本测试通过 profile 同时切换源码和版本，不仅修改版本标签；下载的源码不打入 Creator JAR。
 - 测试随风险覆盖纯策略、持久化、事务、生命周期和兼容契约。适合自动化的行为逐步增加客户端 GameTest；负向验证应因预期断言失败并可靠恢复，不能破坏正式配置。
 - 区分单元测试、Mixin 启动验证与游戏内验收。构建通过不证明运行行为正确，启动通过不证明兼容组合全部可用；明确报告未执行的验证，不声称复现用户另一台测试机的问题。
 - UI 与渲染修改检查截图；相机、碰撞、输入和持久化修改安排实际游戏回归。无头测试保留失败日志，发布使用同一提交通过验证的 artifact。

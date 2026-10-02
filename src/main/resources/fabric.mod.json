@@ -8,7 +8,7 @@
 		"urntt"
 	],
 	"contact": {},
-	"license": "ARR",
+	"license": "MIT",
 	"environment": "client",
 	"entrypoints": {
 		"main": [
@@ -23,9 +23,11 @@
 	],
 	"accessWidener": "litematica-creator.accesswidener",
 	"depends": {
-		"minecraft": "~26.2-",
-		"malilib": ">=0.29.2- <0.29.5-",
-		"litematica": ">=0.28.2- <0.28.6-"
+		"minecraft": "~${minecraft_version}-",
+		"fabricloader": ">=${fabric_loader_version}",
+		"java": ">=${java_version}",
+		"malilib": "${malilib_version_range}",
+		"litematica": "${litematica_version_range}"
 	},
 	"suggests": {
 		"tweakeroo": ">=0.29.2- <0.30.0-",

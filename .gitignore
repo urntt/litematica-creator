@@ -8,3 +8,5 @@ gradle-*.zip
 *.log
 
 run/
+.dependencies/
+__pycache__/
