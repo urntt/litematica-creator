@@ -8,8 +8,8 @@ This developer document owns cloud onboarding, not release authorization. Build 
 
 - Select the public repository [urntt/litematica-creator](https://github.com/urntt/litematica-creator), branch `main`. Its root is the mod project; sibling source folders and local game files are not part of the repository.
 - 选择公开仓库 `urntt/litematica-creator` 与 `main`。GitHub 仓库根目录就是模组项目，不包含本地 sibling 源码或游戏数据。
-- Keep original Git history and author identity. Use purpose-prefixed branches for work, review changes before merging, and do not create releases or tags without a user request.
-- 保留 Git 历史与作者，开发分支使用用途前缀，合并前审查；未经用户要求不创建 release 或 tag。
+- Keep original Git history and author identity. Develop and push directly on `main` as [AGENTS.md](../AGENTS.md) describes, and do not create releases or tags without a user request.
+- 保留 Git 历史与作者，按 AGENTS 约定直接在 `main` 上开发和推送；未经用户要求不创建 release 或 tag。
 
 ## Environment / 环境
 
@@ -83,9 +83,9 @@ Review the setup report and publish the prepared environment only after these ch
 
 检查准备报告，验证通过后再发布环境。账号界面中的环境创建/发布仍需完成；本地 Linux 或 GitHub Actions 通过不等于此账号步骤已完成。具体入口见上述官方指南。
 
-Run a first-session check in each provider: load the shared rules, confirm the repository/branch and JDK, then run the matrix above. Give concurrent agents separate purpose-prefixed branches or worktrees; do not have both write to the same working directory. Merge through reviewed changes and green CI, preserving author identity and updating TODO/completion notes together.
+Run a first-session check in each provider: load the shared rules, confirm the repository, `main` and JDK, then run the matrix above. Give concurrent agents separate clones, never the same working directory, and have each integrate the latest `origin/main` before pushing. Keep CI green, preserve author identity, and update TODO/completion notes together.
 
-每个平台首个会话都检查共享规则、仓库/分支与 JDK，并执行上述矩阵。并行代理使用独立用途分支或 worktree，不同时写同一工作目录。通过审查和绿色 CI 合并，保留作者，并同步维护 TODO 与完成记录。
+每个平台首个会话都检查共享规则、仓库、`main` 与 JDK，并执行上述矩阵。并行代理使用各自的克隆，不同时写同一工作目录，推送前各自整合最新 `origin/main`。保持 CI 绿色，保留作者，并同步维护 TODO 与完成记录。
 
 ## Cache and Evidence / 缓存与证据
 

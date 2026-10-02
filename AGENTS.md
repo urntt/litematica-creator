@@ -44,7 +44,7 @@
 ## Git 与协作
 
 - 与用户交流、解释、进度和计划使用中文；代码、注释、docstring、分支名和提交消息使用英文，仓库文档、README 与面向用户的交付物提供中英双语。不为语言统一批量改写无关历史文档。
-- 提交遵循 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)；如使用分支，以 `feat/`、`fix/`、`refactor/`、`docs/`、`test/` 或 `chore/` 等用途前缀命名。
+- 提交遵循 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)。直接在 `main` 上开发和推送：推送前 fetch 并把未推送的本地提交整合到最新 `origin/main` 之上，不强推、不改写已推送历史，推送后确认 CI。仅在用户另行要求时使用分支，并以 `feat/`、`fix/`、`refactor/`、`docs/`、`test/` 或 `chore/` 等用途前缀命名。
 - 先检查 Git 状态，只提交本任务改动，按职责分批提交。保留历史与用户改动，不误提交缓存、日志、凭据、游戏数据或依赖源码。
 - 所有操作代表用户，不改写或覆盖已有 Git author/committer；确实缺少身份时才配置 `urntt` / `urntts@gmail.com`。未经要求不重写历史作者，不添加 `Co-Authored-By`、代理署名或会话链接到提交和 PR。
 - 不硬编码本机绝对路径；重新核实 workspace、junction 和可写目录，不通过放宽 ACL 或沙箱权限解决文件锁。

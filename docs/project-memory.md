@@ -18,9 +18,9 @@
 
 **GitHub and mixed-cloud preparation, 2026-10-02:** Original history is on public `urntt/litematica-creator/main`, with `origin` configured. GitHub runners passed both profiles, packaged client GameTests and JAR audits; see completion notes. The user chose mixed Codex/Claude cloud development with one AGENTS policy and a CLAUDE import. Each account still needs its environment connection. Earlier no-remote/no-CI statements are historical; use the linked guides and TODO. No release, tag, or version change occurred.
 
-**Claude Code 云端首次会话，2026-10-02：** 云端指南矩阵在 Claude Code 会话中全部通过，证据见[完成记录](completed-tasks.md#claude-code-cloud-first-session--claude-code-云端首次验收)。JDK 25 与无头变量仅在该会话中设置，须由用户保存到环境 setup script / 变量后在新会话复核；Codex Cloud 首次会话仍未执行。
+**Claude Code 云端首次会话，2026-10-02：** 云端指南矩阵在 Claude Code 会话中全部通过，证据见[完成记录](completed-tasks.md#claude-code-cloud-first-session--claude-code-云端首次验收)。JDK 25 与无头变量仅在该会话中设置，须由用户保存到环境 setup script / 变量后在新会话复核；Codex Cloud 首次会话仍未执行。随后用户决定直接在 `main` 上开发和推送，规则见 [AGENTS.md](../AGENTS.md)。
 
-**Claude Code first cloud session, 2026-10-02:** The cloud-guide matrix passed in a Claude Code session; see the completion notes. JDK 25 and headless variables were set only for that session, so the user must save the setup script/variables and recheck in a new session. The first Codex Cloud session has not run.
+**Claude Code first cloud session, 2026-10-02:** The cloud-guide matrix passed in a Claude Code session; see the completion notes. JDK 25 and headless variables were set only for that session, so the user must save the setup script/variables and recheck in a new session. The first Codex Cloud session has not run. The user then chose direct development and pushes on `main`; AGENTS.md owns that rule.
 
 - [当前 TODO](../todo.md)：未完成项目、编号、范围和需要决策的内容。
 - [完成记录](completed-tasks.md)：实现细节、修复沿革和历史验收。
