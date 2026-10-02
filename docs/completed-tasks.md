@@ -431,6 +431,7 @@ Source commits `b05f77c` / `10cabae`, checked on 2026-10-02:
 - 云端指南矩阵全部通过：12 项 Python 策略/产物测试；current 与 legacy 均为 59 suites / 189 JUnit tests、无失败；两组均按 pin 校验上游提交，legacy 实际加载 MaLiLib `0.29.2-sakura.4` 与 Litematica `0.28.2-sakura.1`。两组打包客户端 GameTest 都输出 `Creator client GameTest passed`，截图可见投影方块、选中框与 Creator HUD / 虚拟快捷栏。
 - 两次 JAR 审计均通过；产物为 407983 字节，SHA-256 `860b841f0e606158c52741ccc4da448aef72d81b06afe1a91b31901b59d3365a`，与此前 Temurin Windows/Linux 及 GitHub CI 产物一致。
 - 未执行：CI 中的故意失败门禁（不在云端矩阵内）、Codex Cloud 首次会话、GUI / 输入 / 多人 / 可选模组手工回归。环境 setup script 与环境变量须由用户在 Claude Code 环境设置中保存，并在新会话中复核 JDK；本次未修改代码、版本或发布状态，未创建 release/tag。
+- 后续修复：JUnit 原先加载 Mojang `com.mojang:logging` 自带的 `log4j2.xml`，在仓库根目录写 `logs/latest.log` 与未被忽略的滚动 `.log.gz`。新增测试专用 `log4j2-test.xml` 只输出到控制台；两组完整构建均为 189 项通过，不再生成 `logs/`，预期 WARN 进入测试报告，正式 JAR 的 SHA-256 不变。
 
 Baseline `da4b2e9` (same as `origin/main`) on the session branch above, checked on 2026-10-02:
 
@@ -440,3 +441,4 @@ Baseline `da4b2e9` (same as `origin/main`) on the session branch above, checked 
 - The whole cloud matrix passed: 12 Python checks; 59 suites / 189 JUnit tests with no failures for both profiles; pinned upstream commits verified, with legacy actually loading MaLiLib `0.29.2-sakura.4` and Litematica `0.28.2-sakura.1`. Both packaged client GameTests logged `Creator client GameTest passed`, and the screenshots show the projection block, selection box, Creator HUD and virtual hotbar.
 - Both JAR audits passed. The 407983-byte artifact has the SHA-256 above, identical to the earlier Temurin Windows/Linux and GitHub CI builds.
 - Not run: CI's intentional-failure gate (outside the cloud matrix), the first Codex Cloud session, and manual GUI/input/multiplayer/optional-mod regressions. The user still needs to save the setup script and variables in the Claude Code environment settings and recheck the JDK in a new session. No code, version, release state, release or tag changed.
+- Follow-up fix: JUnit loaded the `log4j2.xml` bundled in Mojang's `com.mojang:logging`, writing `logs/latest.log` and an unignored rolled `.log.gz` into the repository root. A test-only `log4j2-test.xml` now logs to the console. Both full builds pass 189 tests without creating `logs/`; the expected WARN lands in the test report and the production JAR hash is unchanged.

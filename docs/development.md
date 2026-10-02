@@ -55,6 +55,10 @@ Artifacts are written to `build/libs/`. JAR names and metadata use the same `mod
 
 Unit tests cover policies and transactions, startup checks exercise Mixin application, client GameTests cover in-game behavior, and local testing supplements GUI/render/input/combination coverage. Report which checks actually ran.
 
+JUnit 使用测试专用 `src/test/resources/log4j2-test.xml`，覆盖 Mojang logging 库自带的 `log4j2.xml`：日志只输出到控制台并进入 Gradle 测试报告，不在仓库根目录生成 `logs/`。
+
+JUnit uses the test-only `src/test/resources/log4j2-test.xml`, which overrides the `log4j2.xml` bundled with Mojang's logging library. Logs go to the console and Gradle test reports instead of a `logs/` directory in the repository root.
+
 ## CI Contract / CI 约定
 
 `.github/workflows/build.yml` 在每次 push、pull request 及手动运行时执行 Linux `current` / `legacy` 矩阵，读取同一版本配置，运行 Python 策略测试、完整 Gradle 构建/JUnit、正式 JAR 审计及打包客户端 GameTest。Actions 固定提交、默认只读仓库权限，不使用 PR 秘密。通过全部检查才上传正式 JAR，测试日志与截图始终保留。发布门禁见发布指南。
