@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "litematica-creator-gametest",
+  "version": "1.0.0",
+  "name": "Litematica Creator Client Tests",
+  "environment": "client",
+  "license": "MIT",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "io.github.urntt.litematicacreator.gametest.CreatorClientGameTest"
+    ]
+  },
+  "depends": {
+    "litematica-creator": "*",
+    "fabric-client-gametest-api-v1": "*"
+  }
+}

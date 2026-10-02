@@ -49,6 +49,43 @@ loom {
 	accessWidenerPath = file("src/main/resources/litematica-creator.accesswidener")
 }
 
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = 'litematica-creator-gametest'
+		enableGameTests = false
+		enableClientGameTests = true
+	}
+}
+
+dependencies {
+	gametestImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	productionRuntimeMods "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	productionRuntimeMods "fi.dy.masa.malilib:malilib-fabric-${project.minecraft_version}:${project.property(dependencyPrefix + 'malilib_version')}"
+	productionRuntimeMods "fi.dy.masa.litematica:litematica-fabric-${project.minecraft_version}:${project.property(dependencyPrefix + 'litematica_version')}"
+}
+
+def clientGameTestJar = tasks.register('clientGameTestJar', Jar) {
+	archiveClassifier = 'gametest'
+	destinationDirectory = layout.buildDirectory.dir('gametest')
+	from sourceSets.gametest.output
+}
+
+def cleanProductionGameTest = tasks.register('cleanProductionGameTest', Delete) {
+	delete layout.buildDirectory.dir('run/productionClientGameTest')
+}
+
+tasks.register('runProductionClientGameTest', net.fabricmc.loom.task.prod.ClientProductionRunTask) {
+	dependsOn cleanProductionGameTest
+	mods.from(clientGameTestJar)
+	runDir = layout.buildDirectory.dir('run/productionClientGameTest')
+	jvmArgs.addAll('-Dfabric.client.gametest', '-Xmx2G')
+	programArgs.addAll('--username', 'CreatorTest')
+	if (providers.gradleProperty('verifyGameTestFailure').getOrElse('false') == 'true') {
+		jvmArgs.add('-Dlitematica.creator.gametest.verifyFailure=true')
+	}
+}
+
 processResources {
 	def values = [mod_version: project.mod_version, minecraft_version: project.minecraft_version,
 		fabric_loader_version: project.fabric_loader_version, java_version: project.java_version,
