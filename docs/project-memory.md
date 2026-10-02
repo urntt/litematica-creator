@@ -14,6 +14,10 @@
 
 ## 1. 先读哪些文件
 
+**GitHub 与混合云端准备，2026-10-02：** 完整 Git 历史已推送至公开仓库 `urntt/litematica-creator` 的 `main`，`origin` 已设置。push/PR 双硬依赖 Linux CI、打包客户端 GameTest 与正式 JAR 审计已通过 GitHub runner 验证，证据见完成记录。用户选择 Codex Cloud 与 Claude Code 混合开发，统一规则仍为 AGENTS，CLAUDE 只引用它；账号侧环境连接尚需分别完成。下文关于无 remote / CI 的内容是旧快照，后续以[开发指南](development.md)、[云端指南](cloud-development.md)和 TODO 为准；本批没有创建 release/tag 或改版本。
+
+**GitHub and mixed-cloud preparation, 2026-10-02:** Original history is on public `urntt/litematica-creator/main`, with `origin` configured. GitHub runners passed both profiles, packaged client GameTests and JAR audits; see completion notes. The user chose mixed Codex/Claude cloud development with one AGENTS policy and a CLAUDE import. Each account still needs its environment connection. Earlier no-remote/no-CI statements are historical; use the linked guides and TODO. No release, tag, or version change occurred.
+
 - [当前 TODO](../todo.md)：未完成项目、编号、范围和需要决策的内容。
 - [完成记录](completed-tasks.md)：实现细节、修复沿革和历史验收。
 - [README](../README.md)：双语使用入口、依赖范围、默认按键和当前边界。

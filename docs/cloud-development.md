@@ -13,9 +13,22 @@ This developer document owns cloud onboarding, not release authorization. Build 
 
 ## Environment / 环境
 
-Create or edit a Codex Cloud environment, choose this repository, and ask setup to install the JDK matching `java_version`, Git, Python 3.9+, and these headless client libraries on Ubuntu:
+Use the same repository, instruction file, source pins, and validation commands in Codex Cloud and Claude Code cloud. Configure each account's GitHub connection/environment separately; a connection in one product does not configure the other.
 
-创建或编辑 Codex Cloud 环境，选择本仓库，让环境准备过程安装与 `java_version` 一致的 JDK、Git、Python 3.9+，以及 Ubuntu 下的无头客户端依赖：
+Codex Cloud 与 Claude Code 云端共用同一仓库、规则、源码 pin 和验证命令。两个账号的 GitHub 连接与环境需分别配置，不能认为一边连好另一边就能使用。
+
+- **Codex Cloud:** create/edit an environment, select this repository, have setup prepare and test it, then review and publish the environment. [Official environment guide](https://learn.chatgpt.com/docs/environments/cloud-environments).
+- **Codex Cloud：** 创建/编辑环境、选择本仓库，让准备过程安装并验收；审查后发布环境。官方入口见上述指南。
+- **Claude Code cloud:** connect this repository through its own GitHub onboarding, configure a cloud environment with network access, variables and a setup script, then select it for sessions. [Official cloud guide](https://code.claude.com/docs/en/claude-code-on-the-web).
+- **Claude Code 云端：** 通过其 GitHub 接入流程连接仓库，配置网络、变量与 setup script，并在会话中选择该环境。官方入口见上述指南。
+
+`AGENTS.md` owns project rules. `CLAUDE.md` contains only an `@AGENTS.md` import for sessions that do not load AGENTS natively; it does not create another policy copy. Check loaded instructions in the first session. [Claude instruction imports](https://code.claude.com/docs/en/memory#import-additional-files).
+
+项目规则只维护于 `AGENTS.md`。`CLAUDE.md` 仅用 `@AGENTS.md` 引用它，兼容未原生加载 AGENTS 的会话，不复制规则；首次会话检查规则已加载。引用语法见上述官方文档。
+
+Install the JDK matching `java_version`, Git, Python 3.9+, and these headless client libraries on Ubuntu:
+
+两边均安装与 `java_version` 一致的 JDK、Git、Python 3.9+，以及 Ubuntu 下的无头客户端依赖：
 
 ```bash
 sudo apt-get update
@@ -48,6 +61,10 @@ python3 scripts/verify_artifact.py
 Review the setup report and publish the prepared environment only after these checks pass. A cloud environment must still be created/published in the account UI; a successful local Linux run or GitHub Actions run is not evidence that this account step happened. [Official cloud environment guidance](https://learn.chatgpt.com/docs/environments/cloud-environments).
 
 检查准备报告，验证通过后再发布环境。账号界面中的环境创建/发布仍需完成；本地 Linux 或 GitHub Actions 通过不等于此账号步骤已完成。具体入口见上述官方指南。
+
+Run a first-session check in each provider: load the shared rules, confirm the repository/branch and JDK, then run the matrix above. Give concurrent agents separate purpose-prefixed branches or worktrees; do not have both write to the same working directory. Merge through reviewed changes and green CI, preserving author identity and updating TODO/completion notes together.
+
+每个平台首个会话都检查共享规则、仓库/分支与 JDK，并执行上述矩阵。并行代理使用独立用途分支或 worktree，不同时写同一工作目录。通过审查和绿色 CI 合并，保留作者，并同步维护 TODO 与完成记录。
 
 ## Cache and Evidence / 缓存与证据
 

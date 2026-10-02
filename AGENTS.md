@@ -13,7 +13,7 @@
 
 - [todo.md](todo.md) 维护任务状态；[完成记录](docs/completed-tasks.md) 维护实现与验收细节。
 - [README](README.md) 是双语使用入口；[兼容说明](docs/optional-mod-compatibility.md) 记录测试矩阵与退化边界。
-- [开发指南](docs/development.md) 管构建与工具链，[发布指南](docs/releasing.md) 管版本、CI 和发布；[CHANGELOG](CHANGELOG.md) 管用户可见变化。
+- [开发指南](docs/development.md) 管构建、工具链与 CI，[云端开发](docs/cloud-development.md) 管账号接入，[发布指南](docs/releasing.md) 管版本和发布；[CHANGELOG](CHANGELOG.md) 管用户可见变化。Claude 入口只引用本文件，不复制规则。
 - [项目记忆](docs/project-memory.md) 提供交接背景；[路线图](docs/creator-design-and-roadmap.md) 含历史方案。按任务读取相关部分，不把旧方案、提议或取消任务当成当前实现。
 - 面向用户与开发者的文档分开；产品方向沿用路线图，不另建重复的 VISION。行为变化同次更新文档，并将用户可见变化记入 CHANGELOG 的 `Unreleased`；已完成细节从 TODO 移入完成记录。
 - Markdown 围栏代码块必须标明语言；避免重复维护权威事实，历史测试版本和示例须与当前配置区分。
@@ -31,7 +31,7 @@
 
 ## 构建与验证
 
-版本以 `gradle.properties` 为唯一来源，由构建和资源消费，后续 CI 同样读取；后续基础设施见开发指南。遵循目标版本适用的官方 Fabric 模板：`net.fabricmc.fabric-loom`、官方命名、无 `mappings` 依赖，使用 `implementation` 而非 `modImplementation`，不使用 Yarn。不要擅自升级目标版本或重建源码布局。
+版本以 `gradle.properties` 为唯一来源，由构建、资源和 CI 消费；基础设施见开发指南。遵循目标版本适用的官方 Fabric 模板：`net.fabricmc.fabric-loom`、官方命名、无 `mappings` 依赖，使用 `implementation` 而非 `modImplementation`，不使用 Yarn。不要擅自升级目标版本或重建源码布局。
 
 在仓库根目录执行开发指南中的完整验证命令，不在本文件重复维护脚本。
 

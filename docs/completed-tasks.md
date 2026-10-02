@@ -396,3 +396,27 @@ Source commit `77ff477`, checked on 2026-10-02:
 - Final current Windows/Linux JARs are both 407943 bytes with identical SHA-256 hashes.
 - Mixed sandbox/current-user cache ownership caused AccessDenied in the original workspace; an isolated current-user Windows directory built successfully. No ACL, Git identity, or existing reference-source changes were made.
 - No game startup, GUI/optional-combination regression, or client GameTest ran in this batch. CI, release automation, and the Minecraft build-metadata suffix remain pending; nothing was pushed or published.
+
+## GitHub Migration and Client CI / GitHub 迁移与客户端 CI
+
+2026-10-02，实现提交 `b05f77c` / `10cabae`：
+
+- 推送前对最终源码及 143 个完整历史提交运行官方 Gitleaks `v8.30.1` 脱敏扫描，无发现；二进制下载校验官方 SHA-256。历史中无游戏日志、崩溃包或大型制品，唯一跟踪 JAR 为 Gradle wrapper；原历史和作者完整保留。
+- 公开仓库为 [urntt/litematica-creator](https://github.com/urntt/litematica-creator)，推送 `main` 并配置 `origin`；未上传本地依赖、个人游戏文件或父目录源码。
+- `src/gametest/` 独立测试模组通过实际生产 JAR 启动客户端与隔离单人世界，检查增删投影、空 cell 清理、计数、组合 schematic world 重建、虚拟拾取/换手、相机创建与退出、focus/selected 独立以及丢弃卸载。真实客户端和服务端目标格保持 AIR。截图目视检查可见投影和虚拟快捷栏，不把该冒烟测试视为完整 GUI/渲染验收。
+- Linux 两组硬依赖均完整构建通过，每组 59 suites / 189 JUnit tests、无失败；12 项 Python 策略/产物检查测试在 Windows 与 Linux 通过。故意断言失败验证 Gradle exit 1，随后两组正常客户端测试再次通过。
+- [首次 GitHub CI](https://github.com/urntt/litematica-creator/actions/runs/37019428330) 的 `current`、`legacy` 均成功：完整构建、JAR 审计、客户端 GameTest 和 artifact 上传；current 的故意失败门禁也成功。Actions 固定 SHA、只读权限、无 PR 秘密，正式包只在全部门禁通过后上传。
+- 最终 current 正式 JAR 为 407983 字节，SHA-256 `860b841f0e606158c52741ccc4da448aef72d81b06afe1a91b31901b59d3365a`；旧、新基线产物一致。检查 client/mod id/版本/范围、MIT 原文、双语 key 完整性，无 MaLiLib/Litematica、Fabric API、JUnit、测试代码或嵌套 JAR；已复制项目父目录。
+- 用户选择 Codex Cloud 与 Claude Code 混合开发。`CLAUDE.md` 只引用统一 `AGENTS.md`，准备和验证入口见[云端指南](cloud-development.md)。两个账号的 GitHub 授权、环境创建和首次云端会话验收仍须各自完成，本次未冒充已连接。
+- 未发布 release/tag，未修改版本或实现发布工作流；可选模组、多人和完整输入/GUI 回归未在本批重测。
+
+Source commits `b05f77c` / `10cabae`, checked on 2026-10-02:
+
+- Official checksum-verified Gitleaks scanned the final tree and all 143 commits with redaction, finding no secrets. History contains no game logs, crash archives or large artifacts; only the Gradle wrapper JAR is tracked. Original commits/authors were preserved.
+- Original history was pushed to the public repository above, on `main` with `origin` configured; local dependencies, personal game data and parent-directory sources were excluded.
+- A separate test mod starts packaged Creator/upstreams in a real client and isolated singleplayer world. Assertions cover sparse edits/counts, empty-cell removal, schematic-world rebuild, virtual inventory, camera, focus/selected independence and discard. Real client/server target blocks stay AIR. The screenshot visibly contains a projection/hotbar; this is smoke coverage, not comprehensive GUI/render verification.
+- Both Linux profiles passed full builds with 59 suites / 189 JUnit tests each. All 12 Python checks passed on Windows/Linux. Intentional assertion failure produced exit 1; subsequent normal client runs passed for both profiles.
+- The linked GitHub run passed both profiles, production audits, client tests and uploads, including current's intentional-failure gate. Actions are SHA-pinned with read-only permissions and no PR secrets; only fully validated production JARs upload.
+- Both baselines produced the same 407983-byte JAR and the SHA-256 above. Metadata/ranges, exact MIT text, complete bilingual keys, and absence of bundled dependencies/tests passed inspection. The final current package was copied to the project parent.
+- Mixed Codex/Claude cloud instructions share AGENTS through a minimal CLAUDE import. Account connections, environment publication and each provider's first cloud session remain user-side checks; local/CI verification is not claimed as cloud-account setup.
+- No release/tag, version change or release workflow was created. Optional-mod combinations, multiplayer and full input/GUI regressions were not rerun.

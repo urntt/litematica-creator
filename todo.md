@@ -82,6 +82,7 @@
 - [x] 固定官方源码依赖与双版本构建入口 / Pinned official sources and dual dependency profiles
 - [x] Linux wrapper 与干净跨平台构建验证 / Linux wrapper and clean cross-platform builds
 - [x] MIT LICENSE、metadata 与 JAR 许可证 / MIT license and artifact packaging
+- [x] GitHub 迁移、双依赖 push/PR CI 与客户端 GameTest / GitHub migration, dual-profile CI and client GameTests
 实现细节和历史验收记录见 [`docs/completed-tasks.md`](docs/completed-tasks.md)。
 
 ## 已取消
@@ -100,7 +101,6 @@
 
 Only unfinished infrastructure remains here; completed headings are at the top and implementation evidence is in the completion notes. See the development and release guides for the contracts.
 
-- [ ] 接入 push/PR 构建及客户端 GameTest CI / Add push/PR build and client GameTest CI.
 - [ ] 落实 SemVer 命名与 GitHub Release 工作流 / Implement version naming and the GitHub release workflow.
 
 ## Litematica 工具兼容
