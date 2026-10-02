@@ -1,0 +1,65 @@
+# Development / 开发指南
+
+本文件面向开发者，维护工具链、构建和验证约定；用户操作见 [README](../README.md)，产品方向见[设计与路线图](creator-design-and-roadmap.md)，发布流程见[发布指南](releasing.md)。通用工程与协作约束只在 [AGENTS.md](../AGENTS.md) 维护。
+
+This developer guide owns toolchain, build, and validation conventions. See the README for usage, the roadmap for product direction, and the release guide for publishing. General engineering and collaboration rules belong to AGENTS.md.
+
+## Version Sources / 版本来源
+
+- `gradle.properties` 是 mod、Minecraft、Fabric Loader、Loom、Fabric API、Mod Menu 和 Java 版本的唯一配置来源。`build.gradle`、生成后的 `fabric.mod.json`、Mixin 配置和 CI 读取这些值，不再独立硬编码；不要在普通文档中维护另一份当前版本表。
+- Preserve a single version source in `gradle.properties` for the mod, Minecraft, Fabric Loader, Loom, Fabric API, Mod Menu, and Java. Build scripts, generated resources, and workflows must consume those properties instead of maintaining independent values.
+- 运行兼容范围由生成的 `fabric.mod.json` 声明；编译基线、允许范围和已测试组合不是同一概念。测试记录可以保留准确版本和日期，但不能替代当前配置。
+- Generated `fabric.mod.json` declares runtime compatibility. Compile baselines, allowed ranges, and tested combinations are distinct; dated test records are evidence, not another current configuration.
+- Gradle 本身使用已跟踪的 wrapper；变更依赖或工具链时选择可复现版本，不能因“跟随最新模板”而静默升级或追踪浮动 HEAD。
+- Use the tracked Gradle wrapper and reproducible dependency/toolchain inputs. Following the official template is not permission for silent upgrades or floating source revisions.
+
+## Fabric Baseline / Fabric 基线
+
+参考 [Fabric 官方模板](https://github.com/FabricMC/fabric-example-mod)及[模板生成器](https://fabricmc.net/develop/template/)，按目标 Minecraft 版本选择适用分支。当前源码采用 `net.fabricmc.fabric-loom`、Minecraft 官方命名、无 `mappings` 依赖，以及 `implementation` 而非 `modImplementation`；不使用 Yarn。可选编译依赖仍可使用 `compileOnly`，不为了模仿模板强制引入未使用的 Fabric API 或重建 source sets。
+
+Follow the [official Fabric template](https://github.com/FabricMC/fabric-example-mod) and [generator](https://fabricmc.net/develop/template/) for the target Minecraft line. Use `net.fabricmc.fabric-loom`, official Minecraft names, no `mappings` dependency, and `implementation`, not `modImplementation`; do not use Yarn. Keep appropriate `compileOnly` dependencies and existing source sets. Template alignment does not require adding unused Fabric API dependencies.
+
+## Local Validation / 本地验证
+
+Windows:
+
+```powershell
+.\gradlew.bat build --no-daemon --max-workers=1
+```
+
+Linux/macOS:
+
+```bash
+./gradlew build --no-daemon --max-workers=1
+```
+
+产物位于 `build/libs/`。依赖矩阵的准确组合见[兼容说明](optional-mod-compatibility.md)。切换属性后还要确认 composite build 实际使用的源码版本；只改版本字符串不是兼容测试。
+
+Artifacts are written to `build/libs/`. Consult the compatibility notes for tested combinations. Verify the actual composite-build source version when overriding properties; changing a version string alone does not test another dependency.
+
+单元测试验证策略和事务，启动检查验证实际 Mixin 应用，客户端 GameTest 验证游戏行为，本地实测补充 GUI、渲染、输入与模组组合。各类验证不能互相冒充，未执行的部分必须说明。
+
+Unit tests cover policies and transactions, startup checks exercise Mixin application, client GameTests cover in-game behavior, and local testing supplements GUI/render/input/combination coverage. Report which checks actually ran.
+
+## CI Contract / CI 约定
+
+计划的 `.github/workflows/build.yml` 在每次 push 和 pull request 上执行完整构建及客户端 GameTest，读取同一版本配置，保存 JAR 与失败日志。无头游戏测试需要可靠的显示环境；构建成功不能代替游戏测试。发布必须复用同一提交通过完整验证的 artifact，具体门禁见发布指南。
+
+The planned `.github/workflows/build.yml` must build and run client GameTests on every push and pull request, consume the shared version configuration, and retain artifacts and failure logs. Headless tests need a reliable display environment. A successful build is not a substitute for game tests; publishing must use the validated artifact from the same commit.
+
+## Implementation Gaps / 尚未落地的部分
+
+2026-10-02 核对：以上是已采用的开发规范，不是声称配置已经全部实现。任务状态见 [TODO 的开发基础设施部分](../todo.md#开发基础设施与发布准备)。
+
+Checked on 2026-10-02: the conventions above are adopted policy, not a claim that all infrastructure already exists. Track implementation in the development-infrastructure section of TODO.
+
+- Loom 和 Java 尚在 `build.gradle` / Mixin JSON 中硬编码，`fabric.mod.json` 目前只展开 mod version；需完成统一资源生成。Fabric API 属性已存在，但当前没有对应依赖。
+- Loom and Java remain hard-coded in the build/Mixin configuration, and resource expansion currently covers only the mod version. Unified resource generation is pending; the Fabric API property exists without a corresponding dependency.
+- 当前无 CI workflow 或客户端 GameTest 接入；只有本地 JUnit 构建及历史启动/实测记录。
+- No CI workflow or client GameTest integration exists yet; current coverage is local JUnit builds and historical startup/play testing.
+- 构建仍使用 sibling Litematica composite 和 `mavenLocal()`；云端准备需固定依赖来源、提交或校验和，验证干净 Linux 构建，并处理 wrapper 的 LF 与可执行位。
+- The build still uses a sibling Litematica composite and `mavenLocal()`. Cloud setup must pin dependency provenance/revisions or checksums, prove clean Linux builds, and fix wrapper line endings/executable mode.
+
+这些缺口需要另一次明确的实现任务。本次文档整理不升级版本、不增加运行依赖、不改变构建拓扑，也不将上述能力标为已完成。
+
+These gaps require a separate implementation task. This documentation change does not upgrade versions, add runtime dependencies, change the build topology, or mark infrastructure complete.

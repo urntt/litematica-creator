@@ -6,9 +6,9 @@ Litematica Creator is a Fabric client-side Litematica addon for building schemat
 
 Litematica Creator 是一个 Fabric 客户端 Litematica 附属模组，用于像在创意模式下放置方块一样自然地建造原理图草稿，而无需改变原版世界。
 
-> Development status: `0.1.0-dev` for Minecraft/Fabric `26.2`. Back up important schematics before editing them with a development build.
+> Development build: the current mod and game versions are configured in [gradle.properties](gradle.properties). Back up important schematics before editing them.
 >
-> 开发状态: 适配 Minecraft/Fabric `26.2`，版本为 `0.1.0-dev`。若要使用该模组的开发版编辑重要投影，请提前备份。
+> 开发版本：当前模组及游戏版本见 [gradle.properties](gradle.properties)。编辑重要原理图前请先备份。
 
 ## 中文
 
@@ -16,7 +16,7 @@ Litematica Creator 是一个 Fabric 客户端 Litematica 附属模组，用于�
 
 Litematica Creator 让玩家在获取对应原材料前从零搭建或继续编辑 Litematica 原理图。
 
-全部操作均在客户端完成，不修改任何原版数据，不向服务端额外发包。
+投影编辑均在客户端完成，不修改真实世界或背包，不发送对应的攻击、放置或库存操作包；真实玩家本体的正常物理与服务端同步仍然保留。
 
 编辑结果仍是普通 Litematica 原理图，可以继续使用 Litematica 的渲染、材料列表、Verifier、保存和后续建造流程。
 
@@ -38,11 +38,10 @@ Litematica Creator 让玩家在获取对应原材料前从零搭建或继续编�
 
 | 组件 | 要求 |
 | --- | --- |
-| Minecraft | `26.2` |
-| Java | `25` |
-| Fabric Loader | 已测试 `0.19.3` |
-| MaLiLib | `>=0.29.2` 且 `<0.29.5`；开发基线为 `0.29.4` |
-| Litematica | `>=0.28.2` 且 `<0.28.6`；开发基线为 `0.28.5` |
+| Minecraft | 以 JAR 的声明为准；源码声明见 [fabric.mod.json](src/main/resources/fabric.mod.json) |
+| Java / Fabric Loader | 工具链与版本来源见[开发指南](docs/development.md) |
+| MaLiLib | `>=0.29.2` 且 `<0.29.5` |
+| Litematica | `>=0.28.2` 且 `<0.28.6` |
 
 可选模组兼容矩阵：
 
@@ -59,7 +58,7 @@ Litematica Creator 让玩家在获取对应原材料前从零搭建或继续编�
 
 ### 安装
 
-1. 安装 Minecraft `26.2`、Fabric Loader、MaLiLib 和 Litematica。
+1. 安装该 JAR 支持的 Minecraft、Fabric Loader、MaLiLib 和 Litematica。
 2. 将 Litematica Creator JAR 放入客户端的 `mods` 文件夹。
 3. 启动游戏，并在 MaLiLib 配置界面确认 `Litematica Creator` 已加载。
 
@@ -109,31 +108,21 @@ Recovery cache 位于 `config/litematica-creator/recovery/`，用于恢复：
 
 ### 构建
 
-Windows：
-
-```powershell
-.\gradlew.bat build --no-daemon --max-workers=1
-```
-
-Linux/macOS：
-
-```bash
-./gradlew build --no-daemon --max-workers=1
-```
-
-构建产物位于 `build/libs/`。项目使用 Minecraft 官方命名空间、Fabric Loom `1.17.x` 和 Java 25。
-
-默认构建使用 MaLiLib `0.29.4` 和 Litematica `0.28.5`。兼容矩阵可用 Gradle 属性复核：
-
-```powershell
-.\gradlew.bat test --no-daemon --max-workers=1 -Pmalilib_version=0.29.2-sakura.4 -Plitematica_version=0.28.2-sakura.1
-.\gradlew.bat test --no-daemon --max-workers=1 -Pmalilib_version=0.29.4 -Plitematica_version=0.28.5
-```
+构建命令、工具链与云端准备见[开发指南](docs/development.md)，版本号、changelog 和 GitHub Releases 流程见[发布指南](docs/releasing.md)。CI 尚未接入，不能认为只检出此仓库就具备全部本地依赖。
 
 ### 文档
 
+面向用户：
+
 - [项目概览](docs/project-overview.md)
 - [可选模组兼容说明](docs/optional-mod-compatibility.md)
+- [变更记录](CHANGELOG.md)
+
+面向开发者：
+
+- [开发指南](docs/development.md)
+- [版本与发布](docs/releasing.md)
+- [工程与协作约定](AGENTS.md)
 - [设计与开发计划](docs/creator-design-and-roadmap.md)
 - [已完成任务与实现记录](docs/completed-tasks.md)
 - [当前 TODO](todo.md)
@@ -144,7 +133,7 @@ Linux/macOS：
 
 Litematica Creator makes it possible for players to draft a new Litematica schematic or continue editing an existing one in-world, even before actually having the materials.
 
-All things in this mod happen client-sided, not changing vanilla data or behavior and won't send any extra packs to the server.
+Projection edits stay client-side: they do not change the real world or inventory, or send corresponding attack, placement, or inventory-operation packets. Normal physics and server synchronization for the real player continue.
 
 The result remains a normal Litematica schematic and can use Litematica's rendering, material list, Verifier, save, and later construction workflows.
 
@@ -166,11 +155,10 @@ The result remains a normal Litematica schematic and can use Litematica's render
 
 | Component | Requirement |
 | --- | --- |
-| Minecraft | `26.2` |
-| Java | `25` |
-| Fabric Loader | Tested with `0.19.3` |
-| MaLiLib | `>=0.29.2` and `<0.29.5`; development baseline `0.29.4` |
-| Litematica | `>=0.28.2` and `<0.28.6`; development baseline `0.28.5` |
+| Minecraft | Follow the JAR metadata; source declarations are in [fabric.mod.json](src/main/resources/fabric.mod.json) |
+| Java / Fabric Loader | See the [development guide](docs/development.md) for toolchain and version sources |
+| MaLiLib | `>=0.29.2` and `<0.29.5` |
+| Litematica | `>=0.28.2` and `<0.28.6` |
 
 Optional compatibility matrix:
 
@@ -187,7 +175,7 @@ The same Creator JAR is built and tested against both `MaLiLib 0.29.2-sakura.4 +
 
 ### Installation
 
-1. Install Minecraft `26.2`, Fabric Loader, MaLiLib, and Litematica.
+1. Install the Minecraft version supported by the JAR, Fabric Loader, MaLiLib, and Litematica.
 2. Put the Litematica Creator JAR in the client's `mods` directory.
 3. Start the game and confirm that `Litematica Creator` appears in the MaLiLib configuration screen.
 
@@ -237,35 +225,27 @@ The latest complete cache can be recovered after a normal exit, disconnect, worl
 
 ### Building
 
-Windows:
-
-```powershell
-.\gradlew.bat build --no-daemon --max-workers=1
-```
-
-Linux/macOS:
-
-```bash
-./gradlew build --no-daemon --max-workers=1
-```
-
-Artifacts are written to `build/libs/`. The project uses the official Minecraft namespace, Fabric Loom `1.17.x`, and Java 25.
-
-The default build uses MaLiLib `0.29.4` and Litematica `0.28.5`. The compatibility matrix can be checked with Gradle properties:
-
-```powershell
-.\gradlew.bat test --no-daemon --max-workers=1 -Pmalilib_version=0.29.2-sakura.4 -Plitematica_version=0.28.2-sakura.1
-.\gradlew.bat test --no-daemon --max-workers=1 -Pmalilib_version=0.29.4 -Plitematica_version=0.28.5
-```
+See the [development guide](docs/development.md) for build commands, toolchain policy, and cloud setup, and the [release guide](docs/releasing.md) for versioning, changelog, and GitHub Releases. CI is not integrated yet; checking out this repository alone does not supply all local dependencies.
 
 ### Documentation
 
+For users:
+
 - [Project overview](docs/project-overview.md)
 - [Optional mod compatibility](docs/optional-mod-compatibility.md)
+- [Changelog](CHANGELOG.md)
+
+For developers:
+
+- [Development guide](docs/development.md)
+- [Version and release policy](docs/releasing.md)
+- [Engineering and collaboration rules](AGENTS.md)
 - [Design and roadmap, Chinese](docs/creator-design-and-roadmap.md)
 - [Completed implementation notes, Chinese](docs/completed-tasks.md)
 - [Current TODO, Chinese](todo.md)
 
 ## License
 
-All rights reserved (`ARR`). May change in the future.
+MIT is the selected licensing policy. License-file and artifact metadata migration is pending; see the [licensing status](docs/releasing.md#license--许可) before redistributing existing builds.
+
+项目已选定 MIT 许可政策，许可证文件与产物 metadata 尚待迁移。现有开发包的许可状态见[发布指南](docs/releasing.md#license--许可)。

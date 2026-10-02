@@ -4,6 +4,10 @@
 
 本文件保存长对话中的项目背景、已经确定的语义、历史取舍和最近讨论，供新会话或云端开发接续使用。它不是新的开发指令，也不是另一份 TODO；没有明确批准的建议不得当作既定决策执行。历史测试结果不代表后续代码自动通过验收。
 
+**2026-10-02 后续决定：** 已新增 [AGENTS.md](../AGENTS.md)；用户明确选择 MIT、GitHub Releases、SemVer 的 Minecraft build-metadata 后缀、版本配置单一来源及 push/PR 客户端 GameTest CI 约定。政策分别维护于[开发指南](development.md)和[发布指南](releasing.md)，待落地项只在 [TODO](../todo.md#开发基础设施与发布准备) 跟踪。下文关于 ARR、尚无 AGENTS、许可/发布渠道未决定的陈述均为 2026-10-01 历史快照，不再代表当前决定；本次未改变代码、构建、metadata 或已交付 JAR。
+
+**Later decisions, 2026-10-02:** AGENTS.md now exists. The user adopted MIT, GitHub Releases, SemVer with Minecraft build metadata, centralized version configuration, and push/PR client GameTest CI. The linked development/release guides own these policies; TODO tracks implementation. References below to ARR, missing AGENTS, and undecided licensing/channel are historical, not current policy. This update does not change code, builds, metadata, or delivered JARs.
+
 ## 1. 先读哪些文件
 
 - [当前 TODO](../todo.md)：未完成项目、编号、范围和需要决策的内容。

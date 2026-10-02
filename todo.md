@@ -1,6 +1,6 @@
 # Litematica Creator TODO
 
-最后更新：2026-08-23
+最后更新：2026-10-02
 
 ## 已完成
 
@@ -89,6 +89,17 @@
 - [ ] 未开始
 - [~] 进行中或已部分实现
 - [!] 需要设计决策
+
+## 开发基础设施与发布准备
+
+以下为已选定政策的待实现部分，本次仅整理文档。详情见[开发指南](docs/development.md)与[发布指南](docs/releasing.md)。
+
+These adopted policies still need implementation; this change only organizes documentation. See the development and release guides for the contracts.
+
+- [ ] 集中版本配置与资源生成 / Centralize version configuration and resource generation.
+- [ ] 固定云端依赖来源，接入 push/PR 构建及客户端 GameTest / Pin cloud dependencies and add build/client GameTest CI.
+- [ ] 落实 SemVer 命名与 GitHub Release 工作流 / Implement version naming and the GitHub release workflow.
+- [ ] 补齐 MIT LICENSE、metadata 与 JAR 许可证 / Add the MIT license, matching metadata, and JAR license packaging.
 
 ## Litematica 工具兼容
 

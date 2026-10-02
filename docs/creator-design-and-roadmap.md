@@ -14,26 +14,16 @@
 
 ## 2. 26.2 开发基线
 
-本项目第一版按工作区内 masa 系列 `26.2` 项目的实际构建方式开发，而不是按旧 Fabric/Yarn 教程开发。
+本项目第一版按工作区内 masa 系列项目的实际构建方式开发。当前工具链与版本来源统一由[开发指南](development.md)说明，具体值读取 `gradle.properties` 和构建资源；准确兼容测试组合见[兼容说明](optional-mod-compatibility.md)，不在路线图重复维护版本表。
 
-已确认的本地基线：
-
-- Minecraft：`26.2`
-- Fabric Loader：`0.19.3`
-- Loom：`net.fabricmc.fabric-loom` `1.17.+`
-- Java：25
-- MaLiLib：`0.29.4`（同一 JAR 兼容 `0.29.2-sakura.4`，声明范围 `>=0.29.2- <0.29.5-`）
-- Litematica：`0.28.5`（同一 JAR 兼容 `0.28.2-sakura.1`，声明范围 `>=0.28.2- <0.28.6-`）
-- Tweakeroo：`0.29.2-sakura.1`
-- Access Widener namespace：`official`
+The first version follows the actual masa-series build model. The [development guide](development.md) owns toolchain conventions and version sources; the [compatibility notes](optional-mod-compatibility.md) own tested combinations. This roadmap does not maintain another current-version table.
 
 重要约束：
 
-- 不使用旧式 `mappings yarn(...)` 工作流。
-- Mixin target、Access Widener、Minecraft 类名均按 `official` namespace。
+- 官方命名、Loom 与依赖声明约定见开发指南，不使用旧 Fabric/Yarn 教程推断当前 API。
 - 优先复用 MaLiLib 的配置、热键、GUI、渲染辅助和输入管理能力。
 - 优先复用 Litematica 的 schematic 数据结构、placement manager、投影世界和渲染管线。
-- Creator 内部的 export/recovery 快照固定使用原版 `CompoundTag`；Litematica `0.28.2` 的 `CompoundTag` 与 `0.28.5` 的 MaLiLib `CompoundData` 只在集中式兼容边界转换。
+- Creator 内部的 export/recovery 快照固定使用原版 `CompoundTag`；旧版 `CompoundTag` 与新版 MaLiLib `CompoundData` 只在集中式兼容边界转换。
 - 硬依赖版本必须进入双版本构建矩阵；未审计的后续版本先通过 Fabric 上限拒绝加载。
 
 ## 3. 预期行为
