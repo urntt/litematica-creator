@@ -7,7 +7,11 @@
 	"authors": [
 		"urntt"
 	],
-	"contact": {},
+	"contact": {
+		"homepage": "https://github.com/urntt/litematica-creator",
+		"sources": "https://github.com/urntt/litematica-creator",
+		"issues": "https://github.com/urntt/litematica-creator/issues"
+	},
 	"license": "MIT",
 	"environment": "client",
 	"entrypoints": {

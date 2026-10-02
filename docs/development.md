@@ -57,9 +57,26 @@ Unit tests cover policies and transactions, startup checks exercise Mixin applic
 
 ## CI Contract / CI 约定
 
-计划的 `.github/workflows/build.yml` 在每次 push 和 pull request 上执行完整构建及客户端 GameTest，读取同一版本配置，保存 JAR 与失败日志。无头游戏测试需要可靠的显示环境；构建成功不能代替游戏测试。发布必须复用同一提交通过完整验证的 artifact，具体门禁见发布指南。
+`.github/workflows/build.yml` 在每次 push、pull request 及手动运行时执行 Linux `current` / `legacy` 矩阵，读取同一版本配置，运行 Python 策略测试、完整 Gradle 构建/JUnit、正式 JAR 审计及打包客户端 GameTest。Actions 固定提交、默认只读仓库权限，不使用 PR 秘密。通过全部检查才上传正式 JAR，测试日志与截图始终保留。发布门禁见发布指南。
 
-The planned `.github/workflows/build.yml` must build and run client GameTests on every push and pull request, consume the shared version configuration, and retain artifacts and failure logs. Headless tests need a reliable display environment. A successful build is not a substitute for game tests; publishing must use the validated artifact from the same commit.
+The build workflow runs the Linux `current` / `legacy` matrix on push, PR, and manual dispatch. It reads canonical versions, runs Python policies, Gradle/JUnit, production JAR checks, and packaged client GameTests. Actions use fixed commits and read-only repository permissions without PR secrets. Production JARs upload only after all checks pass; diagnostic artifacts always upload. See the release guide for publishing gates.
+
+客户端测试位于独立 `src/gametest/` 测试模组；Fabric API 仅用于该测试环境，正式 Creator JAR 不捆入它或测试代码。`runProductionClientGameTest` 使用实际打包的 Creator 与上游 JAR，不依赖开发模式 Mixin 放宽。地面单人世界断言覆盖投影编辑、空 cell、虚拟库存、相机、focus 与卸载，并检查真实客户端/服务端方块不变；渲染等待检查 schematic world，输出截图。`build` 不自动启动图形客户端。
+
+Client tests live in the separate `src/gametest/` test mod. Fabric API is test-only and neither it nor tests are bundled in Creator. The production test task uses packaged Creator/upstream JARs without development-mode Mixin relaxations. Singleplayer assertions cover edits, empty cells, virtual inventory, camera, focus/discard, unchanged client/server blocks, and schematic-world rebuild completion. Screenshots are retained; `build` alone does not launch a graphical client.
+
+在有显示环境时可直接运行；Linux 无头环境设置 `CI=true` 让 Loom 使用 Xvfb，并安装[云端指南](cloud-development.md)中的系统库。
+
+Run directly with a display, or set `CI=true` for Loom's Xvfb support on Linux after installing the libraries in the cloud guide.
+
+```bash
+python3 scripts/build.py runProductionClientGameTest --no-daemon --max-workers=1
+python3 scripts/verify_artifact.py
+```
+
+`-PverifyGameTestFailure=true` 仅用于测试模组的负向门禁验证：预期断言失败并让 Gradle 非零退出，正常运行不传该参数。CI 对 current 执行此验证后再次运行正常测试；失败日志必须包含预期断言，启动崩溃不能冒充负向验证通过。
+
+The failure-verification property intentionally fails a test-only assertion and must produce a nonzero Gradle exit. CI checks the expected assertion and then reruns normal tests; an unrelated startup crash cannot count as the negative check.
 
 ## Remaining Infrastructure / 后续基础设施
 
@@ -71,7 +88,7 @@ On 2026-10-02 both profiles passed full builds in isolated Windows and clean-cac
 
 See TODO for remaining work. Pinned dependencies, resource generation, and the cross-platform launcher are implemented. Creator does not add unused Fabric API runtime dependencies; upstream dependency versions remain owned by their pinned source commits.
 
-- 当前无 CI workflow 或客户端 GameTest 接入；只有本地 JUnit 构建及历史启动/实测记录。
-- No CI workflow or client GameTest integration exists yet; current coverage is local JUnit builds and historical startup/play testing.
-- SemVer Minecraft 后缀与发布工作流另见发布指南；本批不推送、发布或移植到新游戏版本。
-- SemVer Minecraft suffixes and release workflows remain a separate task. This batch does not push, publish, or port to another Minecraft version.
+- CI 与客户端 GameTest 已接入，实际验证证据见完成记录；云端账号接入步骤见[云端开发](cloud-development.md)。
+- CI/client GameTests are implemented; see completion notes for actual evidence and the cloud guide for account onboarding.
+- SemVer Minecraft 后缀与发布工作流仍为独立任务；迁移 GitHub 不等于正式发布，也不移植游戏版本。
+- SemVer Minecraft suffixes and release automation remain separate tasks. GitHub migration is not a release or a game-version port.

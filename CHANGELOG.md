@@ -6,6 +6,11 @@ Notable user-visible changes are recorded here in English and Chinese, following
 
 ## [Unreleased]
 
+### Added / 新增
+
+- Add push/PR Linux CI for both hard-dependency profiles, packaged client GameTests, and production JAR audits. / 新增两组硬依赖的 push/PR Linux CI、打包客户端 GameTest 与正式 JAR 审计。
+- Publish repository/support links in mod metadata and document cloud development setup. / 模组 metadata 增加仓库/问题入口，并提供云端开发准备文档。
+
 ### Changed / 变更
 
 - Prepare both dependency profiles from pinned official upstream commits instead of manual sibling sources or local Maven. / 两组硬依赖改从固定官方提交准备，不再依赖手工 sibling 源码或本地 Maven。

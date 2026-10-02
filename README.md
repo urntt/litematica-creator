@@ -108,7 +108,7 @@ Recovery cache 位于 `config/litematica-creator/recovery/`，用于恢复：
 
 ### 构建
 
-构建命令、工具链与云端准备见[开发指南](docs/development.md)，版本号、changelog 和 GitHub Releases 流程见[发布指南](docs/releasing.md)。依赖从固定官方提交自动获取，不再需要本地 sibling 目录；CI 尚未接入。
+构建命令与工具链见[开发指南](docs/development.md)，云端接入见[云端开发](docs/cloud-development.md)，版本号与 GitHub Releases 流程见[发布指南](docs/releasing.md)。依赖从固定官方提交自动获取，不再需要 sibling 目录；push/PR CI 覆盖两组硬依赖构建、单元测试、产物审计及客户端 GameTest。
 
 ### 文档
 
@@ -225,7 +225,7 @@ The latest complete cache can be recovered after a normal exit, disconnect, worl
 
 ### Building
 
-See the [development guide](docs/development.md) for build commands, toolchain policy, and cloud setup, and the [release guide](docs/releasing.md) for versioning, changelog, and GitHub Releases. Dependencies are fetched from pinned official sources; local sibling checkouts are no longer required. CI is not integrated yet.
+See the [development guide](docs/development.md) for builds/toolchains, [cloud development](docs/cloud-development.md) for onboarding, and the [release guide](docs/releasing.md) for versioning and GitHub Releases. Pinned official sources replace sibling dependencies. Push/PR CI covers both hard-dependency profiles with builds, unit tests, artifact audits, and client GameTests.
 
 ### Documentation
 

@@ -1,0 +1,86 @@
+name: Build and client tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Linux / ${{ matrix.profile }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [current, legacy]
+    env:
+      LIBGL_ALWAYS_SOFTWARE: "true"
+      ALSOFT_DRIVERS: "null"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Read canonical versions
+        id: versions
+        run: |
+          python3 - <<'PY'
+          import os
+          import sys
+          sys.path.insert(0, 'scripts')
+          from build import read_properties, ROOT
+          properties = read_properties(ROOT / 'gradle.properties')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              for key in ('java_version', 'mod_version', 'mod_file_name', 'minecraft_version'):
+                  print(f'{key}={properties[key]}', file=output)
+          PY
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: ${{ steps.versions.outputs.java_version }}
+      - uses: gradle/actions/setup-gradle@4c125117fe7c5aed11272ec4213f602f012f89f2 # v5
+      - name: Install headless client dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xauth libgl1-mesa-dri libasound2t64
+      - name: Test preparation and artifact policies
+        run: python3 -m unittest discover -s scripts/tests -v
+      - name: Build and run unit tests
+        run: python3 scripts/build.py --profile ${{ matrix.profile }} build --no-daemon --max-workers=1
+      - name: Audit production JAR
+        run: python3 scripts/verify_artifact.py
+      - name: Verify client assertion failures fail the build
+        if: matrix.profile == 'current'
+        run: |
+          if python3 scripts/build.py --profile current runProductionClientGameTest -PverifyGameTestFailure=true --no-daemon --max-workers=1 > build/client-failure-gate.log 2>&1; then
+            cat build/client-failure-gate.log
+            echo "An intentionally failing GameTest unexpectedly succeeded"
+            exit 1
+          fi
+          grep -F "Intentional failure to verify the client GameTest failure gate" build/client-failure-gate.log
+      - name: Run packaged client GameTests
+        run: python3 scripts/build.py --profile ${{ matrix.profile }} runProductionClientGameTest --no-daemon --max-workers=1
+      - name: Upload validated production JAR
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: creator-${{ matrix.profile }}-${{ steps.versions.outputs.mod_version }}
+          path: build/libs/${{ steps.versions.outputs.mod_file_name }}-${{ steps.versions.outputs.minecraft_version }}-${{ steps.versions.outputs.mod_version }}.jar
+          if-no-files-found: error
+      - name: Upload test reports and client diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: test-diagnostics-${{ matrix.profile }}
+          retention-days: 14
+          path: |
+            build/reports/tests/
+            build/client-failure-gate.log
+            build/test-results/
+            build/run/productionClientGameTest/logs/
+            build/run/productionClientGameTest/crash-reports/
+            build/run/productionClientGameTest/screenshots/
