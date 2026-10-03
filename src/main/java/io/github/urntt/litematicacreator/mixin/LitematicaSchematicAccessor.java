@@ -18,6 +18,7 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 import fi.dy.masa.litematica.schematic.LitematicaSchematic;
 import fi.dy.masa.litematica.schematic.container.LitematicaBlockStateContainer;
 import fi.dy.masa.litematica.util.FileType;
+import fi.dy.masa.malilib.util.data.tag.CompoundData;
 
 @Mixin(LitematicaSchematic.class)
 public interface LitematicaSchematicAccessor
@@ -43,7 +44,7 @@ public interface LitematicaSchematicAccessor
     Map<String, LitematicaBlockStateContainer> litematicacreator$getBlockContainers();
 
     @Accessor("tileEntities")
-    Map<String, Map<BlockPos, Object>> litematicacreator$getTileEntities();
+    Map<String, Map<BlockPos, CompoundData>> litematicacreator$getTileEntities();
 
     @Accessor("pendingBlockTicks")
     Map<String, Map<BlockPos, ScheduledTick<Block>>> litematicacreator$getPendingBlockTicks();

@@ -1,14 +1,13 @@
 package io.github.urntt.litematicacreator.compat.litematica;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.Map;
 
 import net.minecraft.core.BlockPos;
@@ -17,23 +16,10 @@ import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
 import fi.dy.masa.litematica.schematic.LitematicaSchematic;
-import fi.dy.masa.litematica.util.FileType;
 import fi.dy.masa.malilib.util.data.tag.CompoundData;
 
 class CreatorLitematicaDataAdapterTest
 {
-    @Test
-    void detectsTheEntityInfoDataModel()
-            throws ReflectiveOperationException
-    {
-        Class<?> runtimeType = LitematicaSchematic.EntityInfo.class.getMethod("nbt").getReturnType();
-        CreatorLitematicaDataAdapter.DataModel expected = runtimeType == CompoundData.class
-                ? CreatorLitematicaDataAdapter.DataModel.COMPOUND_DATA
-                : CreatorLitematicaDataAdapter.DataModel.COMPOUND_TAG;
-
-        assertEquals(expected, CreatorLitematicaDataAdapter.dataModel());
-    }
-
     @Test
     void compoundConversionsAreLosslessCopies()
     {
@@ -43,7 +29,7 @@ class CreatorLitematicaDataAdapterTest
         nested.putIntArray("values", new int[] { 1, 2, 3 });
         source.put("nested", nested);
         CompoundTag expected = source.copy();
-        Object runtime = CreatorLitematicaDataAdapter.copyToRuntime(source);
+        CompoundData runtime = CreatorLitematicaDataAdapter.copyToRuntime(source);
 
         source.putString("marker", "changed");
         CompoundTag first = CreatorLitematicaDataAdapter.copyToVanilla(runtime);
@@ -54,24 +40,15 @@ class CreatorLitematicaDataAdapterTest
     }
 
     @Test
-    void blockEntityMapsUseTheDetectedRuntimeTypeWithoutSharingTags()
+    void blockEntityMapsRoundTripWithoutSharingTags()
     {
         BlockPos position = new BlockPos(2, 3, 4);
         CompoundTag blockEntity = new CompoundTag();
         blockEntity.putString("id", "minecraft:chest");
         Map<BlockPos, CompoundTag> source = Map.of(position, blockEntity);
 
-        Map<BlockPos, Object> runtime = CreatorLitematicaDataAdapter.restoreBlockEntities(source);
-        Object runtimeValue = runtime.get(position);
-
-        if (CreatorLitematicaDataAdapter.dataModel() == CreatorLitematicaDataAdapter.DataModel.COMPOUND_DATA)
-        {
-            assertInstanceOf(CompoundData.class, runtimeValue);
-        }
-        else
-        {
-            assertInstanceOf(CompoundTag.class, runtimeValue);
-        }
+        Map<BlockPos, CompoundData> runtime = CreatorLitematicaDataAdapter.restoreBlockEntities(source);
+        assertEquals("minecraft:chest", runtime.get(position).getString("id"));
 
         blockEntity.putString("id", "minecraft:furnace");
         Map<BlockPos, CompoundTag> restored = CreatorLitematicaDataAdapter.snapshotBlockEntities(runtime);
@@ -97,53 +74,17 @@ class CreatorLitematicaDataAdapterTest
     }
 
     @Test
-    void schematicConstructorAndWriterMatchTheDetectedDataModel()
-            throws ReflectiveOperationException
-    {
-        Class<?> runtimeType = CreatorLitematicaDataAdapter.dataModel() ==
-                               CreatorLitematicaDataAdapter.DataModel.COMPOUND_DATA
-                ? CompoundData.class
-                : CompoundTag.class;
-        String writerName = runtimeType == CompoundData.class ? "writeToData" : "writeToNBT";
-
-        assertEquals(
-                runtimeType,
-                LitematicaSchematic.class.getMethod(writerName).getReturnType()
-        );
-        assertEquals(
-                LitematicaSchematic.class,
-                LitematicaSchematic.class
-                        .getConstructor(Path.class, runtimeType, FileType.class)
-                        .getDeclaringClass()
-        );
-    }
-
-    @Test
-    void detectedLitematicaContainsItsExpectedWriteCall()
+    void litematicaWritesThroughTheRedirectedDataFileCall()
             throws IOException
     {
-        String classConstants = readClassConstants("/fi/dy/masa/litematica/schematic/LitematicaSchematic.class");
-
-        if (CreatorLitematicaDataAdapter.dataModel() == CreatorLitematicaDataAdapter.DataModel.COMPOUND_DATA)
-        {
-            assertTrue(classConstants.contains("writeCompoundDataToCompressedNbtFile"));
-        }
-        else
-        {
-            assertTrue(classConstants.contains("writeCompoundTagToCompressedFile"));
-        }
-    }
-
-    @Test
-    void creatorWriteMixinContainsBothSupportedWriteHooks()
-            throws IOException
-    {
-        String classConstants = readClassConstants(
+        String litematica = readClassConstants("/fi/dy/masa/litematica/schematic/LitematicaSchematic.class");
+        String creatorMixin = readClassConstants(
                 "/io/github/urntt/litematicacreator/mixin/LitematicaSchematicWriteMixin.class"
         );
 
-        assertTrue(classConstants.contains("writeCompoundTagToCompressedFile"));
-        assertTrue(classConstants.contains("writeCompoundDataToCompressedNbtFile"));
+        assertTrue(litematica.contains("writeCompoundDataToCompressedNbtFile"));
+        assertTrue(creatorMixin.contains("writeCompoundDataToCompressedNbtFile"));
+        assertFalse(creatorMixin.contains("writeCompoundTagToCompressedFile"));
     }
 
     private static String readClassConstants(String resource)

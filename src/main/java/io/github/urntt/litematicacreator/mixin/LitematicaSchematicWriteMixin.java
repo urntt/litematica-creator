@@ -7,7 +7,6 @@ import fi.dy.masa.malilib.util.data.tag.BaseData;
 import fi.dy.masa.malilib.util.data.tag.CompoundData;
 import fi.dy.masa.malilib.util.data.tag.converter.DataConverterNbt;
 import fi.dy.masa.malilib.util.data.tag.util.DataFileUtils;
-import fi.dy.masa.malilib.util.nbt.NbtUtils;
 import io.github.urntt.litematicacreator.LitematicaCreator;
 import io.github.urntt.litematicacreator.export.CreatorSchematicExportNormalizer;
 import net.minecraft.nbt.CompoundTag;
@@ -22,25 +21,11 @@ public abstract class LitematicaSchematicWriteMixin
             method = "writeToFile(Ljava/nio/file/Path;Ljava/lang/String;ZZ)Z",
             at = @At(
                     value = "INVOKE",
-                    target = "Lfi/dy/masa/malilib/util/nbt/NbtUtils;writeCompoundTagToCompressedFile(Lnet/minecraft/nbt/CompoundTag;Ljava/nio/file/Path;)Z"
-            ),
-            require = 0
-    )
-    private boolean litematicacreator$normalizeLegacyCreatorDraftExport(CompoundTag nbt, Path file)
-    {
-        CompoundTag normalized = litematicacreator$normalizeOrOriginal(nbt, file);
-        return NbtUtils.writeCompoundTagToCompressedFile(normalized, file);
-    }
-
-    @Redirect(
-            method = "writeToFile(Ljava/nio/file/Path;Ljava/lang/String;ZZ)Z",
-            at = @At(
-                    value = "INVOKE",
                     target = "Lfi/dy/masa/malilib/util/data/tag/util/DataFileUtils;writeCompoundDataToCompressedNbtFile(Ljava/nio/file/Path;Lfi/dy/masa/malilib/util/data/tag/BaseData;)Z"
             ),
             require = 0
     )
-    private boolean litematicacreator$normalizeCurrentCreatorDraftExport(Path file, BaseData data)
+    private boolean litematicacreator$normalizeCreatorDraftExport(Path file, BaseData data)
     {
         if (!(data instanceof CompoundData compoundData))
         {

@@ -10,7 +10,6 @@ import fi.dy.masa.malilib.registry.Registry;
 import fi.dy.masa.malilib.util.data.ModInfo;
 import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.compat.CreatorOptionalCompatibility;
-import io.github.urntt.litematicacreator.compat.litematica.CreatorLitematicaDataAdapter;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.creator.CreatorPlacementIndex;
 import io.github.urntt.litematicacreator.event.CreatorClientTickHandler;
@@ -26,7 +25,6 @@ public class InitHandler implements IInitializationHandler
     @Override
     public void registerModHandlers()
     {
-        CreatorLitematicaDataAdapter.initialize();
         CreatorOptionalCompatibility.initialize();
         ConfigManager.getInstance().registerConfigHandler(Reference.MOD_ID, new Configs());
         Registry.CONFIG_SCREEN.registerConfigScreenFactory(
