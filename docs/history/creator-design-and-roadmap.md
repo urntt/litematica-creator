@@ -1,5 +1,8 @@
 # litematica-creator 设计与开发计划
 
+> **已冻结的历史文档 / Frozen historical document.** 本文件保留 2026-10-03 文档重组前的记录，此后不再更新，内容可能与当前实现不符。当前设计见[架构与核心语义](../architecture.md)，任务状态见 [GitHub Issues](https://github.com/urntt/litematica-creator/issues)；文中 `#N` 即同号 GitHub issue。
+> This file keeps records from before the 2026-10-03 documentation reorganization and is no longer updated, so it may not match current behavior. See the [architecture document](../architecture.md) for current design and [GitHub Issues](https://github.com/urntt/litematica-creator/issues) for task status. `#N` in the text is the GitHub issue with the same number.
+
 ## 1. 模组定位
 
 `litematica-creator` 是一个 Litematica 客户端附属，目标是在生存模式下提供“像创造模式一样直接搭建投影”的客户端编辑体验。
@@ -14,9 +17,9 @@
 
 ## 2. 26.2 开发基线
 
-本项目第一版按工作区内 masa 系列项目的实际构建方式开发。当前工具链与版本来源统一由[开发指南](development.md)说明，具体值读取 `gradle.properties` 和构建资源；准确兼容测试组合见[兼容说明](optional-mod-compatibility.md)，不在路线图重复维护版本表。
+本项目第一版按工作区内 masa 系列项目的实际构建方式开发。当前工具链与版本来源统一由[开发指南](../development.md)说明，具体值读取 `gradle.properties` 和构建资源；准确兼容测试组合见[兼容说明](../optional-mod-compatibility.md)，不在路线图重复维护版本表。
 
-The first version follows the actual masa-series build model. The [development guide](development.md) owns toolchain conventions and version sources; the [compatibility notes](optional-mod-compatibility.md) own tested combinations. This roadmap does not maintain another current-version table.
+The first version follows the actual masa-series build model. The [development guide](../development.md) owns toolchain conventions and version sources; the [compatibility notes](../optional-mod-compatibility.md) own tested combinations. This roadmap does not maintain another current-version table.
 
 重要约束：
 

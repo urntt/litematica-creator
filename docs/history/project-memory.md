@@ -1,24 +1,27 @@
 # Litematica Creator 项目记忆与交接
 
+> **已冻结的历史文档 / Frozen historical document.** 本文件保留 2026-10-03 文档重组前的记录，此后不再更新，内容可能与当前实现不符。当前设计见[架构与核心语义](../architecture.md)，任务状态见 [GitHub Issues](https://github.com/urntt/litematica-creator/issues)；文中 `#N` 即同号 GitHub issue。
+> This file keeps records from before the 2026-10-03 documentation reorganization and is no longer updated, so it may not match current behavior. See the [architecture document](../architecture.md) for current design and [GitHub Issues](https://github.com/urntt/litematica-creator/issues) for task status. `#N` in the text is the GitHub issue with the same number.
+
 记录日期：2026-10-01。写作前核对的代码基线：`50f28af`（`docs: document optional mod compatibility`），分支为 `main`。
 
 本文件保存长对话中的项目背景、已经确定的语义、历史取舍和最近讨论，供新会话或云端开发接续使用。它不是新的开发指令，也不是另一份 TODO；没有明确批准的建议不得当作既定决策执行。历史测试结果不代表后续代码自动通过验收。
 
-**2026-10-02 后续决定：** 已新增 [AGENTS.md](../AGENTS.md)；用户明确选择 MIT、GitHub Releases、SemVer 的 Minecraft build-metadata 后缀、版本配置单一来源及 push/PR 客户端 GameTest CI 约定。政策分别维护于[开发指南](development.md)和[发布指南](releasing.md)，待落地项只在 [TODO](../todo.md#开发基础设施与发布准备) 跟踪。下文关于 ARR、尚无 AGENTS、许可/发布渠道未决定的陈述均为 2026-10-01 历史快照，不再代表当前决定；本次未改变代码、构建、metadata 或已交付 JAR。
+**2026-10-02 后续决定：** 已新增 [AGENTS.md](../../AGENTS.md)；用户明确选择 MIT、GitHub Releases、SemVer 的 Minecraft build-metadata 后缀、版本配置单一来源及 push/PR 客户端 GameTest CI 约定。政策分别维护于[开发指南](../development.md)和[发布指南](../releasing.md)，待落地项只在 [TODO](https://github.com/urntt/litematica-creator/blob/97bf3e24fca8718d0679c8761b0a610a1555e1f2/todo.md#开发基础设施与发布准备) 跟踪。下文关于 ARR、尚无 AGENTS、许可/发布渠道未决定的陈述均为 2026-10-01 历史快照，不再代表当前决定；本次未改变代码、构建、metadata 或已交付 JAR。
 
 **Later decisions, 2026-10-02:** AGENTS.md now exists. The user adopted MIT, GitHub Releases, SemVer with Minecraft build metadata, centralized version configuration, and push/PR client GameTest CI. The linked development/release guides own these policies; TODO tracks implementation. References below to ARR, missing AGENTS, and undecided licensing/channel are historical, not current policy. This update does not change code, builds, metadata, or delivered JARs.
 
-**2026-10-02 工具链落地：** 用户补入的 MIT LICENSE 已打包，版本与资源集中生成，官方依赖从固定提交自动准备，不再依赖手工 sibling 或本地 Maven；Windows 与 Linux 双 profile 构建均通过。使用[开发指南](development.md)中的新入口，来源见[上游依赖](upstream-dependencies.md)，验收见完成记录。下文关于本地依赖、浮动 Loom、wrapper、许可证的旧状态不再适用；CI、发布工作流和 Minecraft build-metadata 后缀仍未落地。
+**2026-10-02 工具链落地：** 用户补入的 MIT LICENSE 已打包，版本与资源集中生成，官方依赖从固定提交自动准备，不再依赖手工 sibling 或本地 Maven；Windows 与 Linux 双 profile 构建均通过。使用[开发指南](../development.md)中的新入口，来源见[上游依赖](../upstream-dependencies.md)，验收见完成记录。下文关于本地依赖、浮动 Loom、wrapper、许可证的旧状态不再适用；CI、发布工作流和 Minecraft build-metadata 后缀仍未落地。
 
 **Toolchain implemented, 2026-10-02:** The user-supplied MIT license is packaged, resource/version configuration is centralized, and fixed official-source profiles replace manual sibling/local Maven dependencies. Both profiles build on Windows and Linux. Use the development guide's new launcher; see provenance and completion notes for details. Historical local-dependency, floating-Loom, wrapper, and license gaps below are obsolete; CI, release automation, and the Minecraft version suffix remain pending.
 
 ## 1. 先读哪些文件
 
-**GitHub 与混合云端准备，2026-10-02：** 完整 Git 历史已推送至公开仓库 `urntt/litematica-creator` 的 `main`，`origin` 已设置。push/PR 双硬依赖 Linux CI、打包客户端 GameTest 与正式 JAR 审计已通过 GitHub runner 验证，证据见完成记录。用户选择 Codex Cloud 与 Claude Code 混合开发，统一规则仍为 AGENTS，CLAUDE 只引用它；账号侧环境连接尚需分别完成。下文关于无 remote / CI 的内容是旧快照，后续以[开发指南](development.md)、[云端指南](cloud-development.md)和 TODO 为准；本批没有创建 release/tag 或改版本。
+**GitHub 与混合云端准备，2026-10-02：** 完整 Git 历史已推送至公开仓库 `urntt/litematica-creator` 的 `main`，`origin` 已设置。push/PR 双硬依赖 Linux CI、打包客户端 GameTest 与正式 JAR 审计已通过 GitHub runner 验证，证据见完成记录。用户选择 Codex Cloud 与 Claude Code 混合开发，统一规则仍为 AGENTS，CLAUDE 只引用它；账号侧环境连接尚需分别完成。下文关于无 remote / CI 的内容是旧快照，后续以[开发指南](../development.md)、[云端指南](../cloud-development.md)和 TODO 为准；本批没有创建 release/tag 或改版本。
 
 **GitHub and mixed-cloud preparation, 2026-10-02:** Original history is on public `urntt/litematica-creator/main`, with `origin` configured. GitHub runners passed both profiles, packaged client GameTests and JAR audits; see completion notes. The user chose mixed Codex/Claude cloud development with one AGENTS policy and a CLAUDE import. Each account still needs its environment connection. Earlier no-remote/no-CI statements are historical; use the linked guides and TODO. No release, tag, or version change occurred.
 
-**Claude Code 云端首次会话，2026-10-02：** 云端指南矩阵在 Claude Code 会话中全部通过，证据见[完成记录](completed-tasks.md#claude-code-cloud-first-session--claude-code-云端首次验收)。JDK 25 与无头变量仅在该会话中设置，须由用户保存到环境 setup script / 变量后在新会话复核；Codex Cloud 首次会话仍未执行。随后用户决定直接在 `main` 上开发和推送，规则见 [AGENTS.md](../AGENTS.md)。
+**Claude Code 云端首次会话，2026-10-02：** 云端指南矩阵在 Claude Code 会话中全部通过，证据见[完成记录](completed-tasks.md#claude-code-cloud-first-session--claude-code-云端首次验收)。JDK 25 与无头变量仅在该会话中设置，须由用户保存到环境 setup script / 变量后在新会话复核；Codex Cloud 首次会话仍未执行。随后用户决定直接在 `main` 上开发和推送，规则见 [AGENTS.md](../../AGENTS.md)。
 
 **Claude Code first cloud session, 2026-10-02:** The cloud-guide matrix passed in a Claude Code session; see the completion notes. JDK 25 and headless variables were set only for that session, so the user must save the setup script/variables and recheck in a new session. The first Codex Cloud session has not run. The user then chose direct development and pushes on `main`; AGENTS.md owns that rule.
 
@@ -26,11 +29,11 @@
 
 **Minecraft 26.3 port, 2026-10-03:** At the user's request, main now targets 26.3 with Loom 1.18.2, Gradle 9.7.1, and Fabric API 0.161.0+26.3; current/legacy pin MaLiLib `0.30.2`/`0.30.1` and Litematica `0.29.1`/`0.29.0`. The 26.2 state remains in Git history without a maintenance branch. 26.3 moved to SDL3, split first-person hand state, and rewrote swings; headless tests need EGL plus `SDL_VIDEO_FORCE_EGL=1`. See the completion notes; manual in-game regression and removal of the old data-model branch remain in TODO.
 
-- [当前 TODO](../todo.md)：未完成项目、编号、范围和需要决策的内容。
+- [当前 TODO](https://github.com/urntt/litematica-creator/blob/97bf3e24fca8718d0679c8761b0a610a1555e1f2/todo.md)：未完成项目、编号、范围和需要决策的内容。
 - [完成记录](completed-tasks.md)：实现细节、修复沿革和历史验收。
-- [README](../README.md)：双语使用入口、依赖范围、默认按键和当前边界。
-- [可选模组兼容](optional-mod-compatibility.md)：准确的启动矩阵、软兼容入口和退化方式。
-- [项目概览](project-overview.md)：亮点、使用场景和技术概要。
+- [README](../../README.md)：双语使用入口、依赖范围、默认按键和当前边界。
+- [可选模组兼容](../optional-mod-compatibility.md)：准确的启动矩阵、软兼容入口和退化方式。
+- [项目概览](https://github.com/urntt/litematica-creator/blob/97bf3e24fca8718d0679c8761b0a610a1555e1f2/docs/project-overview.md)：亮点、使用场景和技术概要。
 - [设计与路线图](creator-design-and-roadmap.md)：早期设计背景，部分段落已经过时。例如轻量库存 GUI、仅由原生页面导出、只清理 Creator cell 等描述不能视为当前实现。
 
 遇到文档冲突先核对源码、最新完成记录与用户的后续决定，不要从旧路线图重新实现已被替代的方案。任务状态只在 TODO 维护，验收细节放到完成记录。
@@ -193,7 +196,7 @@
 
 ## 9. 当前未完成范围
 
-具体细则与编号以 [TODO](../todo.md) 为准，目前主要分组如下：
+具体细则与编号以 [TODO](https://github.com/urntt/litematica-creator/blob/97bf3e24fca8718d0679c8761b0a610a1555e1f2/todo.md) 为准，目前主要分组如下：
 
 - #81：虚拟主副手的 Litematica 工具生效；处理 input 优先级而非替换真实库存。
 - #82/#83：客户端原版式交互事务层和完整 BlockItem 放置，包括门/床/花丛、依附方块、同格累加、半砖合并和含水。

@@ -1,8 +1,11 @@
 # Litematica Creator 已完成工作记录
 
+> **已冻结的历史文档 / Frozen historical document.** 本文件保留 2026-10-03 文档重组前的记录，此后不再更新，内容可能与当前实现不符。当前设计见[架构与核心语义](../architecture.md)，任务状态见 [GitHub Issues](https://github.com/urntt/litematica-creator/issues)；文中 `#N` 即同号 GitHub issue。
+> This file keeps records from before the 2026-10-03 documentation reorganization and is no longer updated, so it may not match current behavior. See the [architecture document](../architecture.md) for current design and [GitHub Issues](https://github.com/urntt/litematica-creator/issues) for task status. `#N` in the text is the GitHub issue with the same number.
+
 最后更新：2026-10-02
 
-本文档保存已完成工作的实现细节和历史验收记录。当前和部分完成的工作统一维护在 [`../todo.md`](../todo.md)。
+本文档保存已完成工作的实现细节和历史验收记录。当前和部分完成的工作统一维护在 [`../todo.md`](https://github.com/urntt/litematica-creator/blob/97bf3e24fca8718d0679c8761b0a610a1555e1f2/todo.md)。
 
 ## 第一批游戏内修复
 
@@ -367,7 +370,7 @@
 
 2026-10-02，源码提交 `77ff477`：
 
-- 两组硬依赖从 Sakura-Ryoko 官方仓库按完整 SHA 下载并校验，使用独立 profile 目录与 composite substitution；不再读取手工 sibling 或 `mavenLocal()`。URL、版本和提交只在 `gradle.properties` 配置；可选模组的阅读入口见[上游来源](upstream-dependencies.md)，不把其源码加入构建。
+- 两组硬依赖从 Sakura-Ryoko 官方仓库按完整 SHA 下载并校验，使用独立 profile 目录与 composite substitution；不再读取手工 sibling 或 `mavenLocal()`。URL、版本和提交只在 `gradle.properties` 配置；可选模组的阅读入口见[上游来源](../upstream-dependencies.md)，不把其源码加入构建。
 - `scripts/build.py` 使用 Git 与 Python 标准库，Windows/Linux 共用；校验 URL、HEAD、tracked 修改和源文件版本，不覆盖用户修改或不同 pin 的缓存。独立 init script 将根项目与上游 Loom 固定到同一配置版本，不修改上游源码。
 - Java 编译、Minecraft/Loader/硬依赖范围和 Mixin Java 声明由同一属性生成。wrapper 保持既有 Gradle 版本并增加官方 distribution SHA-256，Git 中为 LF / `100755`。
 - 用户提供的 MIT LICENSE 原文未改；mod metadata 和 JAR 许可证同步。JAR 版本与 `mod_version` 一致，不再追加日期时间；archive 排序稳定、不保留源码 mtime。
@@ -407,7 +410,7 @@ Source commit `77ff477`, checked on 2026-10-02:
 - Linux 两组硬依赖均完整构建通过，每组 59 suites / 189 JUnit tests、无失败；12 项 Python 策略/产物检查测试在 Windows 与 Linux 通过。故意断言失败验证 Gradle exit 1，随后两组正常客户端测试再次通过。
 - [首次 GitHub CI](https://github.com/urntt/litematica-creator/actions/runs/37019428330) 的 `current`、`legacy` 均成功：完整构建、JAR 审计、客户端 GameTest 和 artifact 上传；current 的故意失败门禁也成功。Actions 固定 SHA、只读权限、无 PR 秘密，正式包只在全部门禁通过后上传。
 - 最终 current 正式 JAR 为 407983 字节，SHA-256 `860b841f0e606158c52741ccc4da448aef72d81b06afe1a91b31901b59d3365a`；旧、新基线产物一致。检查 client/mod id/版本/范围、MIT 原文、双语 key 完整性，无 MaLiLib/Litematica、Fabric API、JUnit、测试代码或嵌套 JAR；已复制项目父目录。
-- 用户选择 Codex Cloud 与 Claude Code 混合开发。`CLAUDE.md` 只引用统一 `AGENTS.md`，准备和验证入口见[云端指南](cloud-development.md)。两个账号的 GitHub 授权、环境创建和首次云端会话验收仍须各自完成，本次未冒充已连接。
+- 用户选择 Codex Cloud 与 Claude Code 混合开发。`CLAUDE.md` 只引用统一 `AGENTS.md`，准备和验证入口见[云端指南](../cloud-development.md)。两个账号的 GitHub 授权、环境创建和首次云端会话验收仍须各自完成，本次未冒充已连接。
 - 未发布 release/tag，未修改版本或实现发布工作流；可选模组、多人和完整输入/GUI 回归未在本批重测。
 
 Source commits `b05f77c` / `10cabae`, checked on 2026-10-02:
@@ -470,7 +473,7 @@ Baseline `da4b2e9` (same as `origin/main`) on the session branch above, checked 
 
 - 12 项 Python 测试通过；current 与 legacy 均为 59 suites / 189 JUnit tests，无失败；两组 JAR 审计通过，产物均为 409578 字节，SHA-256 `0dfa42a06a6638eacb093f09facc564e742b764d2b5b3a41260eac37bd6b56eb`。
 - 两组打包客户端 GameTest 均加载 27 个 Mixin 目标并通过；current 的故意失败门禁以预期断言非零退出。截图可见投影、选中框、Creator HUD、虚拟快捷栏，以及相机模式下的本体 avatar 与虚拟主副手。
-- 可选模组矩阵 6 组全部通过（见[兼容说明](optional-mod-compatibility.md)）：Tweakeroo `0.30.1`、Syncmatica `0.3.20`、Lithium `0.26.2+mc26.3`、Sodium `0.9.2+mc26.3` 单独及合并，以及下限组合 Tweakeroo `0.30.0` + Syncmatica `0.3.20`；Tweakeroo 反射契约经源码核对与 `0.29.3` 一致，相机桥接启用。支持范围与已测试版本同步更新到代码、README 与 suggests。
+- 可选模组矩阵 6 组全部通过（见[兼容说明](../optional-mod-compatibility.md)）：Tweakeroo `0.30.1`、Syncmatica `0.3.20`、Lithium `0.26.2+mc26.3`、Sodium `0.9.2+mc26.3` 单独及合并，以及下限组合 Tweakeroo `0.30.0` + Syncmatica `0.3.20`；Tweakeroo 反射契约经源码核对与 `0.29.3` 一致，相机桥接启用。支持范围与已测试版本同步更新到代码、README 与 suggests。
 - 未执行：真实客户端中的 GUI、输入、相机碰撞与挥手手感回归，以及 Codex Cloud 会话；均列入 TODO。旧数据模型分支在 26.3 不可达，移除计划见 TODO。未创建 release/tag，未保留 26.2 维护分支。
 
 Baseline `f0d5f91`, developed directly on `main` on 2026-10-03 at the user's request:

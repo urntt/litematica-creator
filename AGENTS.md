@@ -11,11 +11,11 @@
 
 ## 文档与上下文
 
-- [todo.md](todo.md) 维护任务状态；[完成记录](docs/completed-tasks.md) 维护实现与验收细节。
-- [README](README.md) 是双语使用入口；[兼容说明](docs/optional-mod-compatibility.md) 记录测试矩阵与退化边界。
+- [todo.md](todo.md) 维护任务状态；[完成记录](docs/history/completed-tasks.md) 维护实现与验收细节。
+- [README](README.md) 是双语使用入口；[架构文档](docs/architecture.md) 是产品定位、边界与核心语义的唯一出处；[兼容说明](docs/optional-mod-compatibility.md) 记录测试矩阵与退化边界。
 - [开发指南](docs/development.md) 管构建、工具链与 CI，[云端开发](docs/cloud-development.md) 管账号接入，[发布指南](docs/releasing.md) 管版本和发布；[CHANGELOG](CHANGELOG.md) 管用户可见变化。Claude 入口只引用本文件，不复制规则。
-- [项目记忆](docs/project-memory.md) 提供交接背景；[路线图](docs/creator-design-and-roadmap.md) 含历史方案。按任务读取相关部分，不把旧方案、提议或取消任务当成当前实现。
-- 面向用户与开发者的文档分开；产品方向沿用路线图，不另建重复的 VISION。行为变化同次更新文档，并将用户可见变化记入 CHANGELOG 的 `Unreleased`；已完成细节从 TODO 移入完成记录。
+- [历史文档](docs/history/README.md) 只读，提供交接背景与旧方案。按任务读取相关部分，不把旧方案、提议或取消任务当成当前实现。
+- 面向用户与开发者的文档分开；产品方向以架构文档为准，不另建重复的 VISION 或路线图。行为变化同次更新架构等现行文档，并将用户可见变化记入 CHANGELOG 的 `Unreleased`；已完成细节从 TODO 移入完成记录。
 - Markdown 围栏代码块必须标明语言；避免重复维护权威事实，历史测试版本和示例须与当前配置区分。
 
 ## 工程原则

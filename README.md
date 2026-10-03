@@ -114,18 +114,18 @@ Recovery cache 位于 `config/litematica-creator/recovery/`，用于恢复：
 
 面向用户：
 
-- [项目概览](docs/project-overview.md)
 - [可选模组兼容说明](docs/optional-mod-compatibility.md)
 - [变更记录](CHANGELOG.md)
 
 面向开发者：
 
+- [架构与核心语义](docs/architecture.md)
 - [开发指南](docs/development.md)
+- [云端开发](docs/cloud-development.md)
 - [版本与发布](docs/releasing.md)
 - [工程与协作约定](AGENTS.md)
-- [设计与开发计划](docs/creator-design-and-roadmap.md)
-- [已完成任务与实现记录](docs/completed-tasks.md)
 - [当前 TODO](todo.md)
+- [历史文档](docs/history/README.md)
 
 ## English
 
@@ -231,18 +231,18 @@ See the [development guide](docs/development.md) for builds/toolchains, [cloud d
 
 For users:
 
-- [Project overview](docs/project-overview.md)
 - [Optional mod compatibility](docs/optional-mod-compatibility.md)
 - [Changelog](CHANGELOG.md)
 
 For developers:
 
+- [Architecture and core semantics](docs/architecture.md)
 - [Development guide](docs/development.md)
+- [Cloud development](docs/cloud-development.md)
 - [Version and release policy](docs/releasing.md)
 - [Engineering and collaboration rules](AGENTS.md)
-- [Design and roadmap, Chinese](docs/creator-design-and-roadmap.md)
-- [Completed implementation notes, Chinese](docs/completed-tasks.md)
 - [Current TODO, Chinese](todo.md)
+- [Historical documents, mostly Chinese](docs/history/README.md)
 
 ## License
 

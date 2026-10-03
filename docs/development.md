@@ -1,8 +1,8 @@
 # Development / 开发指南
 
-本文件面向开发者，维护工具链、构建和验证约定；用户操作见 [README](../README.md)，产品方向见[设计与路线图](creator-design-and-roadmap.md)，发布流程见[发布指南](releasing.md)。通用工程与协作约束只在 [AGENTS.md](../AGENTS.md) 维护。
+本文件面向开发者，维护工具链、构建和验证约定；用户操作见 [README](../README.md)，产品定位与核心语义见[架构文档](architecture.md)，发布流程见[发布指南](releasing.md)。通用工程与协作约束只在 [AGENTS.md](../AGENTS.md) 维护。
 
-This developer guide owns toolchain, build, and validation conventions. See the README for usage, the roadmap for product direction, and the release guide for publishing. General engineering and collaboration rules belong to AGENTS.md.
+This developer guide owns toolchain, build, and validation conventions. See the README for usage, the architecture document for product scope and semantics, and the release guide for publishing. General engineering and collaboration rules belong to AGENTS.md.
 
 ## Version Sources / 版本来源
 
@@ -88,7 +88,7 @@ The failure-verification property intentionally fails a test-only assertion and 
 
 ## Remaining Infrastructure / 后续基础设施
 
-2026-10-02 已在独立 Windows 源码目录和 Ubuntu 干净 Gradle 缓存上通过双 profile 完整构建；Linux 两组均为 189 项 JUnit 测试通过。准备脚本 8 项测试在两平台均通过。具体证据和未执行的游戏验收见[完成记录](completed-tasks.md#official-sources-and-linux-toolchain--官方源码与-linux-工具链)。
+2026-10-02 已在独立 Windows 源码目录和 Ubuntu 干净 Gradle 缓存上通过双 profile 完整构建；Linux 两组均为 189 项 JUnit 测试通过。准备脚本 8 项测试在两平台均通过。具体证据和未执行的游戏验收见[完成记录](history/completed-tasks.md#official-sources-and-linux-toolchain--官方源码与-linux-工具链)。
 
 On 2026-10-02 both profiles passed full builds in isolated Windows and clean-cache Ubuntu directories; Linux reports 189 passing JUnit tests per profile. All 8 preparation tests passed on both platforms. See the completion notes for evidence and unperformed game-level checks.
 
