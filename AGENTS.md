@@ -11,11 +11,11 @@
 
 ## 文档与上下文
 
-- [todo.md](todo.md) 维护任务状态；[完成记录](docs/history/completed-tasks.md) 维护实现与验收细节。
+- [GitHub Issues](https://github.com/urntt/litematica-creator/issues) 维护任务状态、验收条件与完成证据。新 issue 使用双语标题与中文正文，按类型（`bug`、`enhancement`、`documentation`）、领域（`area:*`）及需要决策时的 `needs-decision` 加标签。
 - [README](README.md) 是双语使用入口；[架构文档](docs/architecture.md) 是产品定位、边界与核心语义的唯一出处；[兼容说明](docs/optional-mod-compatibility.md) 记录测试矩阵与退化边界。
 - [开发指南](docs/development.md) 管构建、工具链与 CI，[云端开发](docs/cloud-development.md) 管账号接入，[发布指南](docs/releasing.md) 管版本和发布；[CHANGELOG](CHANGELOG.md) 管用户可见变化。Claude 入口只引用本文件，不复制规则。
-- [历史文档](docs/history/README.md) 只读，提供交接背景与旧方案。按任务读取相关部分，不把旧方案、提议或取消任务当成当前实现。
-- 面向用户与开发者的文档分开；产品方向以架构文档为准，不另建重复的 VISION 或路线图。行为变化同次更新架构等现行文档，并将用户可见变化记入 CHANGELOG 的 `Unreleased`；已完成细节从 TODO 移入完成记录。
+- [历史文档](docs/history/README.md) 只读，提供交接背景、旧方案与迁移前的完成记录；其中 `#N` 即同号 issue。按任务读取相关部分，不把旧方案、提议或取消任务当成当前实现。
+- 面向用户与开发者的文档分开；产品方向以架构文档为准，不另建重复的 VISION 或路线图。行为变化同次更新架构等现行文档，并将用户可见变化记入 CHANGELOG 的 `Unreleased`；任务完成时在对应 issue 中记录实现与验证结果后关闭。
 - Markdown 围栏代码块必须标明语言；避免重复维护权威事实，历史测试版本和示例须与当前配置区分。
 
 ## 工程原则
@@ -48,6 +48,6 @@
 - 先检查 Git 状态，只提交本任务改动，按职责分批提交。保留历史与用户改动，不误提交缓存、日志、凭据、游戏数据或依赖源码。
 - 所有操作代表用户，不改写或覆盖已有 Git author/committer；确实缺少身份时才配置 `urntt` / `urntts@gmail.com`。未经要求不重写历史作者，不添加 `Co-Authored-By`、代理署名或会话链接到提交和 PR。
 - 不硬编码本机绝对路径；重新核实 workspace、junction 和可写目录，不通过放宽 ACL 或沙箱权限解决文件锁。
-- 用户要求讨论、分析或只更新 TODO 时不改代码。只在真正缺失决策时提问；提议不等于批准，外部 skill 的项目政策不自动适用于此仓库。
+- 用户要求讨论、分析或只整理 issue 时不改代码。只在真正缺失决策时提问；提议不等于批准，外部 skill 的项目政策不自动适用于此仓库。
 - 只在用户要求时发布，按发布指南执行；文档记录的发布约定不等于当前推送或发布授权。MIT 与 GitHub Releases 政策已由用户选定，落地状态见发布指南；其他许可和版本维护政策不擅自改变，不限定“只支持最新版”。
 - 完成时简要说明改动、验证结果、提交和剩余风险；如实记录失败或阻碍，不把尚未验收的工作标为完成。

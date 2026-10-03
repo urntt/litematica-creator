@@ -86,17 +86,8 @@ The failure-verification property intentionally fails a test-only assertion and 
 
 `-PgameTestExtraMods=<jar>[<path-separator>...]` adds extra mod JARs to the same client test for the optional-mod matrix. Use the platform path separator (`:` on Linux); without it the test set is unchanged. Take external JARs from official releases, verify their hashes, and keep them out of Git.
 
-## Remaining Infrastructure / 后续基础设施
+## Infrastructure Tasks / 基础设施任务
 
-2026-10-02 已在独立 Windows 源码目录和 Ubuntu 干净 Gradle 缓存上通过双 profile 完整构建；Linux 两组均为 189 项 JUnit 测试通过。准备脚本 8 项测试在两平台均通过。具体证据和未执行的游戏验收见[完成记录](history/completed-tasks.md#official-sources-and-linux-toolchain--官方源码与-linux-工具链)。
+固定依赖、资源生成、跨平台构建入口、CI 与客户端 GameTest 均已实现，迁移前的验收证据见[历史完成记录](history/completed-tasks.md#official-sources-and-linux-toolchain--官方源码与-linux-工具链)，云端账号接入见[云端开发](cloud-development.md)。Creator 不为工具链引入未使用的 Fabric API 运行依赖，上游项目自己的依赖版本由各自固定提交管理。尚未完成的基础设施工作（如 SemVer Minecraft 后缀与 Release 工作流）见带 [`area:infra`](https://github.com/urntt/litematica-creator/issues?q=is%3Aissue%20state%3Aopen%20label%3Aarea%3Ainfra) 标签的 issue。
 
-On 2026-10-02 both profiles passed full builds in isolated Windows and clean-cache Ubuntu directories; Linux reports 189 passing JUnit tests per profile. All 8 preparation tests passed on both platforms. See the completion notes for evidence and unperformed game-level checks.
-
-任务状态见 [TODO 的开发基础设施部分](../todo.md#开发基础设施与发布准备)。固定依赖、资源生成与跨平台构建入口已实现；Fabric API 属性供需要时使用，Creator 没有为了工具链迁移新增运行依赖。上游项目自己的依赖版本继续由各自固定提交管理。
-
-See TODO for remaining work. Pinned dependencies, resource generation, and the cross-platform launcher are implemented. Creator does not add unused Fabric API runtime dependencies; upstream dependency versions remain owned by their pinned source commits.
-
-- CI 与客户端 GameTest 已接入，实际验证证据见完成记录；云端账号接入步骤见[云端开发](cloud-development.md)。
-- CI/client GameTests are implemented; see completion notes for actual evidence and the cloud guide for account onboarding.
-- SemVer Minecraft 后缀与发布工作流仍为独立任务；迁移 GitHub 不等于正式发布，也不移植游戏版本。
-- SemVer Minecraft suffixes and release automation remain separate tasks. GitHub migration is not a release or a game-version port.
+Pinned dependencies, resource generation, the cross-platform launcher, CI, and client GameTests are implemented. See the historical completion notes for pre-migration evidence and the cloud guide for account onboarding. Creator adds no unused Fabric API runtime dependency for tooling, and upstream dependency versions stay owned by their pinned commits. Open infrastructure work, such as the SemVer Minecraft suffix and the release workflow, is tracked in issues labeled [`area:infra`](https://github.com/urntt/litematica-creator/issues?q=is%3Aissue%20state%3Aopen%20label%3Aarea%3Ainfra).

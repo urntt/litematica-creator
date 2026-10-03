@@ -106,6 +106,8 @@ Recovery cache 位于 `config/litematica-creator/recovery/`，用于恢复：
 - Creator Camera 的普通方块式投影预览模式尚未实现。
 - 项目依赖 Litematica 内部实现，目标版本变化时可能需要适配。
 
+计划中的功能与已知问题见 [GitHub Issues](https://github.com/urntt/litematica-creator/issues)。
+
 ### 构建
 
 构建命令与工具链见[开发指南](docs/development.md)，云端接入见[云端开发](docs/cloud-development.md)，版本号与 GitHub Releases 流程见[发布指南](docs/releasing.md)。依赖从固定官方提交自动获取，不再需要 sibling 目录；push/PR CI 覆盖两组硬依赖构建、单元测试、产物审计及客户端 GameTest。
@@ -124,7 +126,7 @@ Recovery cache 位于 `config/litematica-creator/recovery/`，用于恢复：
 - [云端开发](docs/cloud-development.md)
 - [版本与发布](docs/releasing.md)
 - [工程与协作约定](AGENTS.md)
-- [当前 TODO](todo.md)
+- [任务与问题（GitHub Issues）](https://github.com/urntt/litematica-creator/issues)
 - [历史文档](docs/history/README.md)
 
 ## English
@@ -223,6 +225,8 @@ The latest complete cache can be recovered after a normal exit, disconnect, worl
 - Normal opaque block rendering for Creator Camera preview mode is not implemented yet.
 - The addon relies on Litematica internals and may require adaptation for other target versions.
 
+Planned features and known issues are tracked in [GitHub Issues](https://github.com/urntt/litematica-creator/issues).
+
 ### Building
 
 See the [development guide](docs/development.md) for builds/toolchains, [cloud development](docs/cloud-development.md) for onboarding, and the [release guide](docs/releasing.md) for versioning and GitHub Releases. Pinned official sources replace sibling dependencies. Push/PR CI covers both hard-dependency profiles with builds, unit tests, artifact audits, and client GameTests.
@@ -241,7 +245,7 @@ For developers:
 - [Cloud development](docs/cloud-development.md)
 - [Version and release policy](docs/releasing.md)
 - [Engineering and collaboration rules](AGENTS.md)
-- [Current TODO, Chinese](todo.md)
+- [Tasks and known issues (GitHub Issues)](https://github.com/urntt/litematica-creator/issues)
 - [Historical documents, mostly Chinese](docs/history/README.md)
 
 ## License

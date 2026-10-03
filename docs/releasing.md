@@ -16,7 +16,7 @@ Build metadata does not change SemVer precedence or imply cross-Minecraft compat
 
 ## Changelog / 变更记录
 
-[CHANGELOG.md](../CHANGELOG.md) 按 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 维护。每个用户可见变化与实现同次写入 `Unreleased`，使用中英双语；按需使用 `Added`、`Changed`、`Deprecated`、`Removed`、`Fixed`、`Security` 分类，不列空分类，不把 Git 日志或未来 TODO 当成已完成变化。
+[CHANGELOG.md](../CHANGELOG.md) 按 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 维护。每个用户可见变化与实现同次写入 `Unreleased`，使用中英双语；按需使用 `Added`、`Changed`、`Deprecated`、`Removed`、`Fixed`、`Security` 分类，不列空分类，不把 Git 日志或未完成任务当成已完成变化。
 
 Maintain [CHANGELOG.md](../CHANGELOG.md) using [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Add every user-visible change to `Unreleased` in the same change, in English and Chinese. Use the standard change categories when needed, omit empty categories, and do not substitute commit logs or future tasks for completed changes.
 

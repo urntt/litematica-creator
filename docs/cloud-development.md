@@ -88,9 +88,9 @@ Review the setup report and publish the prepared environment only after these ch
 
 检查准备报告，验证通过后再发布环境。账号界面中的环境创建/发布仍需完成；本地 Linux 或 GitHub Actions 通过不等于此账号步骤已完成。具体入口见上述官方指南。
 
-Run a first-session check in each provider: load the shared rules, confirm the repository, `main` and JDK, then run the matrix above. Give concurrent agents separate clones, never the same working directory, and have each integrate the latest `origin/main` before pushing. Keep CI green, preserve author identity, and update TODO/completion notes together.
+Run a first-session check in each provider: load the shared rules, confirm the repository, `main` and JDK, then run the matrix above. Give concurrent agents separate clones, never the same working directory, and have each integrate the latest `origin/main` before pushing. Keep CI green, preserve author identity, and record progress and acceptance in the related GitHub issue.
 
-每个平台首个会话都检查共享规则、仓库、`main` 与 JDK，并执行上述矩阵。并行代理使用各自的克隆，不同时写同一工作目录，推送前各自整合最新 `origin/main`。保持 CI 绿色，保留作者，并同步维护 TODO 与完成记录。
+每个平台首个会话都检查共享规则、仓库、`main` 与 JDK，并执行上述矩阵。并行代理使用各自的克隆，不同时写同一工作目录，推送前各自整合最新 `origin/main`。保持 CI 绿色，保留作者，并在对应 GitHub issue 中记录进展与验收。
 
 ## Cache and Evidence / 缓存与证据
 
