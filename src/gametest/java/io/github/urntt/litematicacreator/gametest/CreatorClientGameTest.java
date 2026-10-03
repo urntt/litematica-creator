@@ -1,5 +1,8 @@
 package io.github.urntt.litematicacreator.gametest;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
@@ -9,6 +12,14 @@ import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.creator.CreatorSchematicEditor;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
@@ -16,12 +27,20 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.ClassNode;
 
 public final class CreatorClientGameTest implements FabricClientGameTest
 {
+    private static final String CREATOR_MIXIN_CONFIG = "mixins.litematica_creator.json";
+
     @Override
     public void runTest(ClientGameTestContext context)
     {
+        loadAllCreatorMixinTargets();
+
         try (TestSingleplayerContext world = context.worldBuilder().create())
         {
             context.waitFor(mc -> mc.player != null && mc.level != null);
@@ -106,6 +125,20 @@ public final class CreatorClientGameTest implements FabricClientGameTest
             context.takeScreenshot("creator-projection-smoke");
             context.runOnClient(mc ->
             {
+                var cameras = CreatorCameraController.getInstance();
+                check(cameras.activate(mc), "Creator Camera must reactivate for the first-person view");
+                // Step back so the real player's avatar, the camera's hands and the projection share one frame.
+                cameras.getCamera().setPos(cameras.getCamera().position().add(-3.0D, 0.0D, 0.0D));
+            });
+            context.waitTicks(10);
+            context.takeScreenshot("creator-camera-first-person");
+            context.runOnClient(mc ->
+            {
+                CreatorCameraController.getInstance().deactivate(mc);
+                check(mc.getCameraEntity() == mc.player, "Camera exit must restore the original player view");
+            });
+            context.runOnClient(mc ->
+            {
                 var manager = CreatorManager.getInstance();
                 var selected = DataManager.getSchematicPlacementManager().getSelectedSchematicPlacement();
                 manager.saveCurrentDraft();
@@ -124,6 +157,93 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                     "Intentional failure to verify the client GameTest failure gate");
             LitematicaCreator.LOGGER.info("Creator client GameTest passed: projection edits, virtual inventory, camera, focus, discard and real-world isolation");
         }
+    }
+
+    // Classes untouched by this scenario would otherwise skip Mixin application, hiding broken injections after a port.
+    private static void loadAllCreatorMixinTargets()
+    {
+        ClassLoader loader = CreatorClientGameTest.class.getClassLoader();
+        Set<String> targets = creatorMixinTargets(loader);
+
+        for (String className : targets)
+        {
+            try
+            {
+                Class.forName(className, false, loader);
+            }
+            catch (ClassNotFoundException | LinkageError | RuntimeException exception)
+            {
+                throw new AssertionError("Creator Mixin target failed to load: " + className, exception);
+            }
+        }
+
+        check(!targets.isEmpty(), "Creator Mixin config must declare targets");
+        LitematicaCreator.LOGGER.info("Loaded {} Creator Mixin targets", targets.size());
+    }
+
+    private static Set<String> creatorMixinTargets(ClassLoader loader)
+    {
+        Set<String> targets = new LinkedHashSet<>();
+        JsonObject config;
+
+        try (Reader reader = new InputStreamReader(resource(loader, CREATOR_MIXIN_CONFIG), StandardCharsets.UTF_8))
+        {
+            config = JsonParser.parseReader(reader).getAsJsonObject();
+        }
+        catch (IOException exception)
+        {
+            throw new AssertionError("Creator Mixin config is unreadable", exception);
+        }
+
+        String mixinPackage = config.get("package").getAsString();
+
+        for (JsonElement mixin : config.getAsJsonArray("client"))
+        {
+            String path = (mixinPackage + "." + mixin.getAsString()).replace('.', '/') + ".class";
+            ClassNode node = new ClassNode();
+
+            try (InputStream input = resource(loader, path))
+            {
+                new ClassReader(input).accept(node, ClassReader.SKIP_CODE);
+            }
+            catch (IOException exception)
+            {
+                throw new AssertionError("Creator Mixin class is unreadable: " + path, exception);
+            }
+
+            for (AnnotationNode annotation : node.invisibleAnnotations != null ? node.invisibleAnnotations : List.<AnnotationNode>of())
+            {
+                if (annotation.desc.equals("Lorg/spongepowered/asm/mixin/Mixin;") && annotation.values != null)
+                {
+                    for (int i = 0; i < annotation.values.size(); i += 2)
+                    {
+                        String key = (String) annotation.values.get(i);
+
+                        if (key.equals("value") || key.equals("targets"))
+                        {
+                            for (Object value : (List<?>) annotation.values.get(i + 1))
+                            {
+                                targets.add(value instanceof Type type ? type.getClassName() : ((String) value).replace('/', '.'));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return targets;
+    }
+
+    private static InputStream resource(ClassLoader loader, String path)
+    {
+        InputStream input = loader.getResourceAsStream(path);
+
+        if (input == null)
+        {
+            throw new AssertionError("Missing resource " + path);
+        }
+
+        return input;
     }
 
     private static void check(boolean condition, String message)
