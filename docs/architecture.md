@@ -63,11 +63,13 @@ Design note: making Litematica's Selected Placement the only edit target was tri
 ### Sparse Editing / 稀疏编辑
 
 - 已有 region 内的编辑使用 world/container 坐标与方块状态的正反变换；边界外按需创建名称带 `__litematica_creator_cell_` 前缀的 `1x1x1` Creator cell，不反复扩张巨大 region，也不把大片真实建筑声明成“投影应为空气”。
+- 某格的 block entity NBT 与 scheduled block/fluid ticks 属于该格方块：同一方块只改状态时保留，换成其他方块（含删除为空气）时一并清除（[#105](https://github.com/urntt/litematica-creator/issues/105)）。
 - 删除后只有方块、block entity NBT、实体、scheduled block ticks 与 fluid ticks 全空时才移除 region，不依赖普通 `set()` 未维护的 `blockCounts`。清理同时适用于普通 region 和 Creator cell，并同步移除 schematic 映射与所有 placements 中的该 region，最后一个 region 清空时也清除旧框。
 - 占用检查先于新建草稿、切换 Focus、建 region、标 dirty、recovery 与成功反馈；目标不可替换时静默阻断，不留下半提交状态。
 - 当前放置只把普通 `BlockItem` 的单个 `BlockState` 写入一个格子。门、床、依附方块、同格累加等完整语义需要 [#82](https://github.com/urntt/litematica-creator/issues/82) 的事务层与 [#83](https://github.com/urntt/litematica-creator/issues/83)，届时也须整体验证全部写入，不能只放一半或覆盖不可替换的投影。
 
 - Inside existing regions, edits use forward and inverse transforms for world/container coordinates and block states. Outside them, Creator adds `1x1x1` cells named with the `__litematica_creator_cell_` prefix instead of resizing a huge region or declaring large volumes of real buildings as "projected air".
+- A cell's block entity NBT and scheduled block and fluid ticks belong to the block in that cell. A state change of the same block keeps them; a different block, including removal to air, clears them ([#105](https://github.com/urntt/litematica-creator/issues/105)).
 - After a removal, a region is deleted only when its blocks, block entity NBT, entities, scheduled block ticks, and fluid ticks are all empty; `blockCounts`, which plain `set()` does not maintain, is not trusted. Cleanup covers ordinary regions and Creator cells, removes the region from the schematic maps and every placement, and clears the stale box when the last region empties.
 - The occupancy check runs before creating a draft, switching Focus, creating a region, marking dirty, scheduling recovery, or showing success. Non-replaceable targets block silently with no partial commit.
 - Placement currently writes one `BlockState` from an ordinary `BlockItem` into one cell. Doors, beds, attached blocks, same-cell stacking, and other full semantics need the [#82](https://github.com/urntt/litematica-creator/issues/82) transaction layer and [#83](https://github.com/urntt/litematica-creator/issues/83); that work must validate every write together and never place half a structure or overwrite non-replaceable projections.

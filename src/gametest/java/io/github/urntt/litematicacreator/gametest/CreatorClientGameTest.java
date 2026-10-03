@@ -4,8 +4,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import fi.dy.masa.litematica.data.DataManager;
+import fi.dy.masa.litematica.schematic.LitematicaSchematic;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
+import fi.dy.masa.malilib.util.data.tag.CompoundData;
 import io.github.urntt.litematicacreator.LitematicaCreator;
 import io.github.urntt.litematicacreator.camera.CreatorCameraController;
 import io.github.urntt.litematicacreator.config.Configs;
@@ -24,9 +26,12 @@ import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.ticks.ScheduledTick;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
@@ -75,6 +80,30 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                         "Deleting one cell must preserve the other");
                 check(mc.level.getBlockState(origin).isAir() && mc.level.getBlockState(origin.east()).isAir(),
                         "Creator edits must not change the real client world");
+
+                // Block entity data and ticks belong to the block in their cell and must not outlive it.
+                BlockPos chestPos = origin.above();
+                check(CreatorSchematicEditor.setBlockState(placement, chestPos, Blocks.CHEST.defaultBlockState()),
+                        "Chest projection must be placed");
+                var schematic = placement.getSchematic();
+                String chestRegion = CreatorSchematicEditor.findRegionAt(placement, chestPos).regionName();
+                attachCellData(schematic, chestRegion, "minecraft:chest");
+                check(CreatorSchematicEditor.setBlockState(placement, chestPos,
+                                Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.EAST)),
+                        "Chest state change must succeed");
+                check(schematic.getBlockEntityMapForRegion(chestRegion).containsKey(BlockPos.ZERO),
+                        "A state change of the same block must keep its block entity data");
+                check(CreatorSchematicEditor.setBlockState(placement, chestPos, Blocks.BARREL.defaultBlockState()),
+                        "Replacing the chest must succeed");
+                check(schematic.getBlockEntityMapForRegion(chestRegion).isEmpty()
+                                && schematic.getScheduledBlockTicksForRegion(chestRegion).isEmpty(),
+                        "Replacing a block must clear its block entity data and ticks");
+                attachCellData(schematic, chestRegion, "minecraft:barrel");
+                check(CreatorSchematicEditor.setBlockState(placement, chestPos, Blocks.AIR.defaultBlockState()),
+                        "Barrel deletion must succeed");
+                check(schematic.getSubRegionContainer(chestRegion) == null
+                                && schematic.getMetadata().getRegionCount() == 1,
+                        "Deleting a block must clear its cell data so the empty cell is removed");
             });
             world.getServer().runOnServer(server ->
             {
@@ -157,6 +186,13 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                     "Intentional failure to verify the client GameTest failure gate");
             LitematicaCreator.LOGGER.info("Creator client GameTest passed: projection edits, virtual inventory, camera, focus, discard and real-world isolation");
         }
+    }
+
+    private static void attachCellData(LitematicaSchematic schematic, String regionName, String blockEntityId)
+    {
+        schematic.getBlockEntityMapForRegion(regionName).put(BlockPos.ZERO, new CompoundData().putString("id", blockEntityId));
+        schematic.getScheduledBlockTicksForRegion(regionName).put(BlockPos.ZERO,
+                new ScheduledTick<>(Blocks.STONE, BlockPos.ZERO, 0L, 0L));
     }
 
     // Classes untouched by this scenario would otherwise skip Mixin application, hiding broken injections after a port.

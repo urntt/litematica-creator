@@ -101,6 +101,11 @@ public final class CreatorSchematicEditor
         {
             container.set(containerPos.getX(), containerPos.getY(), containerPos.getZ(), newState);
             updateBlockCount(schematic.getMetadata(), oldState, newState);
+
+            if (CreatorCellData.isInvalidatedBy(oldState, newState))
+            {
+                clearCellData(schematic, regionName, containerPos);
+            }
         }
 
         if (newState.isAir() && isRegionCompletelyEmpty(schematic, regionName, container))
@@ -446,6 +451,17 @@ public final class CreatorSchematicEditor
         schematic.getMetadata().setModifiedSinceSaved();
         schematic.getMetadata().setTimeModifiedToNow();
         CreatorRecoveryManager.getInstance().onSchematicChanged(schematic);
+    }
+
+    private static void clearCellData(LitematicaSchematic schematic, String regionName, BlockPos containerPos)
+    {
+        LitematicaSchematicAccessor accessor = (LitematicaSchematicAccessor) schematic;
+        CreatorCellData.clear(
+                containerPos,
+                accessor.litematicacreator$getTileEntities().get(regionName),
+                accessor.litematicacreator$getPendingBlockTicks().get(regionName),
+                accessor.litematicacreator$getPendingFluidTicks().get(regionName)
+        );
     }
 
     private static boolean isRegionCompletelyEmpty(

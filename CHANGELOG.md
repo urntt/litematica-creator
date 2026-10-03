@@ -11,6 +11,10 @@ Notable user-visible changes are recorded here in English and Chinese, following
 - Add push/PR Linux CI for both hard-dependency profiles, packaged client GameTests, and production JAR audits. / 新增两组硬依赖的 push/PR Linux CI、打包客户端 GameTest 与正式 JAR 审计。
 - Publish repository/support links in mod metadata and document cloud development setup. / 模组 metadata 增加仓库/问题入口，并提供云端开发准备文档。
 
+### Fixed / 修复
+
+- Removing or replacing a projected block now also clears its block entity data and scheduled ticks, so saved schematics no longer keep stale data such as old chest contents, and emptied Creator cells are removed. / 删除或替换投影方块时会一并清除其方块实体数据与计划刻，保存的原理图不再残留旧箱子内容等过期数据，清空的 Creator cell 也会被正确移除。
+
 ### Changed / 变更
 
 - Target Minecraft 26.3 with Fabric Loader 0.19.5. Creator now requires MaLiLib `>=0.30.1 <0.30.3` and Litematica `>=0.29.0 <0.29.2`; 26.2 is no longer supported by this line. / 目标版本改为 Minecraft 26.3 与 Fabric Loader 0.19.5；Creator 现需要 MaLiLib `>=0.30.1 <0.30.3` 与 Litematica `>=0.29.0 <0.29.2`，此版本线不再支持 26.2。
