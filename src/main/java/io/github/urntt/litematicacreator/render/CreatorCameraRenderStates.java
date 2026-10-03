@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.client.renderer.extract.LevelExtractor;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
@@ -48,7 +49,9 @@ public final class CreatorCameraRenderStates
                 frustum,
                 viewPosition.x(),
                 viewPosition.y(),
-                viewPosition.z()
+                viewPosition.z(),
+                partialTicks(realPlayer, deltaTracker),
+                Util.toMillis(minecraft.options.chunkSectionFadeInTime().get())
         );
 
         if (CreatorCameraRenderPolicy.shouldAppendRealPlayer(
@@ -78,9 +81,12 @@ public final class CreatorCameraRenderStates
 
     private static EntityRenderState extract(LevelExtractor extractor, Entity entity, DeltaTracker deltaTracker)
     {
-        boolean ticking = !entity.level().tickRateManager().isEntityFrozen(entity);
-        float partialTicks = deltaTracker.getGameTimeDeltaPartialTick(ticking);
-        return ((LevelExtractorAccessor) (Object) extractor).litematicacreator$extractEntity(entity, partialTicks);
+        return ((LevelExtractorAccessor) (Object) extractor).litematicacreator$extractEntity(entity, partialTicks(entity, deltaTracker));
+    }
+
+    static float partialTicks(Entity entity, DeltaTracker deltaTracker)
+    {
+        return deltaTracker.getGameTimeDeltaPartialTick(!entity.level().tickRateManager().isEntityFrozen(entity));
     }
 
     public static void makeCameraAvatarTranslucent(EntityRenderState state)

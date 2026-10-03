@@ -28,7 +28,7 @@ class BuildPreparationTest(unittest.TestCase):
             self.assertNotEqual(current[1:], legacy[1:])
 
     def test_rejects_floating_revisions(self):
-        self.properties["malilib_source_commit"] = "LTS/26.2"
+        self.properties["malilib_source_commit"] = "26.3"
         with self.assertRaisesRegex(ValueError, "full commit"):
             build.source_spec(self.properties, "current", "malilib")
 
@@ -43,7 +43,7 @@ class BuildPreparationTest(unittest.TestCase):
             build.source_spec(self.properties, "current", "malilib")
 
     def test_properties_preserve_ranges_and_ignore_comments(self):
-        self.assertEqual(self.properties["malilib_version_range"], ">=0.29.2- <0.29.5-")
+        self.assertEqual(self.properties["malilib_version_range"], ">=0.30.1- <0.30.3-")
         self.assertNotIn("# Official", self.properties)
 
     def test_refuses_existing_non_git_directory(self):

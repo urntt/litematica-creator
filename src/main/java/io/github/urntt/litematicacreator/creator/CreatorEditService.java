@@ -24,6 +24,7 @@ import fi.dy.masa.malilib.util.InfoUtils;
 import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.camera.CreatorCameraController;
 import io.github.urntt.litematicacreator.gui.GuiFocusSwitcher;
+import io.github.urntt.litematicacreator.render.CreatorVirtualLoadout;
 
 public class CreatorEditService
 {
@@ -150,7 +151,7 @@ public class CreatorEditService
                 () -> CreatorEditFeedback.feedbackTarget(
                         mc.player,
                         CreatorCameraController.getInstance().getCamera()
-                ).swing(heldItem.hand(), false)
+                ).swing(heldItem.hand(), heldItem.stack().getInteractAnimation(), false)
         );
         return edited ? CreatorEditOutcome.EDITED : CreatorEditOutcome.NO_CHANGE;
     }
@@ -194,7 +195,7 @@ public class CreatorEditService
                     () -> CreatorEditFeedback.feedbackTarget(
                             mc.player,
                             CreatorCameraController.getInstance().getCamera()
-                    ).swing(InteractionHand.MAIN_HAND, false)
+                    ).swing(InteractionHand.MAIN_HAND, CreatorVirtualLoadout.getMainHand().getAttackAnimation(), false)
             );
             return edited ? CreatorEditOutcome.EDITED : CreatorEditOutcome.NO_CHANGE;
         }

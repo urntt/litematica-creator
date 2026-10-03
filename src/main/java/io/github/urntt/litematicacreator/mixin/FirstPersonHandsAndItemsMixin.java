@@ -1,29 +1,18 @@
 package io.github.urntt.litematicacreator.mixin;
 
-import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.player.FirstPersonHandsAndItems;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-import io.github.urntt.litematicacreator.camera.CreatorCameraController;
-import io.github.urntt.litematicacreator.camera.CreatorCameraEntity;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.render.CreatorVirtualLoadout;
 
-@Mixin(ItemInHandRenderer.class)
-public abstract class ItemInHandRendererMixin
+@Mixin(FirstPersonHandsAndItems.class)
+public abstract class FirstPersonHandsAndItemsMixin
 {
-    @ModifyVariable(method = "submitHandsWithItems", at = @At("HEAD"), argsOnly = true)
-    private LocalPlayer litematicacreator$useCreatorCameraForFirstPersonHands(LocalPlayer player)
-    {
-        CreatorCameraEntity camera = CreatorCameraController.getInstance().getCamera();
-        return camera != null ? camera : player;
-    }
-
     @Redirect(
             method = "tick",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;getMainHandItem()Lnet/minecraft/world/item/ItemStack;")
@@ -79,19 +68,10 @@ public abstract class ItemInHandRendererMixin
     }
 
     @Redirect(
-            method = "submitArmWithItem",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/AbstractClientPlayer;isUsingItem()Z")
+            method = "extractRenderState",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;isScoping()Z")
     )
-    private boolean litematicacreator$ignoreRealUseAnimation(AbstractClientPlayer player)
-    {
-        return !CreatorManager.getInstance().isCreatorModeEnabled() && player.isUsingItem();
-    }
-
-    @Redirect(
-            method = "submitArmWithItem",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/AbstractClientPlayer;isScoping()Z")
-    )
-    private boolean litematicacreator$ignoreRealScoping(AbstractClientPlayer player)
+    private boolean litematicacreator$ignoreRealScoping(LocalPlayer player)
     {
         return !CreatorManager.getInstance().isCreatorModeEnabled() && player.isScoping();
     }

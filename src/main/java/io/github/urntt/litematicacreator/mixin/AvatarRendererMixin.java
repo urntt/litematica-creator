@@ -6,14 +6,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.client.renderer.entity.player.AvatarRenderer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.tags.ItemTags;
+import net.minecraft.client.renderer.texture.UvMapping;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Avatar;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
@@ -22,8 +22,6 @@ import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.SwingAnimationType;
-import net.minecraft.world.item.component.SwingAnimation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -67,8 +65,6 @@ public abstract class AvatarRendererMixin
         resolver.updateForLiving(state.leftHandItemState, leftHand, ItemDisplayContext.THIRD_PERSON_LEFT_HAND, entity);
         state.rightHandItemStack = rightHand.copy();
         state.leftHandItemStack = leftHand.copy();
-        ItemStack attackStack = state.attackArm == HumanoidArm.RIGHT ? rightHand : leftHand;
-        state.swingAnimationType = attackStack.getSwingAnimation().type();
         this.applyArmPoses(entity, state, mainHand, offhand);
 
         state.headEquipment = renderableEquipment(EquipmentSlot.HEAD);
@@ -97,8 +93,8 @@ public abstract class AvatarRendererMixin
 
     private void applyArmPoses(Avatar entity, AvatarRenderState state, ItemStack mainHand, ItemStack offhand)
     {
-        HumanoidModel.ArmPose mainPose = armPose(entity, mainHand);
-        HumanoidModel.ArmPose offhandPose = armPose(entity, offhand);
+        HumanoidModel.ArmPose mainPose = armPose(entity, mainHand, InteractionHand.MAIN_HAND);
+        HumanoidModel.ArmPose offhandPose = armPose(entity, offhand, InteractionHand.OFF_HAND);
 
         if (mainPose.isTwoHanded())
         {
@@ -117,26 +113,21 @@ public abstract class AvatarRendererMixin
         }
     }
 
-    private static HumanoidModel.ArmPose armPose(Avatar entity, ItemStack stack)
+    private static HumanoidModel.ArmPose armPose(Avatar entity, ItemStack stack, InteractionHand hand)
     {
         if (stack.isEmpty())
         {
             return HumanoidModel.ArmPose.EMPTY;
         }
 
-        if (!entity.swinging && stack.is(Items.CROSSBOW) && CrossbowItem.isCharged(stack))
+        if (!entity.isSwinging() && stack.is(Items.CROSSBOW) && CrossbowItem.isCharged(stack))
         {
             return HumanoidModel.ArmPose.CROSSBOW_HOLD;
         }
 
-        SwingAnimation animation = stack.get(DataComponents.SWING_ANIMATION);
-
-        if (animation != null && animation.type() == SwingAnimationType.STAB && entity.swinging)
-        {
-            return HumanoidModel.ArmPose.SPEAR;
-        }
-
-        return stack.is(ItemTags.SPEARS) ? HumanoidModel.ArmPose.SPEAR : HumanoidModel.ArmPose.ITEM;
+        return HumanoidMobRenderer.usesSpearPose(stack, hand.asArm(entity.getMainArm()), entity) ?
+                HumanoidModel.ArmPose.SPEAR :
+                HumanoidModel.ArmPose.ITEM;
     }
 
     private static ItemStack renderableEquipment(EquipmentSlot equipmentSlot)
@@ -149,7 +140,7 @@ public abstract class AvatarRendererMixin
             method = "renderHand",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModelPart(Lnet/minecraft/client/model/geom/ModelPart;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/rendertype/RenderType;IILnet/minecraft/client/renderer/texture/TextureAtlasSprite;)V"
+                    target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModelPart(Lnet/minecraft/client/model/geom/ModelPart;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/rendertype/RenderType;IILnet/minecraft/client/renderer/texture/UvMapping;)V"
             )
     )
     private void litematicacreator$renderTranslucentCreatorFirstPersonArm(
@@ -159,7 +150,7 @@ public abstract class AvatarRendererMixin
             RenderType renderType,
             int light,
             int overlay,
-            TextureAtlasSprite sprite)
+            UvMapping uvMapping)
     {
         Minecraft minecraft = Minecraft.getInstance();
 
@@ -171,15 +162,13 @@ public abstract class AvatarRendererMixin
                     renderType,
                     light,
                     overlay,
-                    sprite,
-                    CREATOR_AVATAR_TINT,
-                    null,
-                    0
+                    uvMapping,
+                    CREATOR_AVATAR_TINT
             );
         }
         else
         {
-            collector.submitModelPart(modelPart, poseStack, renderType, light, overlay, sprite);
+            collector.submitModelPart(modelPart, poseStack, renderType, light, overlay, uvMapping);
         }
     }
 }

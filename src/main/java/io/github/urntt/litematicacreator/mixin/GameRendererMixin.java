@@ -1,6 +1,5 @@
 package io.github.urntt.litematicacreator.mixin;
 
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,12 +13,9 @@ import io.github.urntt.litematicacreator.gui.CreatorThumbnailCapture;
 public abstract class GameRendererMixin
 {
     @Inject(method = "render", at = @At("RETURN"))
-    private void litematicacreator$captureThumbnailAfterWorldFrame(
-            DeltaTracker deltaTracker,
-            boolean renderLevel,
-            CallbackInfo ci)
+    private void litematicacreator$captureThumbnailAfterWorldFrame(CallbackInfo ci)
     {
-        if (renderLevel)
+        if (((GameRenderer) (Object) this).gameRenderState().shouldRenderLevel)
         {
             CreatorThumbnailCapture.afterFrameRendered(Minecraft.getInstance());
         }

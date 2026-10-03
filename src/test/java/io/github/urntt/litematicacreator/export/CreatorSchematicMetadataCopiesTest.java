@@ -23,7 +23,7 @@ class CreatorSchematicMetadataCopiesTest
         assertArrayEquals(new int[] { 1, 2, 3, 4 }, CreatorSchematicMetadataCopies.snapshotPreview(source));
         assertArrayEquals(new int[] { 1, 2, 3, 4 }, CreatorSchematicMetadataCopies.snapshotPreview(first));
         assertArrayEquals(new int[] { 1, 2, 3, 4 }, CreatorSchematicMetadataCopies.snapshotPreview(second));
-        assertArrayEquals(new int[] { 1, 2, 3, 4 }, source.writeToNBT().getIntArray("PreviewImageData").orElseThrow());
+        assertArrayEquals(new int[] { 1, 2, 3, 4 }, source.writeData().getIntArray("PreviewImageData"));
     }
 
     @Test
@@ -42,7 +42,7 @@ class CreatorSchematicMetadataCopiesTest
         new SchematicMetadata().copyFrom(source);
 
         assertNull(CreatorSchematicMetadataCopies.snapshotPreview(source));
-        assertDoesNotThrow(source::writeToNBT);
+        assertDoesNotThrow(source::writeData);
     }
 
     private static SchematicMetadata metadataWithPreview(int... pixels)

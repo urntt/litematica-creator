@@ -3,6 +3,7 @@ package io.github.urntt.litematicacreator.camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.chat.ChatAbilities;
+import net.minecraft.client.player.ItemActivation;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -42,7 +43,8 @@ public final class CreatorCameraEntity extends LocalPlayer
                 player.getRecipeBook(),
                 Input.EMPTY,
                 false,
-                ChatAbilities.NO_RESTRICTIONS
+                ChatAbilities.NO_RESTRICTIONS,
+                new ItemActivation()
         );
         this.minecraft = minecraft;
         this.appearancePlayer = player;
@@ -79,7 +81,6 @@ public final class CreatorCameraEntity extends LocalPlayer
                 this.minecraft.options.autoJump().get()
         );
         this.baseTick();
-        this.updateSwingTime();
         this.aiStep();
         this.updateCreatorFallFlying(wasOnGround);
         this.updateCreatorFallFlyingAnimation();

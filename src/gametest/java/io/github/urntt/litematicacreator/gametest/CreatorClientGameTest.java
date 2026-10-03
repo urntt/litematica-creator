@@ -102,7 +102,7 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                 mc.player.setYRot(-90);
                 mc.player.setXRot(-30);
             });
-            world.getClientLevel().waitForChunksRender();
+            world.getConnection().waitForChunksRender();
             context.takeScreenshot("creator-projection-smoke");
             context.runOnClient(mc ->
             {

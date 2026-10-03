@@ -3,8 +3,6 @@ package io.github.urntt.litematicacreator.gui;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.lwjgl.glfw.GLFW;
-
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
@@ -67,17 +65,17 @@ public class GuiFocusSwitcher extends Screen
     @Override
     public boolean keyPressed(KeyEvent input)
     {
-        if (input.key() == GLFW.GLFW_KEY_UP)
+        if (input.isUp())
         {
             this.moveSelection(-1);
             return true;
         }
-        else if (input.key() == GLFW.GLFW_KEY_DOWN)
+        else if (input.isDown())
         {
             this.moveSelection(1);
             return true;
         }
-        else if (input.key() == GLFW.GLFW_KEY_ENTER || input.key() == GLFW.GLFW_KEY_KP_ENTER)
+        else if (input.isConfirmation())
         {
             this.chooseSelected();
             return true;
