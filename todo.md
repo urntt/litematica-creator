@@ -1,6 +1,6 @@
 # Litematica Creator TODO
 
-最后更新：2026-10-02
+最后更新：2026-10-03
 
 ## 已完成
 
@@ -83,6 +83,7 @@
 - [x] Linux wrapper 与干净跨平台构建验证 / Linux wrapper and clean cross-platform builds
 - [x] MIT LICENSE、metadata 与 JAR 许可证 / MIT license and artifact packaging
 - [x] GitHub 迁移、双依赖 push/PR CI 与客户端 GameTest / GitHub migration, dual-profile CI and client GameTests
+- [x] Minecraft 26.3 移植与配套升级 / Minecraft 26.3 port and toolchain update
 实现细节和历史验收记录见 [`docs/completed-tasks.md`](docs/completed-tasks.md)。
 
 ## 已取消
@@ -102,6 +103,12 @@
 Only unfinished infrastructure remains here; completed headings are at the top and implementation evidence is in the completion notes. See the development and release guides for the contracts.
 
 - [ ] 落实 SemVer 命名与 GitHub Release 工作流 / Implement version naming and the GitHub release workflow.
+- [ ] 26.3 实机回归 / Manual 26.3 in-game regression.
+  - 无头 GameTest 已覆盖编辑、虚拟库存、相机启停、focus 与截图；仍需在真实客户端检查 Creator Camera 第一人称手部与挥手、弓/弩/望远镜姿态、SDL3 下的热键与选择器方向键/回车、Creator 物品栏、Mod Menu 配置页，以及带可选模组的实际游玩。
+  - Headless GameTests cover edits, virtual inventory, camera start/stop, focus, and screenshots. A real client still needs checks for Creator Camera first-person hands and swings, bow/crossbow/spyglass poses, SDL3 hotkeys and selector arrow/Enter keys, the Creator inventory, the Mod Menu screen, and play with optional mods.
+- [ ] 移除仅 26.2 使用的 Litematica `CompoundTag` 数据模型分支 / Remove the 26.2-only Litematica `CompoundTag` data-model branch.
+  - 26.3 支持范围内的 Litematica 只提供 `CompoundData` 模型，`CreatorLitematicaDataAdapter` 的 `CompoundTag` 反射分支与 `LitematicaSchematicWriteMixin` 的 `NbtUtils` 写盘入口已不可达。改为直接调用 `CompoundData` API 并删除旧入口，同步更新适配器测试；磁盘上的 manifest、`.litematic` 与 recovery 格式不变。
+  - Supported 26.3 Litematica releases expose only `CompoundData`, so the adapter's reflective `CompoundTag` branch and the `NbtUtils` write redirect are unreachable. Call the `CompoundData` API directly, delete the old entry points, and update adapter tests; on-disk manifest, `.litematic`, and recovery formats stay unchanged.
 
 ## Litematica 工具兼容
 

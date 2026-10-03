@@ -442,3 +442,45 @@ Baseline `da4b2e9` (same as `origin/main`) on the session branch above, checked 
 - Both JAR audits passed. The 407983-byte artifact has the SHA-256 above, identical to the earlier Temurin Windows/Linux and GitHub CI builds.
 - Not run: CI's intentional-failure gate (outside the cloud matrix), the first Codex Cloud session, and manual GUI/input/multiplayer/optional-mod regressions. The user still needs to save the setup script and variables in the Claude Code environment settings and recheck the JDK in a new session. No code, version, release state, release or tag changed.
 - Follow-up fix: JUnit loaded the `log4j2.xml` bundled in Mojang's `com.mojang:logging`, writing `logs/latest.log` and an unignored rolled `.log.gz` into the repository root. A test-only `log4j2-test.xml` now logs to the console. Both full builds pass 189 tests without creating `logs/`; the expected WARN lands in the test report and the production JAR hash is unchanged.
+
+## Minecraft 26.3 Port / Minecraft 26.3 移植
+
+2026-10-03，用户要求把模组更新到 26.3 并同步升级配套设置；基线 `f0d5f91`，直接在 `main` 上开发。
+
+### Versions and Pins / 版本与 pin
+
+- 依据官方 Fabric 模板 26.3 分支：Minecraft `26.3`、Fabric Loader `0.19.5`、Fabric API `0.161.0+26.3`、Java 25；Loom 固定为当时最新稳定版 `1.18.2`（模板使用浮动的 `1.18-SNAPSHOT`），它要求 Gradle ≥9.7.0，wrapper 用官方 wrapper 任务升级到 `9.7.1`，distribution 与 wrapper JAR 均与官方 SHA-256 一致，原有超时与重试设置保留。Mod Menu 编译依赖为 `21.0.0`。
+- current profile 为 Modrinth 最新正式版 MaLiLib `0.30.2` + Litematica `0.29.1`，legacy profile 为 26.3 最早正式版 MaLiLib `0.30.1` + Litematica `0.29.0`（MaLiLib `0.30.0` 为 beta，且无 Litematica 正式版可配合）。支持范围为 MaLiLib `>=0.30.1- <0.30.3-`、Litematica `>=0.29.0- <0.29.2-`。
+- 下载 Modrinth 官方 JAR 并校验 SHA-512 后，用各提交独有的代码确认 pin：MaLiLib `0.30.2` 为 `43a8d2a8`（含 26.4 schema 常量），Litematica `0.29.1` 为 `decc1336`（含物品展示框材料覆盖），MaLiLib `0.30.1` 为 tag 之前的 `733754e7`（JAR 缺少 tag 提交新增的常量），Litematica `0.29.0` 为 tag 提交 `3ee9c95a`。
+
+### Source Port / 源码移植
+
+- 第一人称手部：26.3 删除 `ItemInHandRenderer`，改为 `LocalPlayer` 自有的 `FirstPersonHandsAndItems`（tick 与状态提取）加只消费渲染状态的 `FirstPersonHandsAndItemsRenderer`。虚拟主副手、忽略真实 busy/using/scoping 的重定向迁移到新类；`LevelExtractor.extractPlayerState` 中以相机替身提取手部姿态，本体继续提供皮肤、光照与手部高度，avatar 状态的挥手进度和俯仰角取自相机，与 26.2 行为对应。
+- 挥手：26.3 以 `SwingDescription` 和 `swingState` 取代 `swinging`、`updateSwingTime()` 与 `SWING_ANIMATION` 组件。Creator 放置改用手持物品的交互动画、删除改用虚拟主手的攻击动画；相机替身移除多余的 `updateSwingTime()`（26.2 中 `Player.aiStep()` 已调用，实际每 tick 推进两次），手臂姿态改用原版公开的 `HumanoidMobRenderer.usesSpearPose`。确认 26.3 客户端 `swing` 不发送任何数据包。
+- 其余 API：`LocalPlayer` 构造器新增 `ItemActivation`（相机替身使用独立实例，不共享本体的图腾动画）；`isEntityVisible` 新增 partial tick 与区块淡入参数；`submitModelPart` 改用 `UvMapping` 并移除 crumbling 参数；`GameRenderer.render()` 无参，缩略图改按 `gameRenderState().shouldRenderLevel` 判断；SDL3 键码下选择器改用原版 `isUp()`/`isDown()`/`isConfirmation()`；测试改用 `SchematicMetadata.writeData()` 与新版 GameTest 的 `getConnection()`。
+- 逐项核对全部 Mixin 目标与签名（含 `require = 0` 的可选入口）在 26.3 与两组上游中存在且未变。
+
+### Headless Client / 无头客户端
+
+- 26.3 的 OpenGL 后端通过 SDL3 请求 sRGB 帧缓冲；Xvfb 的 GLX visual 均不支持，客户端报 "Couldn't find matching GLX visual" 后挂起。安装 `libegl1`、`libegl-mesa0` 并设置 `SDL_VIDEO_FORCE_EGL=1` 后改用 Mesa EGL（llvmpipe OpenGL 4.5 Core）；去掉该变量的对照运行仍然失败，确认二者缺一不可。CI 与云端指南已同步。
+- GameTest 开始时读取 Creator Mixin 配置、用 ASM 解析各 Mixin 的 `@Mixin` 目标并加载全部 27 个目标类，使场景未触及的类也完成注入校验。负向验证：故意破坏 `MultiPlayerGameMode` 注入后，测试在进入世界前以 "Creator Mixin target failed to load" 失败，随后还原。另新增 Creator Camera 第一人称截图。
+- `-PgameTestExtraMods` 可把额外模组 JAR 加入同一 GameTest，用于可选模组矩阵。
+
+### Validation / 验证
+
+- 12 项 Python 测试通过；current 与 legacy 均为 59 suites / 189 JUnit tests，无失败；两组 JAR 审计通过，产物均为 409578 字节，SHA-256 `0dfa42a06a6638eacb093f09facc564e742b764d2b5b3a41260eac37bd6b56eb`。
+- 两组打包客户端 GameTest 均加载 27 个 Mixin 目标并通过；current 的故意失败门禁以预期断言非零退出。截图可见投影、选中框、Creator HUD、虚拟快捷栏，以及相机模式下的本体 avatar 与虚拟主副手。
+- 可选模组矩阵 6 组全部通过（见[兼容说明](optional-mod-compatibility.md)）：Tweakeroo `0.30.1`、Syncmatica `0.3.20`、Lithium `0.26.2+mc26.3`、Sodium `0.9.2+mc26.3` 单独及合并，以及下限组合 Tweakeroo `0.30.0` + Syncmatica `0.3.20`；Tweakeroo 反射契约经源码核对与 `0.29.3` 一致，相机桥接启用。支持范围与已测试版本同步更新到代码、README 与 suggests。
+- 未执行：真实客户端中的 GUI、输入、相机碰撞与挥手手感回归，以及 Codex Cloud 会话；均列入 TODO。旧数据模型分支在 26.3 不可达，移除计划见 TODO。未创建 release/tag，未保留 26.2 维护分支。
+
+Baseline `f0d5f91`, developed directly on `main` on 2026-10-03 at the user's request:
+
+- Versions follow the official Fabric template's 26.3 branch: Minecraft `26.3`, Loader `0.19.5`, Fabric API `0.161.0+26.3`, Java 25, Mod Menu `21.0.0`. Loom is pinned to the latest stable `1.18.2`, which needs Gradle ≥9.7.0; the wrapper task upgraded to `9.7.1` with official checksums for the distribution and wrapper JAR, keeping the existing timeout and retry settings.
+- Current pins the newest Modrinth releases, MaLiLib `0.30.2` + Litematica `0.29.1`; legacy pins the first 26.3 releases, `0.30.1` + `0.29.0`. Pins were matched against SHA-512-verified release JARs using code unique to each commit; MaLiLib `0.30.1` predates its tag.
+- First-person hands moved from `ItemInHandRenderer` to `FirstPersonHandsAndItems` plus a state-only renderer. Creator's redirects moved accordingly; the camera supplies hand pose, swing progress and pitch while the real player keeps skin, light and hand height, matching 26.2.
+- Swings now use `SwingDescription`. Placement uses the held item's interact animation and deletion the virtual main hand's attack animation; the camera no longer double-ticks swings, arm poses reuse vanilla's public spear helper, and client swings send no packets.
+- Other API changes cover `ItemActivation`, entity visibility, `UvMapping`, the parameterless `GameRenderer.render()`, SDL3 key handling, Litematica `writeData()` and the new GameTest connection API. All Mixin targets, including optional ones, were checked against 26.3 and both upstream profiles.
+- 26.3 asks SDL3 for an sRGB framebuffer that Xvfb's GLX lacks; EGL packages plus `SDL_VIDEO_FORCE_EGL=1` fix the headless client, and a control run without the variable still failed. CI and the cloud guide include both.
+- The GameTest now loads all 27 Creator Mixin targets first; an intentionally broken `MultiPlayerGameMode` injection failed before world entry and was restored. It also captures a Creator Camera first-person screenshot, and `-PgameTestExtraMods` adds optional mod JARs.
+- Python checks (12), JUnit (59 suites / 189 tests per profile), JAR audits, both packaged GameTests and the intentional-failure gate passed. Both profiles produced the same 409578-byte JAR with the SHA-256 above. All six optional-mod combinations passed with their audits reporting `tested` and the Tweakeroo bridge active.
+- Not run: real-client GUI/input/camera-collision/swing-feel regression and a Codex Cloud session, both tracked in TODO with the removal plan for the unreachable data-model branch. No release, tag, or 26.2 maintenance branch was created.

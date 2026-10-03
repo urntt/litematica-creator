@@ -32,20 +32,24 @@ Install the JDK matching `java_version`, Git, Python 3.9+, and these headless cl
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y xvfb xauth libgl1-mesa-dri libasound2t64
+sudo apt-get install -y xvfb xauth libgl1-mesa-dri libegl1 libegl-mesa0 libasound2t64
 ```
 
-Configure `JAVA_HOME` and `PATH` in the saved environment, not only an installation shell. Set `CI=true`, `LIBGL_ALWAYS_SOFTWARE=true`, and `ALSOFT_DRIVERS=null` for headless runs. No Minecraft account, PAT, or other secret is needed to build or run the isolated singleplayer tests.
+Configure `JAVA_HOME` and `PATH` in the saved environment, not only an installation shell. Set `CI=true`, `LIBGL_ALWAYS_SOFTWARE=true`, `ALSOFT_DRIVERS=null`, and `SDL_VIDEO_FORCE_EGL=1` for headless runs. No Minecraft account, PAT, or other secret is needed to build or run the isolated singleplayer tests.
 
-在保存的环境中配置 `JAVA_HOME` 与 `PATH`，不要仅在一次安装 shell 中 export。无头测试使用 `CI=true`、`LIBGL_ALWAYS_SOFTWARE=true` 与 `ALSOFT_DRIVERS=null`。构建与隔离单人测试不需要 Minecraft 账号、PAT 或其他秘密。
+在保存的环境中配置 `JAVA_HOME` 与 `PATH`，不要仅在一次安装 shell 中 export。无头测试使用 `CI=true`、`LIBGL_ALWAYS_SOFTWARE=true`、`ALSOFT_DRIVERS=null` 与 `SDL_VIDEO_FORCE_EGL=1`。构建与隔离单人测试不需要 Minecraft 账号、PAT 或其他秘密。
 
-The Claude Code cloud Ubuntu 24.04 image checked on 2026-10-02 preinstalls JDK 21 and exports its `JAVA_HOME` both as a container variable and from `/etc/profile.d/java.sh`. Ubuntu's `openjdk-25-jdk` package from `noble-updates` built the same JAR bytes as the Temurin CI build. Put the following in the environment's setup script, keeping the JDK major equal to `java_version`, and also set `JAVA_HOME` plus the three headless variables in the environment's variables:
+Minecraft 26.3 creates its window through SDL3 and requests an sRGB-capable OpenGL framebuffer. Xvfb's GLX visuals offer none, so the client fails with "Couldn't find matching GLX visual" and then hangs; the EGL packages plus `SDL_VIDEO_FORCE_EGL=1` let Mesa provide the context instead.
 
-2026-10-02 检查的 Claude Code 云端 Ubuntu 24.04 镜像预装 JDK 21，并同时通过容器变量与 `/etc/profile.d/java.sh` 导出其 `JAVA_HOME`。Ubuntu `noble-updates` 的 `openjdk-25-jdk` 构建出的 JAR 与 Temurin CI 产物字节一致。将下列命令放入环境 setup script（JDK 主版本须与 `java_version` 一致），并在环境变量中同时设置 `JAVA_HOME` 和上述三个无头变量：
+Minecraft 26.3 通过 SDL3 创建窗口并请求支持 sRGB 的 OpenGL 帧缓冲。Xvfb 的 GLX visual 均不支持 sRGB，客户端会报 "Couldn't find matching GLX visual" 后挂起；安装 EGL 运行库并设置 `SDL_VIDEO_FORCE_EGL=1` 后改由 Mesa EGL 提供上下文。
+
+The Claude Code cloud Ubuntu 24.04 image checked on 2026-10-02 preinstalls JDK 21 and exports its `JAVA_HOME` both as a container variable and from `/etc/profile.d/java.sh`. Ubuntu's `openjdk-25-jdk` package from `noble-updates` built the same JAR bytes as the Temurin CI build. Put the following in the environment's setup script, keeping the JDK major equal to `java_version`, and also set `JAVA_HOME` plus the headless variables in the environment's variables:
+
+2026-10-02 检查的 Claude Code 云端 Ubuntu 24.04 镜像预装 JDK 21，并同时通过容器变量与 `/etc/profile.d/java.sh` 导出其 `JAVA_HOME`。Ubuntu `noble-updates` 的 `openjdk-25-jdk` 构建出的 JAR 与 Temurin CI 产物字节一致。将下列命令放入环境 setup script（JDK 主版本须与 `java_version` 一致），并在环境变量中同时设置 `JAVA_HOME` 和上述无头变量：
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y openjdk-25-jdk xvfb xauth libgl1-mesa-dri libasound2t64
+sudo apt-get install -y openjdk-25-jdk xvfb xauth libgl1-mesa-dri libegl1 libegl-mesa0 libasound2t64
 printf '%s\n' 'export JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64' 'export PATH=${JAVA_HOME}/bin:${PATH}' | sudo tee /etc/profile.d/java.sh > /dev/null
 ```
 
@@ -54,6 +58,7 @@ JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64
 CI=true
 LIBGL_ALWAYS_SOFTWARE=true
 ALSOFT_DRIVERS=null
+SDL_VIDEO_FORCE_EGL=1
 ```
 
 Allow HTTPS for the GitHub source pins and artifact/tool downloads: `github.com`, `codeload.github.com`, `release-assets.githubusercontent.com`, `raw.githubusercontent.com`, `services.gradle.org`, `downloads.gradle.org`, `plugins.gradle.org`, `maven.fabricmc.net`, `repo.maven.apache.org`, `maven.terraformersmc.com`, `maven.fallenbreath.me`, `jitpack.io`, `piston-meta.mojang.com`, `piston-data.mojang.com`, `libraries.minecraft.net`, and `resources.download.minecraft.net`. Add the selected JDK distributor's official domains, or the Ubuntu package mirrors for the apt package, when installing it. Keep authentication in the environment's GitHub connection, not repository files.

@@ -22,6 +22,10 @@
 
 **Claude Code first cloud session, 2026-10-02:** The cloud-guide matrix passed in a Claude Code session; see the completion notes. JDK 25 and headless variables were set only for that session, so the user must save the setup script/variables and recheck in a new session. The first Codex Cloud session has not run. The user then chose direct development and pushes on `main`; AGENTS.md owns that rule.
 
+**Minecraft 26.3 移植，2026-10-03：** 用户要求把模组更新到 26.3 并同步升级配套设置。main 现以 26.3、Loom 1.18.2、Gradle 9.7.1、Fabric API 0.161.0+26.3 为基线，current/legacy 分别为 MaLiLib `0.30.2`/`0.30.1` 与 Litematica `0.29.1`/`0.29.0`；26.2 状态保留在 Git 历史中，未另建维护分支。26.3 改用 SDL3、拆分第一人称手部状态并重写挥手系统，无头测试需要 EGL 与 `SDL_VIDEO_FORCE_EGL=1`。细节与验证见[完成记录](completed-tasks.md#minecraft-263-port--minecraft-263-移植)，实机回归与旧数据模型分支移除仍在 TODO。
+
+**Minecraft 26.3 port, 2026-10-03:** At the user's request, main now targets 26.3 with Loom 1.18.2, Gradle 9.7.1, and Fabric API 0.161.0+26.3; current/legacy pin MaLiLib `0.30.2`/`0.30.1` and Litematica `0.29.1`/`0.29.0`. The 26.2 state remains in Git history without a maintenance branch. 26.3 moved to SDL3, split first-person hand state, and rewrote swings; headless tests need EGL plus `SDL_VIDEO_FORCE_EGL=1`. See the completion notes; manual in-game regression and removal of the old data-model branch remain in TODO.
+
 - [当前 TODO](../todo.md)：未完成项目、编号、范围和需要决策的内容。
 - [完成记录](completed-tasks.md)：实现细节、修复沿革和历史验收。
 - [README](../README.md)：双语使用入口、依赖范围、默认按键和当前边界。

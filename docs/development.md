@@ -65,13 +65,13 @@ JUnit uses the test-only `src/test/resources/log4j2-test.xml`, which overrides t
 
 The build workflow runs the Linux `current` / `legacy` matrix on push, PR, and manual dispatch. It reads canonical versions, runs Python policies, Gradle/JUnit, production JAR checks, and packaged client GameTests. Actions use fixed commits and read-only repository permissions without PR secrets. Production JARs upload only after all checks pass; diagnostic artifacts always upload. See the release guide for publishing gates.
 
-客户端测试位于独立 `src/gametest/` 测试模组；Fabric API 仅用于该测试环境，正式 Creator JAR 不捆入它或测试代码。`runProductionClientGameTest` 使用实际打包的 Creator 与上游 JAR，不依赖开发模式 Mixin 放宽。地面单人世界断言覆盖投影编辑、空 cell、虚拟库存、相机、focus 与卸载，并检查真实客户端/服务端方块不变；渲染等待检查 schematic world，输出截图。`build` 不自动启动图形客户端。
+客户端测试位于独立 `src/gametest/` 测试模组；Fabric API 仅用于该测试环境，正式 Creator JAR 不捆入它或测试代码。`runProductionClientGameTest` 使用实际打包的 Creator 与上游 JAR，不依赖开发模式 Mixin 放宽。测试开始时先加载 Creator Mixin 配置声明的全部目标类，使本场景未触及的类也完成 Mixin 应用，失效注入会以目标类名报错。地面单人世界断言覆盖投影编辑、空 cell、虚拟库存、相机、focus 与卸载，并检查真实客户端/服务端方块不变；渲染等待检查 schematic world，输出投影与 Creator Camera 第一人称两张截图。`build` 不自动启动图形客户端。
 
-Client tests live in the separate `src/gametest/` test mod. Fabric API is test-only and neither it nor tests are bundled in Creator. The production test task uses packaged Creator/upstream JARs without development-mode Mixin relaxations. Singleplayer assertions cover edits, empty cells, virtual inventory, camera, focus/discard, unchanged client/server blocks, and schematic-world rebuild completion. Screenshots are retained; `build` alone does not launch a graphical client.
+Client tests live in the separate `src/gametest/` test mod. Fabric API is test-only and neither it nor tests are bundled in Creator. The production test task uses packaged Creator/upstream JARs without development-mode Mixin relaxations. It first loads every target class declared by Creator's Mixin config, so classes this scenario never touches still apply their Mixins and a broken injection fails with the target class name. Singleplayer assertions cover edits, empty cells, virtual inventory, camera, focus/discard, unchanged client/server blocks, and schematic-world rebuild completion. Projection and Creator Camera first-person screenshots are retained; `build` alone does not launch a graphical client.
 
-在有显示环境时可直接运行；Linux 无头环境设置 `CI=true` 让 Loom 使用 Xvfb，并安装[云端指南](cloud-development.md)中的系统库。
+在有显示环境时可直接运行；Linux 无头环境设置 `CI=true` 让 Loom 使用 Xvfb，并按[云端指南](cloud-development.md)安装系统库、设置 `SDL_VIDEO_FORCE_EGL=1`（26.3 的 SDL3 客户端需要 Xvfb GLX 不提供的 sRGB 帧缓冲）。
 
-Run directly with a display, or set `CI=true` for Loom's Xvfb support on Linux after installing the libraries in the cloud guide.
+Run directly with a display, or set `CI=true` for Loom's Xvfb support on Linux after installing the cloud guide's libraries and setting `SDL_VIDEO_FORCE_EGL=1`; the 26.3 SDL3 client needs an sRGB framebuffer that Xvfb's GLX does not provide.
 
 ```bash
 python3 scripts/build.py runProductionClientGameTest --no-daemon --max-workers=1
@@ -81,6 +81,10 @@ python3 scripts/verify_artifact.py
 `-PverifyGameTestFailure=true` 仅用于测试模组的负向门禁验证：预期断言失败并让 Gradle 非零退出，正常运行不传该参数。CI 对 current 执行此验证后再次运行正常测试；失败日志必须包含预期断言，启动崩溃不能冒充负向验证通过。
 
 The failure-verification property intentionally fails a test-only assertion and must produce a nonzero Gradle exit. CI checks the expected assertion and then reruns normal tests; an unrelated startup crash cannot count as the negative check.
+
+`-PgameTestExtraMods=<jar>[<路径分隔符>...]` 把额外模组 JAR 加入同一客户端测试，用于[可选模组兼容](optional-mod-compatibility.md)矩阵；分隔符使用平台路径分隔符（Linux 为 `:`），不传时测试组合不变。外部 JAR 须来自官方发布并校验哈希，不提交到仓库。
+
+`-PgameTestExtraMods=<jar>[<path-separator>...]` adds extra mod JARs to the same client test for the optional-mod matrix. Use the platform path separator (`:` on Linux); without it the test set is unchanged. Take external JARs from official releases, verify their hashes, and keep them out of Git.
 
 ## Remaining Infrastructure / 后续基础设施
 
