@@ -81,6 +81,11 @@ tasks.register('runProductionClientGameTest', net.fabricmc.loom.task.prod.Client
 	runDir = layout.buildDirectory.dir('run/productionClientGameTest')
 	jvmArgs.addAll('-Dfabric.client.gametest', '-Xmx2G')
 	programArgs.addAll('--username', 'CreatorTest')
+	// Optional-mod compatibility runs add extra mod JARs; the default test set stays unchanged.
+	def extraMods = providers.gradleProperty('gameTestExtraMods').getOrElse('')
+	if (!extraMods.isEmpty()) {
+		mods.from(extraMods.split(File.pathSeparator).collect { file(it) })
+	}
 	if (providers.gradleProperty('verifyGameTestFailure').getOrElse('false') == 'true') {
 		jvmArgs.add('-Dlitematica.creator.gametest.verifyFailure=true')
 	}

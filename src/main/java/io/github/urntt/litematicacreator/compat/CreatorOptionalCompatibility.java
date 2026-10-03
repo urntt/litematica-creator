@@ -18,26 +18,26 @@ public final class CreatorOptionalCompatibility
     static final CreatorOptionalModSpec TWEAKEROO = new CreatorOptionalModSpec(
             "tweakeroo",
             "Tweakeroo",
-            ">=0.29.2- <0.30.0-",
-            Set.of("0.29.2-sakura.1", "0.29.3")
+            ">=0.30.0- <0.31.0-",
+            Set.of("0.30.0", "0.30.1")
     );
     static final CreatorOptionalModSpec SYNCMATICA = new CreatorOptionalModSpec(
             "syncmatica",
             "Syncmatica",
-            ">=0.3.18- <0.4.0-",
-            Set.of("0.3.18", "0.3.20")
+            ">=0.3.20- <0.4.0-",
+            Set.of("0.3.20")
     );
     static final CreatorOptionalModSpec LITHIUM = new CreatorOptionalModSpec(
             "lithium",
             "Lithium",
-            ">=0.25.3- <0.26.0-",
-            Set.of("0.25.3+mc26.2")
+            ">=0.26.1- <0.27.0-",
+            Set.of("0.26.2+mc26.3")
     );
     static final CreatorOptionalModSpec SODIUM = new CreatorOptionalModSpec(
             "sodium",
             "Sodium",
-            ">=0.9.2-alpha.4 <0.10.0-",
-            Set.of("0.9.2-alpha.4+mc26.2")
+            ">=0.9.2 <0.10.0-",
+            Set.of("0.9.2+mc26.3")
     );
 
     private static final List<CreatorOptionalModSpec> SPECS = List.of(TWEAKEROO, SYNCMATICA, LITHIUM, SODIUM);
