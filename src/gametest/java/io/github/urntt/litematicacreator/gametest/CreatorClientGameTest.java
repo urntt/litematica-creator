@@ -28,6 +28,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -148,6 +149,29 @@ public final class CreatorClientGameTest implements FabricClientGameTest
             {
                 check(!EntityUtils.shouldPickBlock(mc.player),
                         "Litematica's schematic pick block must not touch the real inventory in Creator mode");
+
+                var inventory = CreatorInventory.getInstance();
+                var realMainHand = mc.player.getMainHandItem().copy();
+                inventory.runTransaction(() ->
+                {
+                    for (int slot = 0; slot < CreatorInventory.SLOT_COUNT; ++slot)
+                    {
+                        inventory.setStack(slot, ItemStack.EMPTY);
+                    }
+                    inventory.setSelectedHotbarSlot(0);
+                    inventory.setStack(0, new ItemStack(Items.STICK));
+                });
+                check(EntityUtils.hasToolItem(mc.player), "Litematica must see the tool item in the Creator main hand");
+                inventory.runTransaction(() ->
+                {
+                    inventory.setStack(0, ItemStack.EMPTY);
+                    inventory.setStack(CreatorInventory.OFFHAND_SLOT, new ItemStack(Items.STICK));
+                });
+                check(EntityUtils.hasToolItem(mc.player), "Litematica must see the tool item in the Creator offhand");
+                inventory.runTransaction(() -> inventory.setStack(CreatorInventory.OFFHAND_SLOT, ItemStack.EMPTY));
+                mc.player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STICK));
+                check(!EntityUtils.hasToolItem(mc.player), "A real tool item must not count while Creator mode is on");
+                mc.player.setItemInHand(InteractionHand.MAIN_HAND, realMainHand);
             });
 
             context.waitFor(mc -> SchematicWorldHandler.getSchematicWorld() != null
@@ -190,6 +214,10 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                 Configs.Generic.ENABLE_CREATOR_CAMERA_WITH_CREATOR_MODE.resetToDefault();
 
                 check(EntityUtils.shouldPickBlock(mc.player), "Litematica's schematic pick block must return outside Creator mode");
+                var realMainHand = mc.player.getMainHandItem().copy();
+                mc.player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STICK));
+                check(EntityUtils.hasToolItem(mc.player), "The real hand must hold the Litematica tool outside Creator mode");
+                mc.player.setItemInHand(InteractionHand.MAIN_HAND, realMainHand);
             });
             check(!Boolean.getBoolean("litematica.creator.gametest.verifyFailure"),
                     "Intentional failure to verify the client GameTest failure gate");

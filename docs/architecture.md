@@ -167,12 +167,14 @@ World sampling runs in batches on the client thread. It changes neither Focus no
 - 原版式创造分类、搜索、拖拽、palette 与虚拟生存栏；Creator 开启时默认接管原版物品栏键，重开保留上次标签页。搜索框可正常输入 `e`，不能为了用物品栏键关闭界面而抢走文本输入。
 - pick 按 item 与 components 匹配：快捷栏命中则选中该槽，主库存命中则与合适的快捷栏槽交换，不存在则放入 1 个；不搜索盔甲或副手。Palette 中 Shift+单击在鼠标上拿起一整组。
 - 主手无可放置方块时可用虚拟副手；换手键交换虚拟主副手而非真实库存。
+- Creator 模式下 Litematica 的工具物品（`toolItem` 与 `toolItemComponents`）只按虚拟主副手判断，真实手持的工具不再生效。Tool HUD、角点、选择、模式切换和带修饰键的滚轮都识别虚拟工具；工具热键作用的那次按下不再触发 Creator 放置、删除或 pick，不带修饰键的滚轮仍切换虚拟快捷栏（[#81](https://github.com/urntt/litematica-creator/issues/81)）。
 - 所有文本跟随游戏语言，不设独立语言选择或翻译模式。
 
 - A separate 9-slot hotbar, 27-slot inventory, offhand, 4 armor slots, and a trash slot, with no crafting grid. Everything stays client-side and never writes to the real inventory.
 - Vanilla-style Creative tabs, search, dragging, palette, and a virtual survival tab. While Creator is on it takes over the vanilla inventory key by default, and reopening keeps the last tab. The search box accepts `e`; the inventory key must not steal text input to close the screen.
 - Pick matches item and components: a hotbar hit selects that slot, a main-inventory hit swaps into a suitable hotbar slot, otherwise one item is added. Armor and offhand are not searched. Shift-clicking the palette picks up a full stack on the cursor.
 - When the main hand holds nothing placeable, the virtual offhand is used. The swap-hands key swaps the virtual hands, not the real inventory.
+- In Creator mode, Litematica's tool item (`toolItem` and `toolItemComponents`) is matched against the virtual hands only, so a tool in the real hand no longer counts. The Tool HUD, corners, selection, mode switching, and modifier scrolling follow the virtual tool. A press a tool hotkey acts on no longer also places, removes, or picks, and scrolling without a modifier still switches the virtual hotbar ([#81](https://github.com/urntt/litematica-creator/issues/81)).
 - All text follows the game language; there is no separate language selector or translation mode.
 
 ## Creator Camera / Creator 相机
@@ -232,11 +234,13 @@ Default keys are listed in the README. The manager's early `M+G` default clashed
 - Creator 内部快照、recovery 与导出统一使用原版 `CompoundTag`；Litematica 运行时的 `CompoundData` 只在 `CreatorLitematicaDataAdapter` 集中转换，实体使用 Creator 自有快照。
 - 原生写盘注入只重定向 Litematica 调用的 `DataFileUtils` 写盘入口，且为可选注入（`require = 0`）：入口失配时只跳过 Creator 的 metadata 规范化，不影响 Litematica 自身保存，也不会在延迟类加载时崩溃。
 - 硬依赖范围由生成的 `fabric.mod.json` 声明，未审计的新版本由 Fabric 拒绝加载。同一 Minecraft 版本内的依赖兼容层与跨 Minecraft 版本的移植是两回事，不能只放宽版本声明。
+- Litematica 的工具判定只在 `EntityUtils.hasToolItemInHand` 读取手中物品处改为虚拟主副手，比较逻辑仍由 Litematica 负责；Creator 模式下 `shouldPickBlock` 返回 false。
 - 可选模组：只有 Tweakeroo 使用私有反射桥接，契约在启动时初始化一次，失配或运行失败只停用该桥接且不刷屏；Syncmatica、Lithium、Sodium 不链接私有 API。测试组合与退化方式见[兼容说明](optional-mod-compatibility.md)。
 - `main` 跟随一个目标 Minecraft 版本，旧版本状态保留在 Git 历史中。是否以及如何维护多条版本线（分支或单源码多版本工具）尚未决定。
 
 - Creator's internal snapshots, recovery, and exports use vanilla `CompoundTag`. Litematica's runtime `CompoundData` is converted only in `CreatorLitematicaDataAdapter`, and entities use Creator's own snapshots.
 - The native write injection redirects only the `DataFileUtils` call Litematica uses to write files, and it is optional (`require = 0`). If that entry point ever stops matching, only Creator's metadata normalization is skipped; Litematica still saves, and deferred class loading cannot crash.
 - The generated `fabric.mod.json` declares hard-dependency ranges, and Fabric refuses unaudited newer versions. A dependency compatibility layer within one Minecraft version is different from a port to another Minecraft version; never just widen the version declaration.
+- For Litematica's tool checks, Creator only swaps the stack `EntityUtils.hasToolItemInHand` reads for the virtual hand; Litematica still does the matching. `shouldPickBlock` returns false in Creator mode.
 - Optional mods: only Tweakeroo uses a private reflection bridge. Its contract initializes once at startup, and a mismatch or runtime failure disables just that bridge without log spam. Syncmatica, Lithium, and Sodium link no private API. See the compatibility notes for tested combinations and fallbacks.
 - `main` follows one target Minecraft version, and older states remain in Git history. Whether and how to maintain several version lines (branches or a multi-version single-source tool) is undecided.

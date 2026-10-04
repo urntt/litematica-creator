@@ -7,6 +7,7 @@ import fi.dy.masa.malilib.hotkeys.IKeyboardInputHandler;
 import fi.dy.masa.malilib.hotkeys.IMouseInputHandler;
 import fi.dy.masa.malilib.util.GuiUtils;
 import io.github.urntt.litematicacreator.Reference;
+import io.github.urntt.litematicacreator.compat.litematica.CreatorLitematicaTools;
 import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.config.Hotkeys;
 import io.github.urntt.litematicacreator.creator.CreatorEditGestureController;
@@ -59,15 +60,16 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
     {
         Minecraft mc = Minecraft.getInstance();
         boolean acceptsCreatorEdits = CreatorManager.getInstance().isCreatorModeEnabled() && GuiUtils.getCurrentScreen() == null;
+        boolean toolClaimsInput = eventKeyState && acceptsCreatorEdits && CreatorLitematicaTools.claimsKey(input.key());
 
         if (mc.options.keyUse.matches(input))
         {
-            CreatorEditGestureController.INSTANCE.onPlaceInput(eventKeyState, acceptsCreatorEdits);
+            CreatorEditGestureController.INSTANCE.onPlaceInput(eventKeyState, acceptsCreatorEdits && !toolClaimsInput);
         }
 
         if (mc.options.keyAttack.matches(input))
         {
-            CreatorEditGestureController.INSTANCE.onBreakInput(eventKeyState, acceptsCreatorEdits);
+            CreatorEditGestureController.INSTANCE.onBreakInput(eventKeyState, acceptsCreatorEdits && !toolClaimsInput);
         }
 
         boolean swapOffhandKey = mc.options.keySwapOffhand.matches(input);
@@ -137,15 +139,17 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
     {
         Minecraft mc = Minecraft.getInstance();
         boolean acceptsCreatorEdits = CreatorManager.getInstance().isCreatorModeEnabled() && GuiUtils.getCurrentScreen() == null;
+        // Litematica's tool hotkeys fire before this handler; a press they act on must not also edit.
+        boolean toolClaimsInput = eventButtonState && acceptsCreatorEdits && CreatorLitematicaTools.claimsMouseButton(click.button());
 
         if (mc.options.keyUse.matchesMouse(click))
         {
-            CreatorEditGestureController.INSTANCE.onPlaceInput(eventButtonState, acceptsCreatorEdits);
+            CreatorEditGestureController.INSTANCE.onPlaceInput(eventButtonState, acceptsCreatorEdits && !toolClaimsInput);
         }
 
         if (mc.options.keyAttack.matchesMouse(click))
         {
-            CreatorEditGestureController.INSTANCE.onBreakInput(eventButtonState, acceptsCreatorEdits);
+            CreatorEditGestureController.INSTANCE.onBreakInput(eventButtonState, acceptsCreatorEdits && !toolClaimsInput);
         }
 
         if (!eventButtonState || !CreatorManager.getInstance().isCreatorModeEnabled() || GuiUtils.getCurrentScreen() != null)
@@ -155,7 +159,7 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
 
         if (mc.options.keyPickItem.matchesMouse(click))
         {
-            return CreatorEditService.getInstance().pickBlock();
+            return toolClaimsInput || CreatorEditService.getInstance().pickBlock();
         }
 
         return false;
@@ -166,6 +170,11 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
     {
         if (CreatorManager.getInstance().isCreatorModeEnabled() && GuiUtils.getCurrentScreen() == null)
         {
+            if (CreatorLitematicaTools.claimsScroll())
+            {
+                return false;
+            }
+
             CreatorInventory.getInstance().scrollHotbar(amount);
             return true;
         }
