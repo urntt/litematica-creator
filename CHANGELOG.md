@@ -20,6 +20,7 @@ Notable user-visible changes are recorded here in English and Chinese, following
 
 ### Changed / 变更
 
+- The mod version now carries the target Minecraft version as SemVer build metadata (`0.1.0-dev+26.3`), and JARs are named `litematica-creator-fabric-<version>.jar`. / 模组版本以 SemVer build metadata 标注目标 Minecraft 版本（`0.1.0-dev+26.3`），JAR 命名为 `litematica-creator-fabric-<version>.jar`。
 - Target Minecraft 26.3 with Fabric Loader 0.19.5. Creator now requires MaLiLib `>=0.30.1 <0.30.3` and Litematica `>=0.29.0 <0.29.2`; 26.2 is no longer supported by this line. / 目标版本改为 Minecraft 26.3 与 Fabric Loader 0.19.5；Creator 现需要 MaLiLib `>=0.30.1 <0.30.3` 与 Litematica `>=0.29.0 <0.29.2`，此版本线不再支持 26.2。
 - Update the optional-mod audit to the 26.3 releases of Tweakeroo, Syncmatica, Lithium, and Sodium; older releases are reported as outside the audited range and the Tweakeroo camera bridge stays disabled for them. / 可选模组审计更新为 Tweakeroo、Syncmatica、Lithium 与 Sodium 的 26.3 版本；旧版本会提示超出审计范围，Tweakeroo 相机桥接对其保持禁用。
 - Creator placement and deletion swings now use the held item's 26.3 interaction and attack animations. / Creator 放置与删除的挥手动作改用手持物品在 26.3 中的交互与攻击动画。

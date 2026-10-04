@@ -39,9 +39,14 @@ tasks.test {
 	useJUnitPlatform()
 }
 
+def minecraftBuildMetadata = '+' + project.minecraft_version
+if (!project.mod_version.endsWith(minecraftBuildMetadata)) {
+	throw new GradleException("mod_version '${project.mod_version}' must end with the Minecraft build metadata '${minecraftBuildMetadata}'")
+}
+
 base {
 	group = project.group + "." + project.mod_id
-	archivesName = project.mod_file_name + '-' + project.minecraft_version
+	archivesName = project.mod_file_name
 	version = project.mod_version
 }
 

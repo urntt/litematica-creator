@@ -10,9 +10,9 @@ This guide owns versioning, changelog, GitHub release, and licensing conventions
 
 Use [Semantic Versioning](https://semver.org/), starting at `0.1.0` independently of Litematica or predecessor releases. Store the complete version in `mod_version`; `+<Minecraft version>` names the target game as build metadata. Examples such as `0.1.0+26.2` or `0.1.0-dev+26.2` are illustrative, not current configuration.
 
-Minecraft 后缀不影响 SemVer 优先级，也不声明跨 Minecraft 版本兼容。tag、changelog 标题、JAR metadata 和 release 必须使用完全一致的版本字符串；不得发布后覆盖同版本内容。当前 JAR 名称与 metadata 已统一使用 `mod_version`，不再动态追加时间戳；Minecraft build-metadata 后缀尚待版本迁移任务，不把历史开发包当作正式 release。
+Minecraft 后缀不影响 SemVer 优先级，也不声明跨 Minecraft 版本兼容。tag、changelog 标题、JAR metadata 和 release 必须使用完全一致的版本字符串；不得发布后覆盖同版本内容。构建要求 `mod_version` 以 `+<minecraft_version>` 结尾，否则直接失败；JAR 命名为 `<mod_file_name>-<mod_version>.jar`，例如 `litematica-creator-fabric-0.1.0+26.3.jar`，不追加时间戳。历史开发包不视为正式 release。
 
-Build metadata does not change SemVer precedence or imply cross-Minecraft compatibility. Tags, changelog headings, JAR metadata, and releases must agree on the full version; published versions are immutable. JAR naming now matches `mod_version` without timestamps; the Minecraft build-metadata suffix is still pending.
+Build metadata does not change SemVer precedence or imply cross-Minecraft compatibility. Tags, changelog headings, JAR metadata, and releases must agree on the full version; published versions are immutable. The build fails unless `mod_version` ends with `+<minecraft_version>`. JARs are named `<mod_file_name>-<mod_version>.jar`, for example `litematica-creator-fabric-0.1.0+26.3.jar`, with no timestamp. Historical development JARs are not releases.
 
 ## Changelog / 变更记录
 

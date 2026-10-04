@@ -38,7 +38,7 @@ jobs:
           from build import read_properties, ROOT
           properties = read_properties(ROOT / 'gradle.properties')
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
-              for key in ('java_version', 'mod_version', 'mod_file_name', 'minecraft_version'):
+              for key in ('java_version', 'mod_version', 'mod_file_name'):
                   print(f'{key}={properties[key]}', file=output)
           PY
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -71,7 +71,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: creator-${{ matrix.profile }}-${{ steps.versions.outputs.mod_version }}
-          path: build/libs/${{ steps.versions.outputs.mod_file_name }}-${{ steps.versions.outputs.minecraft_version }}-${{ steps.versions.outputs.mod_version }}.jar
+          path: build/libs/${{ steps.versions.outputs.mod_file_name }}-${{ steps.versions.outputs.mod_version }}.jar
           if-no-files-found: error
       - name: Upload test reports and client diagnostics
         if: always()

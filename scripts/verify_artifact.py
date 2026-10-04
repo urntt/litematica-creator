@@ -61,8 +61,7 @@ def verify(path, properties, license_text):
 
 def main():
     properties = read_properties(ROOT / "gradle.properties")
-    default = ROOT / "build/libs" / (
-        f"{properties['mod_file_name']}-{properties['minecraft_version']}-{properties['mod_version']}.jar")
+    default = ROOT / "build/libs" / f"{properties['mod_file_name']}-{properties['mod_version']}.jar"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("jar", type=Path, nargs="?", default=default)
     args = parser.parse_args()
