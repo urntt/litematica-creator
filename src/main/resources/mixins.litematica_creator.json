@@ -17,6 +17,7 @@
 		"LevelExtractorMixin",
 		"LevelExtractorAccessor",
 		"LevelRendererMixin",
+		"LitematicaEntityUtilsMixin",
 		"LitematicaGuiNavigationMixin",
 		"LitematicaInputHandlerMixin",
 		"LocalPlayerMixin",

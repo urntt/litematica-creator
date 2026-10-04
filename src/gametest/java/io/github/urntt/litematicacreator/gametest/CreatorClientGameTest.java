@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.schematic.LitematicaSchematic;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
+import fi.dy.masa.litematica.util.EntityUtils;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import fi.dy.masa.malilib.util.data.tag.CompoundData;
 import io.github.urntt.litematicacreator.LitematicaCreator;
@@ -143,6 +144,12 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                 check(!cameras.isActive(), "Camera session must be released");
             });
 
+            context.runOnClient(mc ->
+            {
+                check(!EntityUtils.shouldPickBlock(mc.player),
+                        "Litematica's schematic pick block must not touch the real inventory in Creator mode");
+            });
+
             context.waitFor(mc -> SchematicWorldHandler.getSchematicWorld() != null
                     && SchematicWorldHandler.getSchematicWorld().getBlockState(origin.east()).is(Blocks.OAK_PLANKS));
             context.runOnClient(mc ->
@@ -181,6 +188,8 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                         "Discard must unload the placement");
                 manager.setCreatorModeEnabled(false, false);
                 Configs.Generic.ENABLE_CREATOR_CAMERA_WITH_CREATOR_MODE.resetToDefault();
+
+                check(EntityUtils.shouldPickBlock(mc.player), "Litematica's schematic pick block must return outside Creator mode");
             });
             check(!Boolean.getBoolean("litematica.creator.gametest.verifyFailure"),
                     "Intentional failure to verify the client GameTest failure gate");

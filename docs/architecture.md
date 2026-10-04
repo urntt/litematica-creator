@@ -151,12 +151,14 @@ World sampling runs in batches on the client thread. It changes neither Focus no
 - 放置、删除、pick 与原版式投影轮廓共享 Creator Camera 射线和编辑距离（默认 10，范围 1–128）。
 - 真实实体、真实方块与投影分别求最近命中后合并；等距时实体优先，其次投影，最后真实方块。最近的是实体时静默阻断：不穿透、不建对象、不触发空中放置。只有真正 MISS 才用固定距离的空气目标（空中放置默认开启，距离默认 5，范围 1–128）。
 - “忽略放置格实体碰撞”只放宽最终放置格的实体占位检查，不是射线穿透开关（默认关闭）。
+- Creator 模式下 Litematica 的原理图 pick block 不生效：它从真实玩家射线并写入真实背包，中键只执行 Creator 的虚拟 pick（[#106](https://github.com/urntt/litematica-creator/issues/106)）。
 - 长按按固定间隔连续放置或删除（各默认 4 ticks，范围 1–20）。Accurate 连续放置与 backfill 经实测效果不佳已取消，不再恢复。
 
 - Creator mode consumes real attack/use and the conflicting Litematica Rebuild paths. A failed edit never falls through to a real interaction, and nothing stays blocked once the mode is off.
 - Placement, removal, pick, and the vanilla-style projection outline share the Creator Camera ray and edit range (default 10, range 1–128).
 - Real entities, real blocks, and projections are traced separately and merged by distance; ties prefer entities, then projections, then real blocks. A nearest entity blocks silently with no pass-through, no new object, and no air placement. Only a true MISS uses the fixed-distance air target (air placement on by default, distance 5, range 1–128).
 - "Ignore entity collision at the placement cell" only relaxes the entity-occupancy check for the final cell; it does not let the ray pass through entities (off by default).
+- Litematica's schematic pick block is disabled in Creator mode, because it traces from the real player and fills the real inventory; the middle click runs only Creator's virtual pick ([#106](https://github.com/urntt/litematica-creator/issues/106)).
 - Holding the key repeats placement or removal at fixed intervals (4 ticks each by default, range 1–20). Accurate continuous placement and backfill were tried, worked poorly in practice, and were removed for good.
 
 ## Virtual Inventory / 虚拟物品栏

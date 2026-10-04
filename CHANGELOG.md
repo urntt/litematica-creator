@@ -13,6 +13,7 @@ Notable user-visible changes are recorded here in English and Chinese, following
 
 ### Fixed / 修复
 
+- In Creator mode, the middle click no longer also runs Litematica's schematic pick block, which could change the real inventory; it now only picks into the Creator inventory. / Creator 模式下中键不再同时触发 Litematica 的原理图 pick block（它可能改动真实背包），只向 Creator 物品栏拾取。
 - Removing or replacing a projected block now also clears its block entity data and scheduled ticks, so saved schematics no longer keep stale data such as old chest contents, and emptied Creator cells are removed. / 删除或替换投影方块时会一并清除其方块实体数据与计划刻，保存的原理图不再残留旧箱子内容等过期数据，清空的 Creator cell 也会被正确移除。
 
 ### Changed / 变更
