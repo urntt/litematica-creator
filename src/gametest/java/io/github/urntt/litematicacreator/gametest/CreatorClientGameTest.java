@@ -12,6 +12,7 @@ import fi.dy.masa.malilib.util.data.tag.CompoundData;
 import io.github.urntt.litematicacreator.LitematicaCreator;
 import io.github.urntt.litematicacreator.camera.CreatorCameraController;
 import io.github.urntt.litematicacreator.config.Configs;
+import io.github.urntt.litematicacreator.creator.CreatorEditGestureController;
 import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.creator.CreatorSchematicEditor;
@@ -172,6 +173,23 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                 mc.player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STICK));
                 check(!EntityUtils.hasToolItem(mc.player), "A real tool item must not count while Creator mode is on");
                 mc.player.setItemInHand(InteractionHand.MAIN_HAND, realMainHand);
+
+                var cameras = CreatorCameraController.getInstance();
+                check(cameras.activate(mc), "Creator Camera must activate for the empty swing");
+                cameras.getCamera().setXRot(-90.0F);
+                check(!cameras.getCamera().isSwinging() && !mc.player.isSwinging(), "No swing may be in progress yet");
+                CreatorEditGestureController.INSTANCE.onBreakInput(true, true);
+            });
+            context.waitTicks(1);
+            context.runOnClient(mc ->
+            {
+                CreatorEditGestureController.INSTANCE.onBreakInput(false, true);
+                var cameras = CreatorCameraController.getInstance();
+                check(cameras.getCamera().isSwinging(), "An attack that edits nothing must swing the Creator Camera stand-in");
+                check(!mc.player.isSwinging(), "An empty Creator swing must not animate the real player");
+                check(CreatorSchematicEditor.getBlockState(placement, origin.east()).is(Blocks.OAK_PLANKS),
+                        "An empty swing must not edit the projection");
+                cameras.deactivate(mc);
             });
 
             context.waitFor(mc -> SchematicWorldHandler.getSchematicWorld() != null

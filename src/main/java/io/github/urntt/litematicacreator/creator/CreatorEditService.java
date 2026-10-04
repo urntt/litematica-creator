@@ -23,6 +23,7 @@ import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
 import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.camera.CreatorCameraController;
+import io.github.urntt.litematicacreator.camera.CreatorCameraEntity;
 import io.github.urntt.litematicacreator.gui.GuiFocusSwitcher;
 import io.github.urntt.litematicacreator.render.CreatorVirtualLoadout;
 
@@ -201,6 +202,16 @@ public class CreatorEditService
         }
 
         return CreatorEditOutcome.NO_CHANGE;
+    }
+
+    void swingWithoutEdit(@Nullable CreatorEditTarget target)
+    {
+        @Nullable CreatorCameraEntity camera = CreatorCameraController.getInstance().getCamera();
+
+        if (CreatorEditFeedback.swingsWithoutEdit(target != null, camera != null))
+        {
+            camera.swing(InteractionHand.MAIN_HAND, CreatorVirtualLoadout.getMainHand().getAttackAnimation(), false);
+        }
     }
 
     public boolean pickBlock()

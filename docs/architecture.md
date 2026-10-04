@@ -183,6 +183,7 @@ World sampling runs in batches on the client thread. It changes neither Focus no
 - 地面模式复用原版式移动与真实/投影形状碰撞（投影碰撞默认开启）；双击空格飞行，飞行时穿墙。位置与飞行状态不跨会话保存。地面与飞行速度倍率默认 1.0，范围 0.1–5.0。
 - 姿态、碰撞箱、潜行、匍匐、滑翔与装备使用替身自己的状态，不继承本体的鞘翅小碰撞箱或爬行状态。
 - 真实玩家的主动输入与转向被隔离，但本体继续原版物理、姿态更新与服务端位置同步。替身不推动本体或其他真实实体；单人暂停时相机物理冻结。
+- 攻击没有删除投影时（打空、真实方块或实体），替身在本地挥一次主手；只在新按下时挥手，长按不重复，相机关闭时不挥手，也不带动真实玩家（[#91](https://github.com/urntt/litematica-creator/issues/91)）。
 - 第一人称只画虚拟手持物或半透明手臂，不画透明全身；第三人称与物品栏预览画半透明替身，包括皮肤第二层。Creator 挥手只作用于替身；鞘翅、滑翔动作与披风沿用原版纹理选择，不强制关闭 `showCape`。
 - 开启或关闭 Creator 模式时默认同步开关相机。Tweakeroo Free Camera 接管与恢复时保存原相机与配置快照，临时设置 `freeCameraPlayerMovement=true`、`freeCameraPlayerInputs=false`；Creator Camera 本身不依赖 Tweakeroo。
 - 世界卸载、断线、死亡或玩家实例替换以及异常初始化时恢复外部相机、输入与渲染状态；因死亡退出时保留 Focus 与 recovery。
@@ -192,6 +193,7 @@ World sampling runs in batches on the client thread. It changes neither Focus no
 - Ground mode reuses vanilla-style movement with real and projected shape collision (projection collision on by default). Double-tap jump to fly; flight passes through walls. Position and flight state are not saved across sessions. Ground and flight speed multipliers default to 1.0, range 0.1–5.0.
 - Pose, hitbox, sneaking, crawling, gliding, and equipment are the stand-in's own state; it never inherits the real body's elytra hitbox or crawl state.
 - The real player's active input and turning are isolated, while the body keeps vanilla physics, pose updates, and server position sync. The stand-in pushes neither the real body nor other real entities, and its physics freezes while singleplayer is paused.
+- An attack that removes no projection (a miss, a real block, or an entity) swings the stand-in's main hand locally. Only a fresh press swings, holding does not repeat, and nothing swings while the camera is off, so the real player never animates for it ([#91](https://github.com/urntt/litematica-creator/issues/91)).
 - First person draws only virtual held items or translucent arms, never a transparent full body. Third person and the inventory preview draw a translucent stand-in, including the outer skin layer. Creator swings animate only the stand-in. Elytra, gliding, and cape use vanilla texture selection without forcing `showCape` off.
 - By default the camera turns on and off with Creator mode. Taking over and restoring Tweakeroo Free Camera keeps a snapshot of the previous camera and configuration and temporarily sets `freeCameraPlayerMovement=true` and `freeCameraPlayerInputs=false`; Creator Camera itself does not depend on Tweakeroo.
 - World unload, disconnect, death or player replacement, and failed initialization restore the external camera, input, and render state. Leaving through death keeps Focus and recovery.

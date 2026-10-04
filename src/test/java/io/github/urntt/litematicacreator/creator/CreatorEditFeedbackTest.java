@@ -31,4 +31,17 @@ class CreatorEditFeedbackTest
         assertSame(camera, CreatorEditFeedback.feedbackTarget(player, camera));
         assertSame(player, CreatorEditFeedback.feedbackTarget(player, null));
     }
+
+    @Test
+    void swingsTheCameraOnlyForAttacksThatTargetNoProjection()
+    {
+        assertTrue(CreatorEditFeedback.swingsWithoutEdit(false, true));
+        assertFalse(CreatorEditFeedback.swingsWithoutEdit(true, true));
+    }
+
+    @Test
+    void neverSwingsTheRealPlayerWithoutAnEdit()
+    {
+        assertFalse(CreatorEditFeedback.swingsWithoutEdit(false, false));
+    }
 }

@@ -74,6 +74,9 @@ public final class CreatorEditGestureController
                 this.suspend(placeDown, breakDown);
                 return;
             }
+
+            // Only a fresh press swings without an edit; holding the key keeps a single swing.
+            edits.swingWithoutEdit(target);
         }
 
         if (!freshBreak && this.breakInput.isHeld() && this.breakRepeat.shouldObserveHeld(tick))
