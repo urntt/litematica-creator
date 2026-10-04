@@ -61,9 +61,9 @@ JUnit uses the test-only `src/test/resources/log4j2-test.xml`, which overrides t
 
 ## CI Contract / CI 约定
 
-`.github/workflows/build.yml` 在每次 push、pull request 及手动运行时执行 Linux `current` / `legacy` 矩阵，读取同一版本配置，运行 Python 策略测试、完整 Gradle 构建/JUnit、正式 JAR 审计及打包客户端 GameTest。Actions 固定提交、默认只读仓库权限，不使用 PR 秘密。通过全部检查才上传正式 JAR，测试日志与截图始终保留。发布门禁见发布指南。
+`.github/workflows/build.yml` 在每次 push、pull request 及手动运行时执行 Linux `current` / `legacy` 矩阵，Release 工作流也通过 `workflow_call` 复用它验证待发布提交；它读取同一版本配置，运行 Python 策略测试、完整 Gradle 构建/JUnit、正式 JAR 审计及打包客户端 GameTest。Actions 固定提交、默认只读仓库权限，不使用 PR 秘密。通过全部检查才上传正式 JAR，测试日志与截图始终保留。发布门禁见发布指南。
 
-The build workflow runs the Linux `current` / `legacy` matrix on push, PR, and manual dispatch. It reads canonical versions, runs Python policies, Gradle/JUnit, production JAR checks, and packaged client GameTests. Actions use fixed commits and read-only repository permissions without PR secrets. Production JARs upload only after all checks pass; diagnostic artifacts always upload. See the release guide for publishing gates.
+The build workflow runs the Linux `current` / `legacy` matrix on push, PR, and manual dispatch, and the release workflow reuses it through `workflow_call` to validate the commit it publishes. It reads canonical versions, runs Python policies, Gradle/JUnit, production JAR checks, and packaged client GameTests. Actions use fixed commits and read-only repository permissions without PR secrets. Production JARs upload only after all checks pass; diagnostic artifacts always upload. See the release guide for publishing gates.
 
 客户端测试位于独立 `src/gametest/` 测试模组；Fabric API 仅用于该测试环境，正式 Creator JAR 不捆入它或测试代码。`runProductionClientGameTest` 使用实际打包的 Creator 与上游 JAR，不依赖开发模式 Mixin 放宽。测试开始时先加载 Creator Mixin 配置声明的全部目标类，使本场景未触及的类也完成 Mixin 应用，失效注入会以目标类名报错。地面单人世界断言覆盖投影编辑、空 cell、虚拟库存、相机、focus 与卸载，并检查真实客户端/服务端方块不变；渲染等待检查 schematic world，输出投影与 Creator Camera 第一人称两张截图。`build` 不自动启动图形客户端。
 
@@ -88,6 +88,6 @@ The failure-verification property intentionally fails a test-only assertion and 
 
 ## Infrastructure Tasks / 基础设施任务
 
-固定依赖、资源生成、跨平台构建入口、CI 与客户端 GameTest 均已实现，迁移前的验收证据见[历史完成记录](history/completed-tasks.md#official-sources-and-linux-toolchain--官方源码与-linux-工具链)，云端账号接入见[云端开发](cloud-development.md)。Creator 不为工具链引入未使用的 Fabric API 运行依赖，上游项目自己的依赖版本由各自固定提交管理。尚未完成的基础设施工作（如 SemVer Minecraft 后缀与 Release 工作流）见带 [`area:infra`](https://github.com/urntt/litematica-creator/issues?q=is%3Aissue%20state%3Aopen%20label%3Aarea%3Ainfra) 标签的 issue。
+固定依赖、资源生成、跨平台构建入口、CI 与客户端 GameTest 均已实现，迁移前的验收证据见[历史完成记录](history/completed-tasks.md#official-sources-and-linux-toolchain--官方源码与-linux-工具链)，云端账号接入见[云端开发](cloud-development.md)。Creator 不为工具链引入未使用的 Fabric API 运行依赖，上游项目自己的依赖版本由各自固定提交管理。版本后缀与 Release 工作流见[发布指南](releasing.md)。尚未完成的基础设施工作见带 [`area:infra`](https://github.com/urntt/litematica-creator/issues?q=is%3Aissue%20state%3Aopen%20label%3Aarea%3Ainfra) 标签的 issue。
 
-Pinned dependencies, resource generation, the cross-platform launcher, CI, and client GameTests are implemented. See the historical completion notes for pre-migration evidence and the cloud guide for account onboarding. Creator adds no unused Fabric API runtime dependency for tooling, and upstream dependency versions stay owned by their pinned commits. Open infrastructure work, such as the SemVer Minecraft suffix and the release workflow, is tracked in issues labeled [`area:infra`](https://github.com/urntt/litematica-creator/issues?q=is%3Aissue%20state%3Aopen%20label%3Aarea%3Ainfra).
+Pinned dependencies, resource generation, the cross-platform launcher, CI, and client GameTests are implemented. See the historical completion notes for pre-migration evidence and the cloud guide for account onboarding. Creator adds no unused Fabric API runtime dependency for tooling, and upstream dependency versions stay owned by their pinned commits. The release guide covers the version suffix and release workflow. Open infrastructure work is tracked in issues labeled [`area:infra`](https://github.com/urntt/litematica-creator/issues?q=is%3Aissue%20state%3Aopen%20label%3Aarea%3Ainfra).

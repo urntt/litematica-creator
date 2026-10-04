@@ -4,6 +4,13 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  # The release workflow validates its exact commit through this same pipeline.
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit SHA to validate
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -28,6 +35,8 @@ jobs:
       SDL_VIDEO_FORCE_EGL: "1"
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.ref || github.sha }}
       - name: Read canonical versions
         id: versions
         run: |

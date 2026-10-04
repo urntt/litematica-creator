@@ -10,6 +10,7 @@ Notable user-visible changes are recorded here in English and Chinese, following
 
 - Under Creator Camera, an attack that removes no projection now swings the camera stand-in's hand once, like a vanilla attack click; nothing is sent and the real player does not animate. / Creator Camera 下攻击未删除投影时，替身会像原版攻击一样挥一次手；不发送任何数据包，真实玩家也不播放动作。
 - In Creator mode, Litematica's tool item works from the Creator virtual main hand or offhand: the Tool HUD, corner and selection clicks, mode switching, and modifier scrolling use it, and a tool click no longer also edits the projection. A tool in the real hand no longer counts while Creator mode is on. / Creator 模式下 Litematica 工具物品可从虚拟主手或副手生效：Tool HUD、角点与选择点击、模式切换及带修饰键的滚轮均识别虚拟工具，工具点击不再同时编辑投影；Creator 模式开启时真实手中的工具不再生效。
+- Add a GitHub release workflow that publishes only a JAR validated at the release commit against both dependency profiles, with a default dry-run mode for manual runs. / 新增 GitHub Release 工作流：只发布在发布提交上经两组依赖验证的同一 JAR，手动运行默认 dry run。
 - Add push/PR Linux CI for both hard-dependency profiles, packaged client GameTests, and production JAR audits. / 新增两组硬依赖的 push/PR Linux CI、打包客户端 GameTest 与正式 JAR 审计。
 - Publish repository/support links in mod metadata and document cloud development setup. / 模组 metadata 增加仓库/问题入口，并提供云端开发准备文档。
 
