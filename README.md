@@ -103,7 +103,7 @@ Recovery cache 位于 `config/litematica-creator/recovery/`，用于恢复：
 
 - 主要支持普通 `BlockItem` 的单方块放置；门、床等多方块语义尚未实现。
 - 尚无通用 BlockState/NBT 编辑器，也不支持与投影容器、告示牌等交互。
-- 尚无撤销/重做、多方块批量操作和实时多人同步。
+- 不提供撤销/重做；尚无多方块批量操作和实时多人同步。
 - Creator Camera 的普通方块式投影预览模式尚未实现。
 - 项目依赖 Litematica 内部实现，目标版本变化时可能需要适配。
 
@@ -223,7 +223,7 @@ The latest complete cache can be recovered after a normal exit, disconnect, worl
 
 - Placement primarily covers ordinary single-block `BlockItem` behavior. Multi-block blocks such as doors and beds are not implemented yet.
 - There is no general BlockState/NBT editor or virtual interaction for containers, signs, and similar projected blocks.
-- Undo/redo, bulk placement, and real-time multiplayer synchronization are not available yet.
+- Undo/redo is not provided. Bulk placement and real-time multiplayer synchronization are not available yet.
 - Normal opaque block rendering for Creator Camera preview mode is not implemented yet.
 - The addon relies on Litematica internals and may require adaptation for other target versions.
 
