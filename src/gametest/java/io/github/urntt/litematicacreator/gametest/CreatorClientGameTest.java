@@ -29,11 +29,14 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.util.Util;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.ticks.ScheduledTick;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
@@ -214,6 +217,56 @@ public final class CreatorClientGameTest implements FabricClientGameTest
             {
                 CreatorCameraController.getInstance().deactivate(mc);
                 check(mc.getCameraEntity() == mc.player, "Camera exit must restore the original player view");
+            });
+
+            BlockPos stairsPos = origin.above(2);
+            context.runOnClient(mc -> check(
+                    CreatorSchematicEditor.setBlockState(placement, stairsPos, Blocks.OAK_STAIRS.defaultBlockState()),
+                    "Stairs projection must be placed"));
+            context.waitFor(mc -> SchematicWorldHandler.getSchematicWorld() != null
+                    && SchematicWorldHandler.getSchematicWorld().getBlockState(stairsPos).is(Blocks.OAK_STAIRS));
+            context.runOnClient(mc ->
+            {
+                var inventory = CreatorInventory.getInstance();
+                inventory.runTransaction(() ->
+                {
+                    for (int slot = 0; slot < CreatorInventory.SLOT_COUNT; ++slot)
+                    {
+                        inventory.setStack(slot, ItemStack.EMPTY);
+                    }
+                    inventory.setSelectedHotbarSlot(0);
+                    inventory.setStack(0, new ItemStack(Items.DEBUG_STICK));
+                });
+                var cameras = CreatorCameraController.getInstance();
+                check(cameras.activate(mc), "Creator Camera must activate for the debug stick");
+                // Look straight down at the stairs so the Creator ray hits the projection deterministically.
+                cameras.getCamera().setPos(stairsPos.getX() + 0.5D, stairsPos.getY() + 2.0D, stairsPos.getZ() + 0.5D);
+                cameras.getCamera().setXRot(90.0F);
+                CreatorEditGestureController.INSTANCE.onBreakInput(true, true);
+            });
+            context.waitTicks(1);
+            context.runOnClient(mc ->
+            {
+                CreatorEditGestureController.INSTANCE.onBreakInput(false, true);
+                var stickState = CreatorInventory.getInstance().getSelectedStack().get(DataComponents.DEBUG_STICK_STATE);
+                check(stickState != null
+                                && stickState.properties().get(Blocks.OAK_STAIRS.builtInRegistryHolder()) == StairBlock.FACING,
+                        "A debug stick attack must select the first stairs property on the virtual stick");
+                check(CreatorSchematicEditor.getBlockState(placement, stairsPos).getValue(StairBlock.FACING) == Direction.NORTH,
+                        "Selecting a debug stick property must not change the projection");
+                CreatorEditGestureController.INSTANCE.onPlaceInput(true, true);
+            });
+            context.waitTicks(1);
+            context.runOnClient(mc ->
+            {
+                CreatorEditGestureController.INSTANCE.onPlaceInput(false, true);
+                Direction expected = Util.findNextInIterable(StairBlock.FACING.getPossibleValues(), Direction.NORTH);
+                check(CreatorSchematicEditor.getBlockState(placement, stairsPos).getValue(StairBlock.FACING) == expected,
+                        "A debug stick use must cycle the selected projection property");
+                check(CreatorSchematicEditor.getBlockState(placement, stairsPos.above()).isAir(),
+                        "A debug stick use must not place a projection block");
+                check(mc.level.getBlockState(stairsPos).isAir(), "The debug stick must not change the real world");
+                CreatorCameraController.getInstance().deactivate(mc);
             });
             context.runOnClient(mc ->
             {

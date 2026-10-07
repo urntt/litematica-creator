@@ -14,6 +14,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.DebugStickState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.StairBlock;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -59,6 +62,26 @@ class CreatorInventoryStorageTest
         assertEquals(37, result.stacks()[4].getCount());
         assertTrue(ItemStack.isSameItemSameComponents(namedStack, result.stacks()[4]));
         assertFalse(result.migrated());
+    }
+
+    @Test
+    void keepsTheSelectedDebugStickProperty()
+    {
+        ItemStack[] stacks = emptyStacks();
+        ItemStack debugStick = new ItemStack(Items.DEBUG_STICK);
+        debugStick.set(DataComponents.DEBUG_STICK_STATE,
+                DebugStickState.EMPTY.withProperty(Blocks.OAK_STAIRS.builtInRegistryHolder(), StairBlock.HALF));
+        stacks[CreatorInventory.OFFHAND_SLOT] = debugStick;
+        List<String> errors = new ArrayList<>();
+
+        JsonObject json = CreatorInventoryStorage.toJson(stacks, 0, registryAccess, errors::add);
+        CreatorInventoryStorage.LoadResult result = CreatorInventoryStorage.fromJson(json, registryAccess, errors::add);
+
+        assertTrue(errors.isEmpty());
+        assertEquals(StairBlock.HALF, result.stacks()[CreatorInventory.OFFHAND_SLOT]
+                .get(DataComponents.DEBUG_STICK_STATE)
+                .properties()
+                .get(Blocks.OAK_STAIRS.builtInRegistryHolder()));
     }
 
     @Test

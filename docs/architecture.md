@@ -168,6 +168,7 @@ World sampling runs in batches on the client thread. It changes neither Focus no
 - pick 按 item 与 components 匹配：快捷栏命中则选中该槽，主库存命中则与合适的快捷栏槽交换，不存在则放入 1 个；不搜索盔甲或副手。Palette 中 Shift+单击在鼠标上拿起一整组。
 - 主手无可放置方块时可用虚拟副手；换手键交换虚拟主副手而非真实库存。
 - Creator 模式下 Litematica 的工具物品（`toolItem` 与 `toolItemComponents`）只按虚拟主副手判断，真实手持的工具不再生效。Tool HUD、角点、选择、模式切换和带修饰键的滚轮都识别虚拟工具；工具热键作用的那次按下不再触发 Creator 放置、删除或 pick，不带修饰键的滚轮仍切换虚拟快捷栏（[#81](https://github.com/urntt/litematica-creator/issues/81)）。
+- 虚拟主手或副手持原版调试棒时（主手优先），攻击投影方块按原版语义选择属性，使用则循环所选属性的值，潜行反向；不检查真实玩家的权限。调试棒优先于删除和放置，每次按下只执行一次，长按不重复；真实方块与空气不受影响，中键 pick 不变。所选属性写入虚拟调试棒的 `debug_stick_state` 组件并随物品栏持久化；值的修改走普通编辑路径，重叠时先打开 Focus Switcher，同一方块改状态时保留其 NBT（[#87](https://github.com/urntt/litematica-creator/issues/87)）。
 - 所有文本跟随游戏语言，不设独立语言选择或翻译模式。
 
 - A separate 9-slot hotbar, 27-slot inventory, offhand, 4 armor slots, and a trash slot, with no crafting grid. Everything stays client-side and never writes to the real inventory.
@@ -175,6 +176,7 @@ World sampling runs in batches on the client thread. It changes neither Focus no
 - Pick matches item and components: a hotbar hit selects that slot, a main-inventory hit swaps into a suitable hotbar slot, otherwise one item is added. Armor and offhand are not searched. Shift-clicking the palette picks up a full stack on the cursor.
 - When the main hand holds nothing placeable, the virtual offhand is used. The swap-hands key swaps the virtual hands, not the real inventory.
 - In Creator mode, Litematica's tool item (`toolItem` and `toolItemComponents`) is matched against the virtual hands only, so a tool in the real hand no longer counts. The Tool HUD, corners, selection, mode switching, and modifier scrolling follow the virtual tool. A press a tool hotkey acts on no longer also places, removes, or picks, and scrolling without a modifier still switches the virtual hotbar ([#81](https://github.com/urntt/litematica-creator/issues/81)).
+- With a vanilla debug stick in the virtual main hand or offhand (main hand first), attacking a projection block selects a property and using it cycles that property's value, both reversed while sneaking, without checking the real player's permissions. The stick takes priority over removal and placement, acts once per press, and does not repeat while held; real blocks and air are unaffected, and middle-click pick is unchanged. The selected property lives in the virtual stick's `debug_stick_state` component and persists with the inventory. Value changes use the normal edit path: overlaps open the Focus Switcher first, and a state change of the same block keeps its NBT ([#87](https://github.com/urntt/litematica-creator/issues/87)).
 - All text follows the game language; there is no separate language selector or translation mode.
 
 ## Creator Camera / Creator 相机

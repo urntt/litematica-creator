@@ -8,6 +8,7 @@ Notable user-visible changes are recorded here in English and Chinese, following
 
 ### Added / 新增
 
+- A debug stick in the Creator virtual main hand or offhand now edits projection block states with vanilla semantics: attack selects a property, use cycles its value, and sneaking reverses either; the selection is saved on the virtual stick. / Creator 虚拟主手或副手中的调试棒可按原版语义编辑投影方块状态：攻击选择属性、使用切换属性值、潜行反向，所选属性保存在虚拟调试棒上。
 - Under Creator Camera, an attack that removes no projection now swings the camera stand-in's hand once, like a vanilla attack click; nothing is sent and the real player does not animate. / Creator Camera 下攻击未删除投影时，替身会像原版攻击一样挥一次手；不发送任何数据包，真实玩家也不播放动作。
 - In Creator mode, Litematica's tool item works from the Creator virtual main hand or offhand: the Tool HUD, corner and selection clicks, mode switching, and modifier scrolling use it, and a tool click no longer also edits the projection. A tool in the real hand no longer counts while Creator mode is on. / Creator 模式下 Litematica 工具物品可从虚拟主手或副手生效：Tool HUD、角点与选择点击、模式切换及带修饰键的滚轮均识别虚拟工具，工具点击不再同时编辑投影；Creator 模式开启时真实手中的工具不再生效。
 - Add a GitHub release workflow that publishes only a JAR validated at the release commit against both dependency profiles, with a default dry-run mode for manual runs. / 新增 GitHub Release 工作流：只发布在发布提交上经两组依赖验证的同一 JAR，手动运行默认 dry run。

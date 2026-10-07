@@ -4,10 +4,12 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.DebugStickState;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -202,6 +204,99 @@ public class CreatorEditService
         }
 
         return CreatorEditOutcome.NO_CHANGE;
+    }
+
+    boolean holdsDebugStick()
+    {
+        return CreatorDebugStick.activeHand(CreatorVirtualLoadout.getMainHand(), CreatorVirtualLoadout.getOffhand()) != null;
+    }
+
+    /**
+     * Applies the virtual debug stick to a projection block: attacking selects a property on the stick, using cycles
+     * that property on the projection. Real blocks and air are ignored, and the real player's permissions do not apply.
+     */
+    CreatorEditOutcome useDebugStick(@Nullable CreatorEditTarget target, boolean cycle)
+    {
+        Minecraft mc = Minecraft.getInstance();
+        CreatorInventory inventory = CreatorInventory.getInstance();
+        @Nullable InteractionHand hand = CreatorDebugStick.activeHand(
+                inventory.getSelectedStack(),
+                inventory.getStack(CreatorInventory.OFFHAND_SLOT)
+        );
+
+        if (!this.canEdit(mc) || hand == null || target == null)
+        {
+            return CreatorEditOutcome.NO_CHANGE;
+        }
+
+        int slot = hand == InteractionHand.MAIN_HAND ? inventory.getSelectedHotbarSlot() : CreatorInventory.OFFHAND_SLOT;
+        ItemStack stick = inventory.getStack(slot);
+        @Nullable DebugStickState stickState = stick.get(DataComponents.DEBUG_STICK_STATE);
+
+        if (stickState == null)
+        {
+            return CreatorEditOutcome.NO_CHANGE;
+        }
+
+        // While the Creator Camera is active, sneaking belongs to the stand-in, not the real player.
+        @Nullable CreatorCameraEntity camera = CreatorCameraController.getInstance().getCamera();
+        boolean backward = camera != null ? camera.isSecondaryUseActive() : mc.player.isSecondaryUseActive();
+
+        if (!cycle)
+        {
+            @Nullable Level schematicWorld = SchematicWorldHandler.getSchematicWorld();
+
+            if (schematicWorld == null)
+            {
+                return CreatorEditOutcome.NO_CHANGE;
+            }
+
+            CreatorDebugStick.Action action = CreatorDebugStick.select(schematicWorld.getBlockState(target.blockPos()), stickState, backward);
+            mc.player.sendOverlayMessage(action.message());
+
+            if (action.stickState() != null)
+            {
+                ItemStack updated = stick.copy();
+                updated.set(DataComponents.DEBUG_STICK_STATE, action.stickState());
+                inventory.setStack(slot, updated);
+                CreatorEditFeedback.feedbackTarget(mc.player, camera).swing(hand, stick.getAttackAnimation(), false);
+            }
+
+            return CreatorEditOutcome.NO_CHANGE;
+        }
+
+        List<CreatorPlacementTarget> candidates = CreatorPlacementIndex.INSTANCE.findAt(target.blockPos());
+
+        if (candidates.size() > 1)
+        {
+            GuiFocusSwitcher.openForOverlap(candidates.stream().map(CreatorPlacementTarget::placement).toList());
+            return CreatorEditOutcome.OVERLAP;
+        }
+
+        if (candidates.size() != 1)
+        {
+            return CreatorEditOutcome.NO_CHANGE;
+        }
+
+        SchematicPlacement placement = candidates.getFirst().placement();
+        CreatorDebugStick.Action action = CreatorDebugStick.cycle(
+                CreatorSchematicEditor.getBlockState(placement, target.blockPos()),
+                stickState,
+                backward
+        );
+        mc.player.sendOverlayMessage(action.message());
+
+        if (action.state() == null)
+        {
+            return CreatorEditOutcome.NO_CHANGE;
+        }
+
+        CreatorManager.getInstance().focusPlacement(placement);
+        boolean edited = CreatorEditFeedback.afterSuccessfulEdit(
+                CreatorSchematicEditor.setBlockState(placement, target.blockPos(), action.state()),
+                () -> CreatorEditFeedback.feedbackTarget(mc.player, camera).swing(hand, stick.getInteractAnimation(), false)
+        );
+        return edited ? CreatorEditOutcome.EDITED : CreatorEditOutcome.NO_CHANGE;
     }
 
     void swingWithoutEdit(@Nullable CreatorEditTarget target)

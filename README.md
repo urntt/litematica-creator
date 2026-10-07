@@ -26,6 +26,7 @@ Litematica Creator 让玩家在获取对应原材料前从零搭建或继续编�
 - **从零创建草稿**：在没有可编辑 placement 时自动创建草稿，也可主动新建空白原理图。
 - **稀疏动态扩展**：在原理图边界外编辑时按需创建 `1x1x1` subregion，不用频繁扩张一个巨大 region，也不会声明大片隐式空气。
 - **虚拟创造物品栏**：具有独立的虚拟快捷栏、背包、副手、盔甲和丢弃栏，支持创造分类、中英双语搜索和原版式 pick block；数据仅保存在客户端。
+- **虚拟调试棒**：Creator 模式下在虚拟主手或副手持调试棒，即可按原版方式选择并切换投影方块的属性，不需要真实玩家的权限。
 - **Litematica 工具**：Creator 模式下把 Litematica 工具物品（默认木棍）放在虚拟主手或副手即可使用选区、placement 和模式切换等工具操作。
 - **Creator Focus**：编辑目标独立于 Litematica selected placement；同一 schematic 的任意 placement 都可以作为编辑入口，修改会反映到它的全部 placements。
 - **Creator Camera**：纯客户端地面/飞行相机，支持双击空格飞行、穿墙、速度调节和可选投影碰撞；真实玩家本体保持独立，继续受重力、惯性和服务端校正影响。
@@ -146,6 +147,7 @@ The result remains a normal Litematica schematic and can use Litematica's render
 - **Draft from scratch**: automatically create a draft when no placement can be edited, or explicitly create an empty schematic.
 - **Sparse expansion**: create `1x1x1` subregions only where edits occur outside existing bounds, without repeatedly resizing one huge region or declaring large volumes of implicit air.
 - **Virtual Creative inventory**: separate virtual hotbar, inventory, offhand, armor, and trash slots with Creative tabs, search, and vanilla-style pick block. All data stays client-side.
+- **Virtual debug stick**: in Creator mode, hold a debug stick in the virtual main hand or offhand to select and cycle projection block properties the vanilla way, without the real player's permissions.
 - **Litematica tool**: in Creator mode, hold Litematica's tool item (a stick by default) in the virtual main hand or offhand to use selection, placement, and mode-switching tool actions.
 - **Creator Focus**: the edit target is independent from Litematica's selected placement. Any placement of the same schematic can be used as an edit entry point, and every placement reflects the same schematic changes.
 - **Creator Camera**: a client-only ground/flight camera with double-tap flight, noclip while flying, speed controls, and optional projection collision. The real player remains behind and continues normal gravity, momentum, and server corrections.

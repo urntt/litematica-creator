@@ -48,6 +48,13 @@ public final class CreatorEditGestureController
         }
 
         CreatorEditService edits = CreatorEditService.getInstance();
+
+        if (edits.holdsDebugStick())
+        {
+            this.runDebugStick(edits, placeDown, breakDown);
+            return;
+        }
+
         int placeInterval = Configs.Generic.CONTINUOUS_PLACE_INTERVAL_TICKS.getIntegerValue();
         int breakInterval = Configs.Generic.CONTINUOUS_BREAK_INTERVAL_TICKS.getIntegerValue();
 
@@ -143,6 +150,36 @@ public final class CreatorEditGestureController
             if (GuiUtils.getCurrentScreen() != null)
             {
                 this.suspend(placeDown, breakDown);
+            }
+        }
+    }
+
+    // A virtual debug stick takes over attack and use: one action per fresh press, never a held repeat.
+    private void runDebugStick(CreatorEditService edits, boolean placeDown, boolean breakDown)
+    {
+        this.breakRepeat.reset();
+        this.nextPlaceTick = 0L;
+
+        while (this.breakInput.consumePress())
+        {
+            CreatorEditTarget target = edits.traceDeleteTarget();
+            edits.useDebugStick(target, false);
+            edits.swingWithoutEdit(target);
+
+            if (GuiUtils.getCurrentScreen() != null)
+            {
+                this.suspend(placeDown, breakDown);
+                return;
+            }
+        }
+
+        while (this.placeInput.consumePress())
+        {
+            if (edits.useDebugStick(edits.traceDeleteTarget(), true) == CreatorEditOutcome.OVERLAP ||
+                GuiUtils.getCurrentScreen() != null)
+            {
+                this.suspend(placeDown, breakDown);
+                return;
             }
         }
     }
