@@ -100,6 +100,8 @@ Run a first-session check in each provider: load the shared rules, confirm the r
 - 冷缓存时 Maven Central 可能对共享云端出口返回 HTTP 429。重新运行同一命令即可，Gradle 会保留已完成的下载；只重试依赖下载的 429，不重试编译、测试或 GameTest 失败。
 - Offline GameTest logs contain expected authlib 401, Realms and Xvfb cursor errors. Judge a run by Gradle's exit code, the `Creator client GameTest passed` log line and the screenshot.
 - 离线 GameTest 日志中的 authlib 401、Realms 与 Xvfb 光标错误属预期；以 Gradle 退出码、`Creator client GameTest passed` 日志行和截图判断结果。
+- The container is reclaimed after the session, so nothing built in it reaches the user. Deliver the JAR as the commit's CI artifact `creator-current-<version>` instead of copying it inside the container; AGENTS.md owns this rule.
+- 容器在会话结束后回收，其中的构建产物不会留给用户。交付的 JAR 以该提交 CI 上传的 `creator-current-<version>` 产物为准，不在容器内复制；规则由 AGENTS.md 维护。
 - Client tests use `build/run/productionClientGameTest`, which is cleared before each run. Never point tests at a personal game directory. Logs/screenshots stay in build outputs, not Git.
 - 客户端测试使用每次清空的 `build/run/productionClientGameTest`，不得指向个人游戏目录；日志与截图只留在构建产物中。
 - These smoke tests do not replace manual GUI, rendering, input, multiplayer, or optional-mod regression. GitHub CI tests the two hard-dependency profiles; optional mod combinations remain separately documented.
