@@ -8,6 +8,7 @@ Notable user-visible changes are recorded here in English and Chinese, following
 
 ### Added / 新增
 
+- A bilingual [player guide](docs/player-guide.md) explains the core concepts, step-by-step workflows, feature details, and common questions. / 新增双语[玩家指南](docs/player-guide.md)，介绍核心概念、分步教程、功能说明与常见问题。
 - Using a projection sign, hanging sign, command block, chest, trapped chest, barrel, shulker box, hopper, dispenser, or dropper opens its vanilla screen. Edits are saved into the projection without sending packets, container player slots use the Creator virtual inventory, and sneaking with an item in hand still places against the block. / 在投影的告示牌、悬挂告示牌、命令方块、箱子、陷阱箱、木桶、潜影盒、漏斗、发射器或投掷器上使用时打开对应的原版界面：编辑结果写入投影、不发送数据包，容器的玩家槽位使用 Creator 虚拟物品栏，手持物品潜行时仍对着该方块放置。
 - Placing an item that carries block entity data into a projection keeps that data, such as a container's custom name, banner patterns, a head's profile, shulker box contents, or `block_entity_data`; plain blocks store no default data. / 放置带有方块实体数据的物品时，投影会保留这些数据，例如容器的自定义名称、旗帜图案、头颅资料、潜影盒内容或 `block_entity_data`；普通方块不写入默认数据。
 - Creator placement now follows vanilla block item rules: doors, beds, and tall plants place both cells, slabs merge, candles and sea pickles stack in one cell, facing follows the clicked face and view, and adjacent projected fences, walls, and similar blocks connect. The whole placement is checked and committed together, so no half structure is left behind. / Creator 放置改为沿用原版方块物品规则：门、床、高花放置两格，半砖合并，蜡烛与海泡菜同格叠加，朝向随点击面与视角，相邻投影中的栅栏、墙等会连接；整次放置一起校验、一起提交，不会只留下半个结构。

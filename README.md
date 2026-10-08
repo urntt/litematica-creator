@@ -77,6 +77,8 @@ Tweakeroo `0.30.1` 自身要求 MaLiLib `>=0.30.2`，搭配 MaLiLib `0.30.1` 时
 5. 对已有投影操作会切换 Creator focus；发生重叠或需要主动切换时，使用 `M + F` 打开 Focus Switcher。
 6. 按 `M + J` 打开 Creator 原理图管理器，检查 metadata 和导出信息，然后选择保存、另存并绑定或导出副本；也可以从管理器切换到 Litematica 原生页面。
 
+完整教程、功能说明与常见问题见[玩家指南](docs/player-guide.md)。
+
 默认快捷键：
 
 | 操作 | 默认按键 |
@@ -120,6 +122,7 @@ Recovery cache 位于 `config/litematica-creator/recovery/`，用于恢复：
 
 面向用户：
 
+- [玩家指南](docs/player-guide.md)
 - [可选模组兼容说明](docs/optional-mod-compatibility.md)
 - [变更记录](CHANGELOG.md)
 
@@ -200,6 +203,8 @@ This is a client-only mod; the server does not need it.
 5. Editing an existing projection changes Creator focus. Use `M + F` when projections overlap or when you want to select a focus explicitly.
 6. Press `M + J` to open the Creator schematic manager, review metadata and export details, then Save, Save As and Bind, or Export Copy. The manager also links directly to Litematica's native screens.
 
+See the [player guide](docs/player-guide.md) for tutorials, feature details, and the FAQ.
+
 Default keybinds:
 
 | Action | Default key |
@@ -243,6 +248,7 @@ See the [development guide](docs/development.md) for builds/toolchains, [cloud d
 
 For users:
 
+- [Player guide](docs/player-guide.md)
 - [Optional mod compatibility](docs/optional-mod-compatibility.md)
 - [Changelog](CHANGELOG.md)
 
