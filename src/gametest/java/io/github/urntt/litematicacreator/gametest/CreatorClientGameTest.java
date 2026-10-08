@@ -44,6 +44,7 @@ import net.minecraft.world.level.block.CrossCollisionBlock;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.MultifaceBlock;
 import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.SpeleothemBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -453,6 +454,28 @@ public final class CreatorClientGameTest implements FabricClientGameTest
         context.runOnClient(mc -> expect(failures,
                 CreatorSchematicEditor.getBlockState(placement, commandBlock.above()).is(Blocks.COMMAND_BLOCK),
                 "A command block must be placeable without the real player's permissions"));
+
+        // These blocks check their surroundings directly in their placement rules: support, soil, or water.
+        useFromAbove(context, Items.POINTED_DRIPSTONE, dripstone.above(2));
+        useFromAbove(context, Items.BAMBOO, bamboo.above(2));
+        useFromAbove(context, Items.SCAFFOLDING, scaffolding.above(2));
+        useFromAbove(context, Items.SEAGRASS, seagrass.above(2));
+        useFromAbove(context, Items.KELP, kelp.above(2));
+        context.runOnClient(mc ->
+        {
+            BlockState stalagmite = CreatorSchematicEditor.getBlockState(placement, dripstone.above());
+            expect(failures, stalagmite.is(Blocks.POINTED_DRIPSTONE)
+                            && stalagmite.getValue(SpeleothemBlock.TIP_DIRECTION) == Direction.UP,
+                    "Pointed dripstone on a slab top must grow up from the clicked face, without a sturdy support");
+            expect(failures, CreatorSchematicEditor.getBlockState(placement, bamboo.above()).is(Blocks.BAMBOO_SAPLING),
+                    "Bamboo must be placeable without soil below");
+            expect(failures, CreatorSchematicEditor.getBlockState(placement, scaffolding.above()).is(Blocks.SCAFFOLDING),
+                    "Scaffolding must be placeable without support below");
+            expect(failures, CreatorSchematicEditor.getBlockState(placement, seagrass.above()).is(Blocks.SEAGRASS),
+                    "Seagrass must be placeable without water");
+            expect(failures, CreatorSchematicEditor.getBlockState(placement, kelp.above()).is(Blocks.KELP),
+                    "Kelp must be placeable without water");
+        });
 
         context.runOnClient(mc -> CreatorManager.getInstance().clearFocusSilently());
         useFromEast(context, Items.OAK_DOOR, blockedDoor, 0.5D);

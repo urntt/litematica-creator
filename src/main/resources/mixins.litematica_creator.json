@@ -5,6 +5,7 @@
 	"compatibilityLevel": "JAVA_${java_version}",
 	"client": [
 		"AvatarRendererMixin",
+		"BambooSoilMixin",
 		"BlockStateSurvivalMixin",
 		"ChunkRendererSchematicVboAccessor",
 		"ChunkRenderTaskSchematicAccessor",
@@ -34,10 +35,13 @@
 		"OverlayRendererMixin",
 		"PlacementManagerTaskAccessor",
 		"PlacementManagerTaskRebuildMixin",
+		"ScaffoldingSupportMixin",
 		"SchematicPlacementMixin",
 		"SchematicPlacementAccessor",
 		"SchematicPlacementManagerAccessor",
-		"SubRegionPlacementAccessor"
+		"SpeleothemSupportMixin",
+		"SubRegionPlacementAccessor",
+		"UnderwaterPlantMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
