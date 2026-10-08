@@ -5,6 +5,7 @@
 	"compatibilityLevel": "JAVA_${java_version}",
 	"client": [
 		"AvatarRendererMixin",
+		"BlockStateSurvivalMixin",
 		"ChunkRendererSchematicVboAccessor",
 		"ChunkRenderTaskSchematicAccessor",
 		"ChunkRenderWorkerLitematicaMixin",
@@ -27,6 +28,7 @@
 		"LitematicaSchematicWriteMixin",
 		"LivingEntityRendererAccessor",
 		"MinecraftClientMixin",
+		"MultifaceAttachMixin",
 		"MultiPlayerGameModeMixin",
 		"OverlayRendererMixin",
 		"PlacementManagerTaskAccessor",

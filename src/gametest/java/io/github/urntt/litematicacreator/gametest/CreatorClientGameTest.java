@@ -42,8 +42,10 @@ import net.minecraft.world.level.block.CandleBlock;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.CrossCollisionBlock;
 import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.MultifaceBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
@@ -413,6 +415,24 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                     "A placed fence must connect to the adjacent projection fence");
             expect(failures, neighbour.is(Blocks.OAK_FENCE) && neighbour.getValue(CrossCollisionBlock.EAST),
                     "The adjacent projection fence must update its shape to connect back");
+        });
+
+        // The bottom slab's side is not sturdy, so vanilla survival rules would refuse a wall torch here.
+        useFromEast(context, Items.TORCH, torchSupport, 0.25D);
+        context.runOnClient(mc ->
+        {
+            BlockState torch = CreatorSchematicEditor.getBlockState(placement, torchSupport.east());
+            expect(failures, torch.is(Blocks.WALL_TORCH) && torch.getValue(WallTorchBlock.FACING) == Direction.EAST,
+                    "A torch on a projection side must become a wall torch facing out, without needing support");
+        });
+
+        // Multiface blocks check their own attachment faces instead of survival; a slab side is not a full face.
+        useFromEast(context, Items.GLOW_LICHEN, lichenSupport, 0.25D);
+        context.runOnClient(mc ->
+        {
+            BlockState lichen = CreatorSchematicEditor.getBlockState(placement, lichenSupport.east());
+            expect(failures, lichen.is(Blocks.GLOW_LICHEN) && MultifaceBlock.hasFace(lichen, Direction.WEST),
+                    "Glow lichen on a projection side must attach to the clicked face, without needing a full face");
         });
 
         context.runOnClient(mc -> CreatorManager.getInstance().clearFocusSilently());

@@ -23,7 +23,7 @@ Litematica Creator 让玩家在获取对应原材料前从零搭建或继续编�
 ### 主要功能
 
 - **直接编辑投影**：右键放置、左键删除、中键拾取投影或真实方块。
-- **原版放置语义**：放置沿用原版 `BlockItem` 规则：门、床、高花一次放好两格，半砖可合并，蜡烛与海泡菜可在同一格叠加，栅栏、墙等会与相邻投影连接。
+- **原版放置语义**：放置沿用原版 `BlockItem` 规则：门、床、高花一次放好两格，半砖可合并，蜡烛与海泡菜可在同一格叠加，栅栏、墙等会与相邻投影连接；火把、灯笼、按钮等按点击面朝向放置，不需要投影支撑。
 - **从零创建草稿**：在没有可编辑 placement 时自动创建草稿，也可主动新建空白原理图。
 - **稀疏动态扩展**：在原理图边界外编辑时按需创建 `1x1x1` subregion，不用频繁扩张一个巨大 region，也不会声明大片隐式空气。
 - **虚拟创造物品栏**：具有独立的虚拟快捷栏、背包、副手、盔甲和丢弃栏，支持创造分类、中英双语搜索和原版式 pick block；数据仅保存在客户端。
@@ -103,6 +103,7 @@ Recovery cache 位于 `config/litematica-creator/recovery/`，用于恢复：
 
 ### 当前边界
 
+- 滴水石锥、竹子、海草、海带等在放置时直接检查环境的方块，仍需投影提供支撑、下方方块或水。
 - 放置只支持方块物品，物品自带的方块实体数据（命名、旗帜图案、告示牌文字等）暂不写入；放置不连锁更新，只让直接相邻的投影方块调整一次形状。
 - 尚无通用 BlockState/NBT 编辑器，也不支持与投影容器、告示牌等交互。
 - 不提供撤销/重做和实时多人同步；尚无多方块批量操作。多人协作计划通过 Syncmatica 共享已保存的原理图。
@@ -145,7 +146,7 @@ The result remains a normal Litematica schematic and can use Litematica's render
 ### Features
 
 - **Direct projection editing**: right-click to place, left-click to remove, and middle-click to pick projected or real blocks.
-- **Vanilla placement rules**: placement follows vanilla `BlockItem` rules. Doors, beds, and tall plants place both cells at once, slabs merge, candles and sea pickles stack in one cell, and fences, walls, and similar blocks connect to adjacent projections.
+- **Vanilla placement rules**: placement follows vanilla `BlockItem` rules. Doors, beds, and tall plants place both cells at once, slabs merge, candles and sea pickles stack in one cell, and fences, walls, and similar blocks connect to adjacent projections. Torches, lanterns, buttons, and the like follow the clicked face without needing projected support.
 - **Draft from scratch**: automatically create a draft when no placement can be edited, or explicitly create an empty schematic.
 - **Sparse expansion**: create `1x1x1` subregions only where edits occur outside existing bounds, without repeatedly resizing one huge region or declaring large volumes of implicit air.
 - **Virtual Creative inventory**: separate virtual hotbar, inventory, offhand, armor, and trash slots with Creative tabs, search, and vanilla-style pick block. All data stays client-side.
@@ -225,6 +226,7 @@ The latest complete cache can be recovered after a normal exit, disconnect, worl
 
 ### Current Limitations
 
+- Blocks whose placement rules check their surroundings directly, such as pointed dripstone, bamboo, seagrass, and kelp, still need the projection to provide support, the block below, or water.
 - Only block items can be placed, and block entity data carried by the item (names, banner patterns, sign text, and so on) is not written yet. Placement does not chain updates; only directly adjacent projection blocks adjust their shape once.
 - There is no general BlockState/NBT editor or virtual interaction for containers, signs, and similar projected blocks.
 - Undo/redo and real-time multiplayer synchronization are not provided, and bulk placement is not available yet. Multiplayer sharing is planned through Syncmatica for saved schematics.
