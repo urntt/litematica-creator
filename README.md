@@ -50,7 +50,7 @@ Litematica Creator 让玩家在获取对应原材料前从零搭建或继续编�
 | 模组 | 已测试版本 | Creator 行为 |
 | --- | --- | --- |
 | Tweakeroo | `0.30.0`、`0.30.1` | 协调 Free Camera 状态；反射契约不匹配时只禁用该桥接 |
-| Syncmatica | `0.3.20` | 可与 Creator/Litematica 管理页面共存；实时同步尚未实现 |
+| Syncmatica | `0.3.20` | 可与 Creator/Litematica 管理页面共存；不提供实时同步 |
 | Lithium | `0.26.2+mc26.3` | Creator Camera 投影碰撞使用独立的原版 `Entity.collide()` 入口 |
 | Sodium | `0.9.2+mc26.3` | 不引用 Sodium 私有 API；原版渲染刷新注入保持可选 |
 
@@ -104,7 +104,7 @@ Recovery cache 位于 `config/litematica-creator/recovery/`，用于恢复：
 
 - 主要支持普通 `BlockItem` 的单方块放置；门、床等多方块语义尚未实现。
 - 尚无通用 BlockState/NBT 编辑器，也不支持与投影容器、告示牌等交互。
-- 不提供撤销/重做；尚无多方块批量操作和实时多人同步。
+- 不提供撤销/重做和实时多人同步；尚无多方块批量操作。多人协作计划通过 Syncmatica 共享已保存的原理图。
 - Creator Camera 的普通方块式投影预览模式尚未实现。
 - 项目依赖 Litematica 内部实现，目标版本变化时可能需要适配。
 
@@ -171,7 +171,7 @@ Optional compatibility matrix:
 | Mod | Tested versions | Creator behavior |
 | --- | --- | --- |
 | Tweakeroo | `0.30.0`, `0.30.1` | Coordinates Free Camera state; disables only this bridge when its reflection contract does not match |
-| Syncmatica | `0.3.20` | Coexists with the Creator/Litematica management screens; real-time synchronization is not implemented |
+| Syncmatica | `0.3.20` | Coexists with the Creator/Litematica management screens; real-time synchronization is not provided |
 | Lithium | `0.26.2+mc26.3` | Creator Camera projection collision uses an independent vanilla `Entity.collide()` entry point |
 | Sodium | `0.9.2+mc26.3` | Uses no private Sodium API; the vanilla renderer refresh injection remains optional |
 
@@ -225,7 +225,7 @@ The latest complete cache can be recovered after a normal exit, disconnect, worl
 
 - Placement primarily covers ordinary single-block `BlockItem` behavior. Multi-block blocks such as doors and beds are not implemented yet.
 - There is no general BlockState/NBT editor or virtual interaction for containers, signs, and similar projected blocks.
-- Undo/redo is not provided. Bulk placement and real-time multiplayer synchronization are not available yet.
+- Undo/redo and real-time multiplayer synchronization are not provided, and bulk placement is not available yet. Multiplayer sharing is planned through Syncmatica for saved schematics.
 - Normal opaque block rendering for Creator Camera preview mode is not implemented yet.
 - The addon relies on Litematica internals and may require adaptation for other target versions.
 

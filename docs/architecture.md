@@ -10,15 +10,15 @@ This file is the single source for Litematica Creator's current scope, boundarie
 - 编辑数据是普通 `LitematicaSchematic` 与 `SchematicPlacement`，不引入私有草稿格式或另一套投影渲染；结果可继续使用 Litematica 的保存、渲染、材料列表、Verifier 与建造流程。
 - Creator 编辑不放置或破坏真实方块、不修改真实物品栏，也不发送由此产生的攻击、放置或库存操作包。
 - “纯客户端”不等于压制真实玩家的同步：相机替身不发移动包，但本体的重力、惯性、击退与服务端校正照常进行。
-- 硬依赖仅 MaLiLib 与 Litematica；Tweakeroo、Syncmatica、Lithium、Sodium 为软兼容。Syncmatica 目前只保证共存，实时草稿同步属于 [#27](https://github.com/urntt/litematica-creator/issues/27) 的独立设计。
-- 普通编辑只提交玩家明确产生的直接结果，不运行邻居更新、侦测器、红石、流体传播或 block entity tick；可选的隔离模拟属于 [#88](https://github.com/urntt/litematica-creator/issues/88)，不能把真实 `ClientLevel` 伪装成 schematic world。
+- 硬依赖仅 MaLiLib 与 Litematica；Tweakeroo、Syncmatica、Lithium、Sodium 为软兼容。Syncmatica 目前只保证共存；[#27](https://github.com/urntt/litematica-creator/issues/27) 只计划通过 Syncmatica 共享已保存的原理图与 placement，不做实时草稿同步或服务端组件。
+- 普通编辑只提交玩家明确产生的直接结果，不运行邻居更新、侦测器、红石、流体传播或 block entity tick；不提供隔离的世界模拟（[#88](https://github.com/urntt/litematica-creator/issues/88) 已关闭），也不能把真实 `ClientLevel` 伪装成 schematic world。
 
 - A Fabric client-side Litematica addon whose target Minecraft version comes from `gradle.properties`. Players create or edit projections in-world, Creative-style, without owning the real blocks.
 - Edits operate on ordinary `LitematicaSchematic` and `SchematicPlacement` objects, with no private draft format or separate projection renderer, so Litematica's save, render, material list, Verifier, and build workflows keep working.
 - Creator edits never place or break real blocks, never touch the real inventory, and never send the resulting attack, placement, or inventory-operation packets.
 - "Client-only" does not suppress the real player's synchronization. The camera stand-in sends no movement packets, while the real body keeps gravity, momentum, knockback, and server corrections.
-- MaLiLib and Litematica are the only hard dependencies. Tweakeroo, Syncmatica, Lithium, and Sodium are soft-compatible. Syncmatica is only guaranteed to coexist; real-time draft sync is a separate design under [#27](https://github.com/urntt/litematica-creator/issues/27).
-- Ordinary edits commit only the direct result the player asked for. They run no neighbor updates, observers, redstone, fluid spread, or block entity ticks. Optional isolated simulation belongs to [#88](https://github.com/urntt/litematica-creator/issues/88); the real `ClientLevel` is never disguised as the schematic world.
+- MaLiLib and Litematica are the only hard dependencies. Tweakeroo, Syncmatica, Lithium, and Sodium are soft-compatible. Syncmatica is only guaranteed to coexist; [#27](https://github.com/urntt/litematica-creator/issues/27) only plans to share saved schematics and placements through Syncmatica, with no real-time draft sync or server component.
+- Ordinary edits commit only the direct result the player asked for. They run no neighbor updates, observers, redstone, fluid spread, or block entity ticks. No isolated world simulation is provided ([#88](https://github.com/urntt/litematica-creator/issues/88) was closed), and the real `ClientLevel` is never disguised as the schematic world.
 
 典型场景：在生存服务器现场设计建筑后按材料列表施工；从空白快速草拟红石、装饰或结构布局；从任意旋转或镜像的 placement 进入编辑，同步修正同一 schematic 的全部实例；用 Creator Camera 检查高处、地下或封闭空间；在管理器中整理多个 schematics 与 placements 后保存、改绑或只导出副本；断线或异常退出后恢复尚未保存的设计。
 

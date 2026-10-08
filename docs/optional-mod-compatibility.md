@@ -54,10 +54,10 @@ Unit coverage verifies version policy, Tweakeroo contract probing, Creator Camer
 
 ## Syncmatica
 
-- **当前范围**：只保证共同安装和 GUI 注入共存；Creator 草稿的实时同步与服务端 companion 仍属于 #27。
+- **当前范围**：只保证共同安装和 GUI 注入共存。#27 只计划通过 Syncmatica 共享已保存的原理图与 placement，不做草稿实时同步，也不提供服务端 companion。
 - **入口**：Creator 与 Syncmatica 都在 Litematica `initGui()` 尾部追加按钮，但使用独立按钮实例和不同布局位置；Creator 不调用 Syncmatica 私有 API，也不改其 placement 扩展字段。
 - **退化**：未安装时 Creator 管理器和普通 placement 保存完全不变。未知版本只给出兼容审计警告，不会阻止 Creator 启动或伪装成已经支持同步。
-- **未来集成边界**：应从普通 `.litematic` 与 placement 共享入口开始；实时 dirty 草稿同步必须另行定义所有权、冲突和恢复协议。
+- **未来集成边界**：只从普通 `.litematic` 与 placement 的共享入口开始；未保存（dirty）的草稿需先保存，不共享内存中的草稿。
 
 ## Lithium
 
