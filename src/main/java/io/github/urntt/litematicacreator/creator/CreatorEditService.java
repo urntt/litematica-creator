@@ -176,6 +176,52 @@ public class CreatorEditService
         return CreatorEditOutcome.EDITED;
     }
 
+    /**
+     * Opens the vanilla editor of a projection sign, command block or container that the use input targets, unless the
+     * placing player sneaks with something in a virtual hand, which places against it as in vanilla.
+     *
+     * @return the outcome, or {@code null} when the input should place a block instead
+     */
+    @Nullable
+    CreatorEditOutcome useProjectionBlock(CreatorPlacementTrace placementTrace)
+    {
+        Minecraft mc = Minecraft.getInstance();
+        @Nullable CreatorEditTarget target = placementTrace.target();
+
+        if (!this.canEdit(mc) || target == null || !target.schematicBlock())
+        {
+            return null;
+        }
+
+        Player player = placementPlayer(mc);
+        boolean holdsItem = !CreatorVirtualLoadout.getMainHand().isEmpty() || !CreatorVirtualLoadout.getOffhand().isEmpty();
+        BlockPos pos = target.clickedBlockPos();
+        List<SchematicPlacement> candidates = CreatorPlacementIndex.INSTANCE.findAt(pos).stream()
+                .map(CreatorPlacementTarget::placement)
+                .filter(placement -> CreatorBlockEntityEditorPolicy.opens(
+                        CreatorBlockEntityEditorPolicy.editorFor(CreatorSchematicEditor.getBlockState(placement, pos)),
+                        player.isSecondaryUseActive(),
+                        holdsItem
+                ))
+                .toList();
+
+        if (candidates.size() > 1)
+        {
+            GuiFocusSwitcher.openForOverlap(candidates);
+            return CreatorEditOutcome.OVERLAP;
+        }
+
+        if (candidates.isEmpty() ||
+            !CreatorBlockEntityEditSession.open(mc, candidates.getFirst(), pos, CreatorSchematicEditor.getBlockState(candidates.getFirst(), pos), player))
+        {
+            return null;
+        }
+
+        CreatorEditFeedback.feedbackTarget(mc.player, CreatorCameraController.getInstance().getCamera())
+                .swing(InteractionHand.MAIN_HAND, CreatorVirtualLoadout.getMainHand().getInteractAnimation(), false);
+        return CreatorEditOutcome.NO_CHANGE;
+    }
+
     @Nullable
     CreatorEditTarget traceDeleteTarget()
     {

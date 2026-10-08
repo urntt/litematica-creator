@@ -27,6 +27,7 @@ Litematica Creator 让玩家在获取对应原材料前从零搭建或继续编�
 - **从零创建草稿**：在没有可编辑 placement 时自动创建草稿，也可主动新建空白原理图。
 - **稀疏动态扩展**：在原理图边界外编辑时按需创建 `1x1x1` subregion，不用频繁扩张一个巨大 region，也不会声明大片隐式空气。
 - **虚拟创造物品栏**：具有独立的虚拟快捷栏、背包、副手、盔甲和丢弃栏，支持创造分类、中英双语搜索和原版式 pick block；数据仅保存在客户端。
+- **原版界面编辑**：在投影的告示牌、命令方块、箱子、木桶、潜影盒、漏斗、发射器和投掷器上使用即可打开原版界面编辑，容器的玩家槽位是虚拟物品栏，结果只写入投影；手持物品潜行时照常放置。
 - **虚拟调试棒**：Creator 模式下在虚拟主手或副手持调试棒，即可按原版方式选择并切换投影方块的属性，不需要真实玩家的权限。
 - **Litematica 工具**：Creator 模式下把 Litematica 工具物品（默认木棍）放在虚拟主手或副手即可使用选区、placement 和模式切换等工具操作。
 - **Creator Focus**：编辑目标独立于 Litematica selected placement；同一 schematic 的任意 placement 都可以作为编辑入口，修改会反映到它的全部 placements。
@@ -104,7 +105,7 @@ Recovery cache 位于 `config/litematica-creator/recovery/`，用于恢复：
 ### 当前边界
 
 - 放置只支持方块物品；放置不连锁更新，只让直接相邻的投影方块调整一次形状。
-- 尚无通用 BlockState/NBT 编辑器，也不支持与投影容器、告示牌等交互。
+- 投影中的熔炉、酿造台、合成器、讲台等界面尚不能打开，也没有通用的 NBT 编辑器；门、拉杆等方块的右键交互尚未实现。
 - 不提供撤销/重做和实时多人同步；尚无多方块批量操作。多人协作计划通过 Syncmatica 共享已保存的原理图。
 - Creator Camera 的普通方块式投影预览模式尚未实现。
 - 项目依赖 Litematica 内部实现，目标版本变化时可能需要适配。
@@ -149,6 +150,7 @@ The result remains a normal Litematica schematic and can use Litematica's render
 - **Draft from scratch**: automatically create a draft when no placement can be edited, or explicitly create an empty schematic.
 - **Sparse expansion**: create `1x1x1` subregions only where edits occur outside existing bounds, without repeatedly resizing one huge region or declaring large volumes of implicit air.
 - **Virtual Creative inventory**: separate virtual hotbar, inventory, offhand, armor, and trash slots with Creative tabs, search, and vanilla-style pick block. All data stays client-side.
+- **Vanilla screens for projection blocks**: use a projection sign, command block, chest, barrel, shulker box, hopper, dispenser, or dropper to edit it in its vanilla screen. Container player slots show the virtual inventory, and results go only into the projection; sneaking with an item in hand still places blocks.
 - **Virtual debug stick**: in Creator mode, hold a debug stick in the virtual main hand or offhand to select and cycle projection block properties the vanilla way, without the real player's permissions.
 - **Litematica tool**: in Creator mode, hold Litematica's tool item (a stick by default) in the virtual main hand or offhand to use selection, placement, and mode-switching tool actions.
 - **Creator Focus**: the edit target is independent from Litematica's selected placement. Any placement of the same schematic can be used as an edit entry point, and every placement reflects the same schematic changes.
@@ -226,7 +228,7 @@ The latest complete cache can be recovered after a normal exit, disconnect, worl
 ### Current Limitations
 
 - Only block items can be placed. Placement does not chain updates; only directly adjacent projection blocks adjust their shape once.
-- There is no general BlockState/NBT editor or virtual interaction for containers, signs, and similar projected blocks.
+- Furnaces, brewing stands, crafters, lecterns, and similar screens cannot be opened on projections yet, and there is no general NBT editor; using doors, levers, and similar blocks is not implemented yet.
 - Undo/redo and real-time multiplayer synchronization are not provided, and bulk placement is not available yet. Multiplayer sharing is planned through Syncmatica for saved schematics.
 - Normal opaque block rendering for Creator Camera preview mode is not implemented yet.
 - The addon relies on Litematica internals and may require adaptation for other target versions.

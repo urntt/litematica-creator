@@ -305,6 +305,7 @@
 	"litematica-creator.message.draft.saved": "已结束编辑：%s",
 	"litematica-creator.message.focus.changed": "Creator Focus：%s（原理图：%s）",
 	"litematica-creator.message.focus.cleared": "已清空 Creator Focus",
+	"litematica-creator.message.edit.block_entity_changed": "编辑期间投影方块已改变，本次编辑未保存",
 	"litematica-creator.message.edit.no_block_selected": "请先在 Creator 虚拟快捷栏中选择一个方块",
 	"litematica-creator.message.edit.no_place_state": "无法为当前选择的方块创建放置状态",
 	"litematica-creator.message.edit.no_target": "未找到可编辑目标",

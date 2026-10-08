@@ -3,9 +3,11 @@ package io.github.urntt.litematicacreator.gametest;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.mojang.blaze3d.platform.InputConstants;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.schematic.LitematicaSchematic;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
+import fi.dy.masa.litematica.util.FileType;
 import fi.dy.masa.litematica.util.EntityUtils;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import fi.dy.masa.malilib.util.data.tag.CompoundData;
@@ -17,11 +19,13 @@ import io.github.urntt.litematicacreator.creator.CreatorEditGestureController;
 import io.github.urntt.litematicacreator.creator.CreatorInventory;
 import io.github.urntt.litematicacreator.creator.CreatorManager;
 import io.github.urntt.litematicacreator.creator.CreatorSchematicEditor;
+import io.github.urntt.litematicacreator.gui.CreatorProjectionContainerScreen;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,6 +34,10 @@ import javax.annotation.Nullable;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.CommandBlockEditScreen;
+import net.minecraft.client.gui.screens.inventory.SignEditScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -38,6 +46,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -61,6 +72,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTypes;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.phys.Vec3;
@@ -297,7 +309,17 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                 CreatorCameraController.getInstance().deactivate(mc);
             });
             runPlacementMatrix(context, world, placement, origin);
-            runBlockEntityMatrix(context, world, placement, origin);
+            try
+            {
+                runBlockEntityMatrix(context, world, placement, origin);
+            }
+            catch (RuntimeException | AssertionError failure)
+            {
+                // A pausing screen left open would keep the integrated server from stopping when the world closes.
+                LitematicaCreator.LOGGER.error("Creator block entity matrix failed", failure);
+                context.runOnClient(CreatorClientGameTest::closeScreen);
+                throw failure;
+            }
             context.runOnClient(mc ->
             {
                 var manager = CreatorManager.getInstance();
@@ -546,8 +568,8 @@ public final class CreatorClientGameTest implements FabricClientGameTest
     }
 
     /**
-     * Keeps block entity data carried by placed items. Like the placement matrix, every case runs and failures are
-     * reported together.
+     * Keeps block entity data carried by placed items and edits projection signs, command blocks and containers through
+     * the vanilla screens. Like the placement matrix, every case runs and failures are reported together.
      */
     private static void runBlockEntityMatrix(
             ClientGameTestContext context,
@@ -559,10 +581,16 @@ public final class CreatorClientGameTest implements FabricClientGameTest
         BlockPos banner = origin.offset(6, 0, -8);
         BlockPos commandData = origin.offset(12, 0, -8);
         BlockPos plainChest = origin.offset(0, 0, -13);
+        BlockPos editChest = origin.offset(6, 0, -13);
+        BlockPos editSign = origin.offset(12, 0, -13);
+        BlockPos editCommand = origin.offset(0, 0, -18);
+        BlockPos doubleChest = origin.offset(6, 0, -18);
         List<BlockPos> projectionOnly = List.of(
-                namedChest.above(), banner.above(), commandData.above(), plainChest.above()
+                namedChest.above(), banner.above(), commandData.above(), plainChest.above(),
+                editChest, editChest.above(), editSign, editCommand, doubleChest, doubleChest.east()
         );
         List<String> failures = new ArrayList<>();
+        BlockState northChest = Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.NORTH);
         List<ItemStack> realInventory = context.computeOnClient(mc ->
         {
             List<ItemStack> stacks = new ArrayList<>();
@@ -580,11 +608,17 @@ public final class CreatorClientGameTest implements FabricClientGameTest
             check(CreatorSchematicEditor.setBlockState(placement, namedChest, Blocks.STONE.defaultBlockState())
                             && CreatorSchematicEditor.setBlockState(placement, banner, Blocks.STONE.defaultBlockState())
                             && CreatorSchematicEditor.setBlockState(placement, commandData, Blocks.STONE.defaultBlockState())
-                            && CreatorSchematicEditor.setBlockState(placement, plainChest, Blocks.STONE.defaultBlockState()),
+                            && CreatorSchematicEditor.setBlockState(placement, plainChest, Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, editChest, northChest)
+                            && CreatorSchematicEditor.setBlockState(placement, editSign, Blocks.OAK_SIGN.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, editCommand, Blocks.COMMAND_BLOCK.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, doubleChest, northChest.setValue(ChestBlock.TYPE, ChestType.LEFT))
+                            && CreatorSchematicEditor.setBlockState(placement, doubleChest.east(), northChest.setValue(ChestBlock.TYPE, ChestType.RIGHT)),
                     "Block entity matrix projections must be written");
             check(CreatorCameraController.getInstance().activate(mc), "Creator Camera must activate for the block entity matrix");
         });
-        awaitSchematicWorld(context, placement, namedChest, banner, commandData, plainChest);
+        awaitSchematicWorld(context, placement, namedChest, banner, commandData, plainChest, editChest, editSign,
+                editCommand, doubleChest, doubleChest.east());
 
         ItemStack named = new ItemStack(Items.CHEST);
         named.set(DataComponents.CUSTOM_NAME, Component.literal("Creator Chest"));
@@ -628,8 +662,115 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                     "A plain chest must not store default block entity data");
         });
 
+        // Using a block on a projection chest, sign or command block opens the vanilla screen instead of placing.
+        useFromAbove(context, new ItemStack(Items.STONE, 16), editChest.above(2));
         context.runOnClient(mc ->
         {
+            expect(failures, mc.gui.screen() instanceof AbstractContainerScreen<?> screen && screen.getMenu() instanceof ChestMenu,
+                    "Using a block on a projection chest must open the chest screen");
+            expect(failures, CreatorSchematicEditor.getBlockState(placement, editChest.above()).isAir(),
+                    "Opening a projection chest must not also place the held block");
+
+            if (mc.gui.screen() instanceof CreatorProjectionContainerScreen screen)
+            {
+                // Shift-click the first virtual hotbar slot, which holds the stone, into the chest.
+                AbstractContainerMenu menu = screen.interaction().menu();
+                int hotbarSlot = menu.slots.size() - CreatorInventory.HOTBAR_SIZE;
+                screen.interaction().slotClicked(menu.getSlot(hotbarSlot), hotbarSlot, 0, ContainerInput.QUICK_MOVE);
+            }
+        });
+        context.waitTicks(2);
+        context.takeScreenshot("creator-projection-chest");
+        context.runOnClient(mc ->
+        {
+            closeScreen(mc);
+            expect(failures, mc.gui.screen() == null, "Closing a projection chest screen must close it");
+            CompoundTag chest = blockEntityData(placement, editChest);
+            expect(failures, chest != null && chest.toString().contains("minecraft:stone"),
+                    "Items moved into a projection chest must be saved in the projection");
+            expect(failures, CreatorInventory.getInstance().getStack(0).isEmpty(),
+                    "Moving items into a projection chest must take them from the virtual inventory");
+        });
+
+        // As in vanilla, sneaking with an item places against the projection chest instead of opening it.
+        // The stand-in starts one block higher than usual, so that sinking keeps it clear of the cell it places into.
+        useWithCamera(context, new ItemStack(Items.STONE), Vec3.atBottomCenterOf(editChest.above(3)), 0.0F, 90.0F, true);
+        context.runOnClient(mc ->
+        {
+            expect(failures, mc.gui.screen() == null, "Sneaking with an item must not open a projection chest");
+            expect(failures, CreatorSchematicEditor.getBlockState(placement, editChest.above()).is(Blocks.STONE),
+                    "Sneaking with an item must place against a projection chest");
+            CreatorSchematicEditor.setBlockState(placement, editChest.above(), Blocks.AIR.defaultBlockState());
+        });
+
+        // Closing an editor without changes keeps the stored data as it is.
+        CompoundData storedChest = context.computeOnClient(mc -> storedBlockEntity(placement, editChest));
+        useFromAbove(context, new ItemStack(Items.STONE), editChest.above(2));
+        context.runOnClient(mc ->
+        {
+            expect(failures, mc.gui.screen() instanceof CreatorProjectionContainerScreen,
+                    "Using a block on an edited projection chest must open it again");
+            closeScreen(mc);
+            expect(failures, storedChest != null && storedBlockEntity(placement, editChest) == storedChest,
+                    "Closing an unchanged projection chest must not rewrite its data");
+        });
+
+        useFromAbove(context, new ItemStack(Items.STONE), editSign.above(2));
+        context.runOnClient(mc -> expect(failures, mc.gui.screen() instanceof SignEditScreen,
+                "Using a block on a projection sign must open the sign editor"));
+        context.getInput().typeChars("Creator");
+        context.waitTicks(2);
+        context.takeScreenshot("creator-projection-sign");
+        context.runOnClient(CreatorClientGameTest::closeScreen);
+        context.runOnClient(mc ->
+        {
+            CompoundTag sign = blockEntityData(placement, editSign);
+            expect(failures, sign != null && sign.toString().contains("Creator"),
+                    "Sign text typed into the vanilla editor must be saved in the projection");
+        });
+
+        useFromAbove(context, new ItemStack(Items.STONE), editCommand.above(2));
+        context.runOnClient(mc -> expect(failures, mc.gui.screen() instanceof CommandBlockEditScreen,
+                "Using a block on a projection command block must open the command block editor"));
+        context.getInput().typeChars("say hi");
+        context.getInput().pressKey(InputConstants.KEY_RETURN);
+        context.runOnClient(mc ->
+        {
+            CompoundTag commandTag = blockEntityData(placement, editCommand);
+            expect(failures, commandTag != null && "say hi".equals(commandTag.getStringOr("Command", "")),
+                    "A command confirmed in the vanilla editor must be saved in the projection");
+            expect(failures, mc.gui.screen() == null, "Confirming the command block editor must close it");
+            closeScreen(mc);
+        });
+
+        useFromAbove(context, new ItemStack(Items.STONE), doubleChest.above(2));
+        context.runOnClient(mc ->
+        {
+            expect(failures, mc.gui.screen() instanceof AbstractContainerScreen<?> screen && screen.getMenu().slots.size() == 90,
+                    "A projection double chest must open as one large chest");
+            closeScreen(mc);
+            expect(failures, blockEntityData(placement, doubleChest) == null && blockEntityData(placement, doubleChest.east()) == null,
+                    "Closing an empty projection double chest must not store default data");
+
+            // Saving and loading the schematic keeps the edited block entity data.
+            LitematicaSchematic schematic = placement.getSchematic();
+            String chestRegion = CreatorSchematicEditor.findRegionAt(placement, editChest).regionName();
+            LitematicaSchematic reloaded = CreatorLitematicaDataAdapter.readSchematic(
+                    Path.of("creator-block-entity-roundtrip.litematic"),
+                    CreatorLitematicaDataAdapter.writeSchematicToNbt(schematic),
+                    FileType.LITEMATICA_SCHEMATIC
+            );
+            var saved = CreatorLitematicaDataAdapter.snapshotBlockEntities(schematic.getBlockEntityMapForRegion(chestRegion));
+            var loaded = reloaded.getBlockEntityMapForRegion(chestRegion) != null ?
+                    CreatorLitematicaDataAdapter.snapshotBlockEntities(reloaded.getBlockEntityMapForRegion(chestRegion)) : null;
+
+            if (!saved.equals(loaded))
+            {
+                LitematicaCreator.LOGGER.error("Block entity round trip differs: saved={} loaded={}", saved, loaded);
+            }
+
+            expect(failures, saved.equals(loaded), "Projection block entity data must survive saving and loading the schematic");
+
             for (int slot = 0; slot < realInventory.size(); ++slot)
             {
                 expect(failures, ItemStack.matches(realInventory.get(slot), mc.player.getInventory().getItem(slot)),
@@ -658,6 +799,13 @@ public final class CreatorClientGameTest implements FabricClientGameTest
     @Nullable
     private static CompoundTag blockEntityData(SchematicPlacement placement, BlockPos pos)
     {
+        CompoundData data = storedBlockEntity(placement, pos);
+        return data != null ? CreatorLitematicaDataAdapter.copyToVanilla(data) : null;
+    }
+
+    @Nullable
+    private static CompoundData storedBlockEntity(SchematicPlacement placement, BlockPos pos)
+    {
         var target = CreatorSchematicEditor.findRegionAt(placement, pos);
 
         if (target == null)
@@ -666,8 +814,15 @@ public final class CreatorClientGameTest implements FabricClientGameTest
         }
 
         // Creator cells are 1x1x1 regions, so the cell's data lives at the region origin.
-        CompoundData data = placement.getSchematic().getBlockEntityMapForRegion(target.regionName()).get(BlockPos.ZERO);
-        return data != null ? CreatorLitematicaDataAdapter.copyToVanilla(data) : null;
+        return placement.getSchematic().getBlockEntityMapForRegion(target.regionName()).get(BlockPos.ZERO);
+    }
+
+    private static void closeScreen(Minecraft mc)
+    {
+        if (mc.gui.screen() != null)
+        {
+            mc.gui.screen().onClose();
+        }
     }
 
     // Looks straight down at the block below the camera's feet; the camera stays clear of every placed shape.
@@ -690,6 +845,17 @@ public final class CreatorClientGameTest implements FabricClientGameTest
 
     private static void useWithCamera(ClientGameTestContext context, ItemStack stack, Vec3 feet, float yRot, float xRot)
     {
+        useWithCamera(context, stack, feet, yRot, xRot, false);
+    }
+
+    private static void useWithCamera(ClientGameTestContext context, ItemStack stack, Vec3 feet, float yRot, float xRot, boolean sneaking)
+    {
+        if (sneaking)
+        {
+            context.getInput().holdKey(options -> options.keyShift);
+            context.waitTicks(1);
+        }
+
         context.runOnClient(mc ->
         {
             var inventory = CreatorInventory.getInstance();
@@ -718,9 +884,16 @@ public final class CreatorClientGameTest implements FabricClientGameTest
         {
             CreatorEditGestureController.INSTANCE.onPlaceInput(false, true);
             var camera = CreatorCameraController.getInstance().getCamera();
-            check(camera.position().equals(feet) && camera.getEyeHeight() == CAMERA_EYE_HEIGHT,
+            // A sneaking stand-in sinks while flying, which still leaves it aimed at the same block.
+            check(sneaking || camera.position().equals(feet) && camera.getEyeHeight() == CAMERA_EYE_HEIGHT,
                     "The Creator Camera must not move while a placement is aimed");
         });
+
+        if (sneaking)
+        {
+            context.getInput().releaseKey(options -> options.keyShift);
+            context.waitTicks(1);
+        }
     }
 
     private static void awaitSchematicWorld(ClientGameTestContext context, SchematicPlacement placement, BlockPos... positions)

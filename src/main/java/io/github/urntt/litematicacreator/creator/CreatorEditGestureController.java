@@ -1,5 +1,7 @@
 package io.github.urntt.litematicacreator.creator;
 
+import javax.annotation.Nullable;
+
 import net.minecraft.client.Minecraft;
 
 import fi.dy.masa.malilib.util.GuiUtils;
@@ -119,7 +121,8 @@ public final class CreatorEditGestureController
         {
             freshPlace = true;
             CreatorPlacementTrace trace = edits.tracePlacementTarget();
-            CreatorEditOutcome outcome = edits.placeProjectionBlock(trace, true);
+            @Nullable CreatorEditOutcome used = edits.useProjectionBlock(trace);
+            CreatorEditOutcome outcome = used != null ? used : edits.placeProjectionBlock(trace, true);
             this.nextPlaceTick = tick + placeInterval;
 
             if (outcome == CreatorEditOutcome.OVERLAP)

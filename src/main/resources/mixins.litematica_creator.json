@@ -11,6 +11,7 @@
 		"ChunkRendererSchematicVboAccessor",
 		"ChunkRenderTaskSchematicAccessor",
 		"ChunkRenderWorkerLitematicaMixin",
+		"CommandBlockEditScreenAccessor",
 		"EntityCollisionMixin",
 		"EntityTurnMixin",
 		"FirstPersonHandsAndItemsMixin",
