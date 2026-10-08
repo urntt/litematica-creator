@@ -12,6 +12,7 @@
 		"EntityCollisionMixin",
 		"EntityTurnMixin",
 		"FirstPersonHandsAndItemsMixin",
+		"GameMasterBlockItemPermissionMixin",
 		"GameRendererMixin",
 		"HudMixin",
 		"InventoryScreenMixin",

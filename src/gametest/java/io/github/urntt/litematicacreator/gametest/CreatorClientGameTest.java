@@ -331,9 +331,16 @@ public final class CreatorClientGameTest implements FabricClientGameTest
         BlockPos blockedDoor = origin.offset(0, 0, 14);
         BlockPos realGrass = origin.offset(6, 0, 14);
         BlockPos lichenSupport = origin.offset(12, 0, 14);
+        BlockPos commandBlock = origin.offset(0, 0, 19);
+        BlockPos dripstone = origin.offset(6, 0, 19);
+        BlockPos bamboo = origin.offset(12, 0, 19);
+        BlockPos scaffolding = origin.offset(0, 0, 24);
+        BlockPos seagrass = origin.offset(6, 0, 24);
+        BlockPos kelp = origin.offset(12, 0, 24);
         List<BlockPos> projectionOnly = List.of(
                 door.above(), door.above(2), bed.above(), bed.above().south(), slab.above(), candle.above(),
-                fence.above(), fence.above().west(), torchSupport.east(), blockedDoor.east(), lichenSupport.east()
+                fence.above(), fence.above().west(), torchSupport.east(), blockedDoor.east(), lichenSupport.east(),
+                commandBlock.above(), dripstone.above(), bamboo.above(), scaffolding.above(), seagrass.above(), kelp.above()
         );
         List<String> failures = new ArrayList<>();
 
@@ -353,12 +360,18 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                             && CreatorSchematicEditor.setBlockState(placement, torchSupport, Blocks.OAK_SLAB.defaultBlockState())
                             && CreatorSchematicEditor.setBlockState(placement, lichenSupport, Blocks.OAK_SLAB.defaultBlockState())
                             && CreatorSchematicEditor.setBlockState(placement, blockedDoor, Blocks.STONE.defaultBlockState())
-                            && CreatorSchematicEditor.setBlockState(placement, blockedDoor.east().above(), Blocks.STONE.defaultBlockState()),
+                            && CreatorSchematicEditor.setBlockState(placement, blockedDoor.east().above(), Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, commandBlock, Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, dripstone, Blocks.OAK_SLAB.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, bamboo, Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, scaffolding, Blocks.OAK_SLAB.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, seagrass, Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, kelp, Blocks.STONE.defaultBlockState()),
                     "Placement matrix supports must be written");
             check(CreatorCameraController.getInstance().activate(mc), "Creator Camera must activate for the placement matrix");
         });
         awaitSchematicWorld(context, placement, door, bed, slab, candle, fence, fence.above().west(), torchSupport,
-                lichenSupport, blockedDoor, blockedDoor.east().above());
+                lichenSupport, blockedDoor, blockedDoor.east().above(), commandBlock, dripstone, bamboo, scaffolding, seagrass, kelp);
         context.waitFor(mc -> mc.level.getBlockState(realGrass.above()).is(Blocks.SHORT_GRASS));
 
         useFromAbove(context, Items.OAK_DOOR, door.above(3));
@@ -435,6 +448,12 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                     "Glow lichen on a projection side must attach to the clicked face, without needing a full face");
         });
 
+        // Game master blocks normally need a creative operator, and the camera stand-in has no permissions at all.
+        useFromAbove(context, Items.COMMAND_BLOCK, commandBlock.above(2));
+        context.runOnClient(mc -> expect(failures,
+                CreatorSchematicEditor.getBlockState(placement, commandBlock.above()).is(Blocks.COMMAND_BLOCK),
+                "A command block must be placeable without the real player's permissions"));
+
         context.runOnClient(mc -> CreatorManager.getInstance().clearFocusSilently());
         useFromEast(context, Items.OAK_DOOR, blockedDoor, 0.5D);
         context.runOnClient(mc ->
@@ -465,14 +484,15 @@ public final class CreatorClientGameTest implements FabricClientGameTest
 
             // Look down over the whole matrix from its north edge for the screenshot.
             var camera = CreatorCameraController.getInstance().getCamera();
-            Vec3 overview = Vec3.atBottomCenterOf(origin.offset(6, 9, -2));
+            Vec3 overview = Vec3.atBottomCenterOf(origin.offset(6, 12, -4));
             camera.setPos(overview);
             camera.setYRot(0.0F);
-            camera.setXRot(50.0F);
-            camera.setOldPosAndRot(overview, 0.0F, 50.0F);
+            camera.setXRot(45.0F);
+            camera.setOldPosAndRot(overview, 0.0F, 45.0F);
         });
         awaitSchematicWorld(context, placement, door.above(2), bed.above().south(), slab.above(), candle.above(),
-                fence.above(), fence.above().west(), torchSupport.east(), lichenSupport.east(), realGrass.above());
+                fence.above(), fence.above().west(), torchSupport.east(), lichenSupport.east(), realGrass.above(),
+                commandBlock.above(), dripstone.above(), bamboo.above(), scaffolding.above(), seagrass.above(), kelp.above());
         // Let the in-game placement messages fade so they do not cover the matrix.
         context.waitTicks(120);
         context.takeScreenshot("creator-placement-matrix");
