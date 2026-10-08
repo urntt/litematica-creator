@@ -11,14 +11,14 @@ This file is the single source for Litematica Creator's current scope, boundarie
 - Creator 编辑不放置或破坏真实方块、不修改真实物品栏，也不发送由此产生的攻击、放置或库存操作包。
 - “纯客户端”不等于压制真实玩家的同步：相机替身不发移动包，但本体的重力、惯性、击退与服务端校正照常进行。
 - 硬依赖仅 MaLiLib 与 Litematica；Tweakeroo、Syncmatica、Lithium、Sodium 为软兼容。Syncmatica 目前只保证共存；[#27](https://github.com/urntt/litematica-creator/issues/27) 只计划通过 Syncmatica 共享已保存的原理图与 placement，不做实时草稿同步或服务端组件。
-- 普通编辑只提交玩家明确产生的直接结果，不运行邻居更新、侦测器、红石、流体传播或 block entity tick；不提供隔离的世界模拟（[#88](https://github.com/urntt/litematica-creator/issues/88) 已关闭），也不能把真实 `ClientLevel` 伪装成 schematic world。
+- 普通编辑只提交玩家明确产生的直接结果：放置写入原版放置本身产生的全部格子，并让直接相邻的投影方块各做一次原版形状更新；不连锁邻居更新，也不运行侦测器、红石、流体传播或 block entity tick。放置用的事务世界只读取目标投影、记录写入，不是持续运行的世界模拟（[#88](https://github.com/urntt/litematica-creator/issues/88) 已关闭），也不能把真实 `ClientLevel` 伪装成 schematic world。
 
 - A Fabric client-side Litematica addon whose target Minecraft version comes from `gradle.properties`. Players create or edit projections in-world, Creative-style, without owning the real blocks.
 - Edits operate on ordinary `LitematicaSchematic` and `SchematicPlacement` objects, with no private draft format or separate projection renderer, so Litematica's save, render, material list, Verifier, and build workflows keep working.
 - Creator edits never place or break real blocks, never touch the real inventory, and never send the resulting attack, placement, or inventory-operation packets.
 - "Client-only" does not suppress the real player's synchronization. The camera stand-in sends no movement packets, while the real body keeps gravity, momentum, knockback, and server corrections.
 - MaLiLib and Litematica are the only hard dependencies. Tweakeroo, Syncmatica, Lithium, and Sodium are soft-compatible. Syncmatica is only guaranteed to coexist; [#27](https://github.com/urntt/litematica-creator/issues/27) only plans to share saved schematics and placements through Syncmatica, with no real-time draft sync or server component.
-- Ordinary edits commit only the direct result the player asked for. They run no neighbor updates, observers, redstone, fluid spread, or block entity ticks. No isolated world simulation is provided ([#88](https://github.com/urntt/litematica-creator/issues/88) was closed), and the real `ClientLevel` is never disguised as the schematic world.
+- Ordinary edits commit only the direct result the player asked for: a placement writes every cell vanilla placement itself produces, and each directly adjacent projection block runs one vanilla shape update. Neighbor updates never chain, and no observers, redstone, fluid spread, or block entity ticks run. The transaction world used for placement only reads the target projection and records writes; it is not a running world simulation ([#88](https://github.com/urntt/litematica-creator/issues/88) was closed), and the real `ClientLevel` is never disguised as the schematic world.
 
 典型场景：在生存服务器现场设计建筑后按材料列表施工；从空白快速草拟红石、装饰或结构布局；从任意旋转或镜像的 placement 进入编辑，同步修正同一 schematic 的全部实例；用 Creator Camera 检查高处、地下或封闭空间；在管理器中整理多个 schematics 与 placements 后保存、改绑或只导出副本；断线或异常退出后恢复尚未保存的设计。
 
@@ -42,14 +42,14 @@ Typical uses: design a build on a survival server and then gather materials from
 
 ### Target Resolution / 目标归属
 
-- 命中投影或操作位置只属于一个可编辑 placement 时编辑它，并在操作确定可提交后切换 Focus。
+- 命中投影或操作位置只属于一个可编辑 placement 时编辑它，并在操作确定可提交后切换 Focus。放置的操作位置是原版的实际落点，例如点中真实矮草时是草所在格，而不是其上方。
 - 位置不属于任何候选 placement 时：有有效 Focus 就向该 schematic 扩展，没有就新建并聚焦草稿；不要求与原投影相接，也不设扩展边界。
 - 重叠候选先打开 Focus Switcher 由玩家选择，不按 Selected、旧 Focus、距离或渲染顺序代为决定；选择期间的临时隐藏是 Creator 本地状态，不改写 placement 的启用或渲染设置。
 - 中键只 pick block，不新建、切换或清空 Focus。
 - 新草稿是否同时成为 Litematica Selected 由 `selectNewDraftPlacement` 控制，默认关闭。
 - Focus 所在 placement 被移除时直接清空 Focus；连续操作同一 placement 不重复提示。
 
-- When the hit projection or target position belongs to exactly one editable placement, edit it and move Focus only once the operation is known to commit.
+- When the hit projection or target position belongs to exactly one editable placement, edit it and move Focus only once the operation is known to commit. For placement, the target position is where vanilla actually puts the block; clicking real short grass, for example, targets the grass cell rather than the cell above it.
 - When the position belongs to no candidate placement, extend the focused schematic if Focus is valid; otherwise create and focus a new draft. Extensions need not touch the existing projection and have no extra bound.
 - Overlapping candidates open the Focus Switcher for the player to choose. Creator never decides by Selected, previous Focus, distance, or render order. Temporary hiding during the choice is Creator-local and never rewrites a placement's enabled or render settings.
 - Middle-click only picks a block; it never creates, switches, or clears Focus.
@@ -65,14 +65,18 @@ Design note: making Litematica's Selected Placement the only edit target was tri
 - 已有 region 内的编辑使用 world/container 坐标与方块状态的正反变换；边界外按需创建名称带 `__litematica_creator_cell_` 前缀的 `1x1x1` Creator cell，不反复扩张巨大 region，也不把大片真实建筑声明成“投影应为空气”。
 - 某格的 block entity NBT 与 scheduled block/fluid ticks 属于该格方块：同一方块只改状态时保留，换成其他方块（含删除为空气）时一并清除（[#105](https://github.com/urntt/litematica-creator/issues/105)）。
 - 删除后只有方块、block entity NBT、实体、scheduled block ticks 与 fluid ticks 全空时才移除 region，不依赖普通 `set()` 未维护的 `blockCounts`。清理同时适用于普通 region 和 Creator cell，并同步移除 schematic 映射与所有 placements 中的该 region，最后一个 region 清空时也清除旧框。
-- 占用检查先于新建草稿、切换 Focus、建 region、标 dirty、recovery 与成功反馈；目标不可替换时静默阻断，不留下半提交状态。
-- 当前放置只把普通 `BlockItem` 的单个 `BlockState` 写入一个格子。门、床、依附方块、同格累加等完整语义需要 [#82](https://github.com/urntt/litematica-creator/issues/82) 的事务层与 [#83](https://github.com/urntt/litematica-creator/issues/83)，届时也须整体验证全部写入，不能只放一半或覆盖不可替换的投影。
+- 放置在事务世界 `CreatorPlacementWorld`（继承 Litematica `WorldSchematic`、不渲染、不进入 Litematica 的世界管理）中执行原版 `BlockItem.place`。它读取目标 placement 的投影；点中真实方块时，只额外看到被点中的那一格，供原版判断是替换（如矮草）还是放到相邻格（如石头）。写入只被记录，不触及任何区块。门、床、高花写入两格，半砖合并，蜡烛与海泡菜同格叠加，朝向随点击面与视角，都沿用原版（[#82](https://github.com/urntt/litematica-creator/issues/82)）。
+- 放置后，与写入格直接相邻的每个投影方块运行一次原版形状更新（如栅栏、墙、楼梯连接）。只保留改变了且没有变成空气的结果，不连锁，也不因放置删除投影。
+- 全部写入一起校验：除原版已检查的落点外，写入格原有投影须为空气或可替换；每个非空气写入都要通过实体占位检查。全部通过后才新建草稿或切换 Focus，并在同一编辑事务中提交；任何一格失败都不写入，不留下半个结构。占用检查先于建 region、标 dirty、recovery 与成功反馈；目标不可替换时静默阻断，原版找不到可放置状态时提示。
+- 物品自带的方块实体数据（命名、旗帜图案、告示牌文字等）暂不写入，由 [#22](https://github.com/urntt/litematica-creator/issues/22) 跟踪；非方块物品的放置见 [#84](https://github.com/urntt/litematica-creator/issues/84) 与 [#86](https://github.com/urntt/litematica-creator/issues/86)。
 
 - Inside existing regions, edits use forward and inverse transforms for world/container coordinates and block states. Outside them, Creator adds `1x1x1` cells named with the `__litematica_creator_cell_` prefix instead of resizing a huge region or declaring large volumes of real buildings as "projected air".
 - A cell's block entity NBT and scheduled block and fluid ticks belong to the block in that cell. A state change of the same block keeps them; a different block, including removal to air, clears them ([#105](https://github.com/urntt/litematica-creator/issues/105)).
 - After a removal, a region is deleted only when its blocks, block entity NBT, entities, scheduled block ticks, and fluid ticks are all empty; `blockCounts`, which plain `set()` does not maintain, is not trusted. Cleanup covers ordinary regions and Creator cells, removes the region from the schematic maps and every placement, and clears the stale box when the last region empties.
-- The occupancy check runs before creating a draft, switching Focus, creating a region, marking dirty, scheduling recovery, or showing success. Non-replaceable targets block silently with no partial commit.
-- Placement currently writes one `BlockState` from an ordinary `BlockItem` into one cell. Doors, beds, attached blocks, same-cell stacking, and other full semantics need the [#82](https://github.com/urntt/litematica-creator/issues/82) transaction layer and [#83](https://github.com/urntt/litematica-creator/issues/83); that work must validate every write together and never place half a structure or overwrite non-replaceable projections.
+- Placement runs vanilla `BlockItem.place` in the transaction world `CreatorPlacementWorld`, which extends Litematica's `WorldSchematic` but is never rendered or managed by Litematica. It reads the target placement's projection; when a real block was clicked, it also sees that one cell, so vanilla can decide whether to replace it (short grass) or place next to it (stone). Writes are only recorded and touch no chunk. Doors, beds, and tall plants write both cells, slabs merge, candles and sea pickles stack in their cell, and facing follows the clicked face and view, all as in vanilla ([#82](https://github.com/urntt/litematica-creator/issues/82)).
+- After a placement, every projection block directly adjacent to a written cell runs one vanilla shape update, so fences, walls, and stairs connect. Only results that change the block without turning it into air are kept; nothing chains, and placement never removes a projection block.
+- All writes are validated together. Apart from the cell vanilla already checked, every written cell must hold air or a replaceable projection, and every non-air write must pass the entity-occupancy check. Only then is a draft created or Focus switched, and every cell is committed in one edit transaction; if any cell fails, nothing is written and no half structure remains. The occupancy check runs before creating a region, marking dirty, scheduling recovery, or showing success. Non-replaceable targets block silently; a warning appears when vanilla finds no placeable state.
+- Block entity data carried by the item (names, banner patterns, sign text, and so on) is not written yet; [#22](https://github.com/urntt/litematica-creator/issues/22) tracks it. Placing non-block items is covered by [#84](https://github.com/urntt/litematica-creator/issues/84) and [#86](https://github.com/urntt/litematica-creator/issues/86).
 
 ### Edit and Render Consistency / 编辑与渲染一致性
 
@@ -216,22 +220,24 @@ Default keys are listed in the README. The manager's early `M+G` default clashed
 1. 输入层在 Creator 模式下拦截使用与攻击，阻止真实世界交互。
 2. `CreatorTargeting` 从 Creator Camera 统一执行真实世界与投影 `VoxelShape` 射线。
 3. `CreatorFocus` 决定边界外操作扩展哪个 schematic；placement 负责坐标、旋转与镜像。
-4. `CreatorSchematicEditor` 写入已有 region 或按需创建 Creator cell，并同步全部 placements 与 metadata。
-5. Litematica placement manager 重建受影响的 schematic chunks，`CreatorSchematicEditGuard` 保证重建与渲染编译在稳定快照上进行。
-6. `CreatorRecoveryManager` 在客户端线程生成不可变快照，后台原子提交 generation 与 manifest。
-7. `CreatorSchematicExportService` 在不可变快照上执行四种 region 规范化，真实世界补入按选定 placement 反向映射采样。
-8. `CreatorSchematicBindingService` 只在原子写文件成功后更新 schematic 与全部 placements 的文件身份，重新加载时原地协调 region 拓扑。
-9. 可选模组兼容注册表在启动时记录版本并验证契约（见下节）。
+4. `CreatorPlacementSimulation` 在 `CreatorPlacementWorld` 中运行原版放置与一次相邻形状更新，给出待提交的全部格子。
+5. `CreatorSchematicEditor` 写入已有 region 或按需创建 Creator cell，并同步全部 placements 与 metadata。
+6. Litematica placement manager 重建受影响的 schematic chunks，`CreatorSchematicEditGuard` 保证重建与渲染编译在稳定快照上进行。
+7. `CreatorRecoveryManager` 在客户端线程生成不可变快照，后台原子提交 generation 与 manifest。
+8. `CreatorSchematicExportService` 在不可变快照上执行四种 region 规范化，真实世界补入按选定 placement 反向映射采样。
+9. `CreatorSchematicBindingService` 只在原子写文件成功后更新 schematic 与全部 placements 的文件身份，重新加载时原地协调 region 拓扑。
+10. 可选模组兼容注册表在启动时记录版本并验证契约（见下节）。
 
 1. The input layer intercepts use and attack in Creator mode so nothing reaches the real world.
 2. `CreatorTargeting` traces real-world and projected `VoxelShape`s from Creator Camera.
 3. `CreatorFocus` decides which schematic an out-of-bounds edit extends; placements own coordinates, rotation, and mirroring.
-4. `CreatorSchematicEditor` writes into existing regions or creates Creator cells, then updates every placement and the metadata.
-5. Litematica's placement manager rebuilds the affected schematic chunks, and `CreatorSchematicEditGuard` keeps rebuilds and render compilation on stable snapshots.
-6. `CreatorRecoveryManager` takes immutable snapshots on the client thread and commits generations and manifests atomically in the background.
-7. `CreatorSchematicExportService` applies the four region modes to immutable snapshots, mapping world-filled sampling back through the chosen placement.
-8. `CreatorSchematicBindingService` changes the file identity of the schematic and its placements only after the atomic write succeeds, and reconciles region topology in place on reload.
-9. The optional-mod registry records versions and validates contracts at startup (next section).
+4. `CreatorPlacementSimulation` runs vanilla placement and one adjacent shape update in `CreatorPlacementWorld`, yielding every cell to commit.
+5. `CreatorSchematicEditor` writes into existing regions or creates Creator cells, then updates every placement and the metadata.
+6. Litematica's placement manager rebuilds the affected schematic chunks, and `CreatorSchematicEditGuard` keeps rebuilds and render compilation on stable snapshots.
+7. `CreatorRecoveryManager` takes immutable snapshots on the client thread and commits generations and manifests atomically in the background.
+8. `CreatorSchematicExportService` applies the four region modes to immutable snapshots, mapping world-filled sampling back through the chosen placement.
+9. `CreatorSchematicBindingService` changes the file identity of the schematic and its placements only after the atomic write succeeds, and reconciles region topology in place on reload.
+10. The optional-mod registry records versions and validates contracts at startup (next section).
 
 ## Compatibility Boundaries / 兼容边界
 
@@ -239,6 +245,7 @@ Default keys are listed in the README. The manager's early `M+G` default clashed
 - 原生写盘注入只重定向 Litematica 调用的 `DataFileUtils` 写盘入口，且为可选注入（`require = 0`）：入口失配时只跳过 Creator 的 metadata 规范化，不影响 Litematica 自身保存，也不会在延迟类加载时崩溃。
 - 硬依赖范围由生成的 `fabric.mod.json` 声明，未审计的新版本由 Fabric 拒绝加载。同一 Minecraft 版本内的依赖兼容层与跨 Minecraft 版本的移植是两回事，不能只放宽版本声明。
 - Litematica 的工具判定只在 `EntityUtils.hasToolItemInHand` 读取手中物品处改为虚拟主副手，比较逻辑仍由 Litematica 负责；Creator 模式下 `shouldPickBlock` 返回 false。
+- 放置调用原版 `BlockItem.place`，因此其他模组对 `BlockItem` 的钩子也会在事务世界中运行。Litematica Easy Place 与 Tweakeroo 客户端放置协议只解析编码进点击坐标的协议值，Creator 的普通点击不受影响。
 - 可选模组：只有 Tweakeroo 使用私有反射桥接，契约在启动时初始化一次，失配或运行失败只停用该桥接且不刷屏；Syncmatica、Lithium、Sodium 不链接私有 API。测试组合与退化方式见[兼容说明](optional-mod-compatibility.md)。
 - `main` 跟随一个目标 Minecraft 版本，旧版本状态保留在 Git 历史中。是否以及如何维护多条版本线（分支或单源码多版本工具）尚未决定。
 
@@ -246,5 +253,6 @@ Default keys are listed in the README. The manager's early `M+G` default clashed
 - The native write injection redirects only the `DataFileUtils` call Litematica uses to write files, and it is optional (`require = 0`). If that entry point ever stops matching, only Creator's metadata normalization is skipped; Litematica still saves, and deferred class loading cannot crash.
 - The generated `fabric.mod.json` declares hard-dependency ranges, and Fabric refuses unaudited newer versions. A dependency compatibility layer within one Minecraft version is different from a port to another Minecraft version; never just widen the version declaration.
 - For Litematica's tool checks, Creator only swaps the stack `EntityUtils.hasToolItemInHand` reads for the virtual hand; Litematica still does the matching. `shouldPickBlock` returns false in Creator mode.
+- Placement calls vanilla `BlockItem.place`, so other mods' `BlockItem` hooks run in the transaction world too. Litematica Easy Place and Tweakeroo's client placement protocol only decode values encoded in the click position, which Creator's ordinary clicks never carry.
 - Optional mods: only Tweakeroo uses a private reflection bridge. Its contract initializes once at startup, and a mismatch or runtime failure disables just that bridge without log spam. Syncmatica, Lithium, and Sodium link no private API. See the compatibility notes for tested combinations and fallbacks.
 - `main` follows one target Minecraft version, and older states remain in Git history. Whether and how to maintain several version lines (branches or a multi-version single-source tool) is undecided.

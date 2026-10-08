@@ -4,22 +4,20 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.DebugStickState;
-import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
-import fi.dy.masa.litematica.mixin.entity.IMixinEntity;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
 import fi.dy.masa.litematica.util.RayTraceUtils.RayTraceWrapper;
-import fi.dy.masa.litematica.util.EntityUtils;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import fi.dy.masa.malilib.gui.Message.MessageType;
 import fi.dy.masa.malilib.util.InfoUtils;
@@ -48,6 +46,7 @@ public class CreatorEditService
     public void resetTransientState()
     {
         this.lastNoTargetWarning = 0L;
+        CreatorPlacementWorld.release();
     }
 
     CreatorPlacementTrace tracePlacementTarget()
@@ -104,7 +103,7 @@ public class CreatorEditService
             return CreatorEditOutcome.NO_CHANGE;
         }
 
-        CreatorTargetResolver.Resolution resolution = this.resolvePlacementTarget(target);
+        CreatorTargetResolver.Resolution resolution = this.resolvePlacementTarget(target, target.blockPos());
 
         if (resolution.action() == CreatorTargetResolver.Action.CHOOSE_OVERLAP)
         {
@@ -112,51 +111,62 @@ public class CreatorEditService
             return CreatorEditOutcome.OVERLAP;
         }
 
-        PlacementPreflight preflight = this.preflightPlacement(
-                mc,
-                heldItem.blockItem(),
-                heldItem.stack(),
-                heldItem.hand(),
-                target,
-                resolution.placement()
-        );
+        Player player = placementPlayer(mc);
+        CreatorPlacementSimulation.Result result = CreatorPlacementSimulation.simulate(mc, player, heldItem, target, resolution.placement());
 
-        if (preflight.outcome() == PreflightOutcome.INVALID_STATE)
+        // Vanilla decides where the block lands, for example on clicked real grass instead of next to it. A landing
+        // cell that belongs to another projection is resolved again, so nothing is written into the wrong one.
+        if (result.placed() && !result.primaryPos().equals(target.blockPos()))
         {
-            if (showWarnings)
+            CreatorTargetResolver.Resolution landed = this.resolvePlacementTarget(target, result.primaryPos());
+
+            if (landed.action() == CreatorTargetResolver.Action.CHOOSE_OVERLAP)
             {
-                InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_place_state");
+                GuiFocusSwitcher.openForOverlap(landed.candidates());
+                return CreatorEditOutcome.OVERLAP;
             }
 
-            return CreatorEditOutcome.NO_CHANGE;
+            if (landed.action() != resolution.action() || landed.placement() != resolution.placement())
+            {
+                BlockPos landedPos = result.primaryPos();
+                resolution = landed;
+                result = CreatorPlacementSimulation.simulate(mc, player, heldItem, target, landed.placement());
+
+                if (result.placed() && !result.primaryPos().equals(landedPos))
+                {
+                    return CreatorEditOutcome.NO_CHANGE;
+                }
+            }
         }
 
-        if (preflight.outcome() == PreflightOutcome.BLOCKED)
+        if (result.outcome() == CreatorPlacementSimulation.Outcome.NO_STATE && showWarnings)
+        {
+            InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_place_state");
+        }
+
+        if (!result.placed())
         {
             return CreatorEditOutcome.NO_CHANGE;
         }
 
+        // Focus and new drafts change only once the whole placement is known to be valid.
         CreatorManager manager = CreatorManager.getInstance();
-        SchematicPlacement placement;
+        boolean editsExisting = resolution.action() == CreatorTargetResolver.Action.EDIT;
+        SchematicPlacement placement = editsExisting ? resolution.placement() : manager.createBlank(result.primaryPos());
 
-        if (resolution.action() == CreatorTargetResolver.Action.EDIT)
+        if (!CreatorSchematicEditor.setBlockStates(placement, result.writes()))
         {
-            placement = resolution.placement();
+            return CreatorEditOutcome.NO_CHANGE;
+        }
+
+        if (editsExisting)
+        {
             manager.focusPlacement(placement);
         }
-        else
-        {
-            placement = manager.createBlank(target.blockPos());
-        }
 
-        boolean edited = CreatorEditFeedback.afterSuccessfulEdit(
-                CreatorSchematicEditor.setBlockState(placement, target.blockPos(), preflight.state()),
-                () -> CreatorEditFeedback.feedbackTarget(
-                        mc.player,
-                        CreatorCameraController.getInstance().getCamera()
-                ).swing(heldItem.hand(), heldItem.stack().getInteractAnimation(), false)
-        );
-        return edited ? CreatorEditOutcome.EDITED : CreatorEditOutcome.NO_CHANGE;
+        CreatorEditFeedback.feedbackTarget(mc.player, CreatorCameraController.getInstance().getCamera())
+                .swing(heldItem.hand(), heldItem.stack().getInteractAnimation(), false);
+        return CreatorEditOutcome.EDITED;
     }
 
     @Nullable
@@ -344,93 +354,6 @@ public class CreatorEditService
         return true;
     }
 
-    private PlacementPreflight preflightPlacement(
-            Minecraft mc,
-            BlockItem blockItem,
-            ItemStack stack,
-            InteractionHand hand,
-            CreatorEditTarget target,
-            @Nullable SchematicPlacement placement)
-    {
-        Level schematicWorld = SchematicWorldHandler.getSchematicWorld();
-
-        if (schematicWorld == null || mc.player == null)
-        {
-            BlockState state = blockItem.getBlock().defaultBlockState();
-            return placement == null || CreatorSchematicEditor.getBlockState(placement, target.blockPos()).isAir() ?
-                    PlacementPreflight.success(state) : PlacementPreflight.blocked();
-        }
-
-        Level oldWorld = mc.player.level();
-        float oldYaw = mc.player.getYRot();
-        float oldPitch = mc.player.getXRot();
-        Entity camera = CreatorCameraCompat.getCameraEntity();
-        BlockHitResult hit = new BlockHitResult(target.hitVec(), target.side(), target.clickedBlockPos(), false);
-
-        try
-        {
-            ((IMixinEntity) mc.player).litematica_setWorld(schematicWorld);
-            // Block placement state helpers read the player rotation from the context player.
-            if (camera != null)
-            {
-                EntityUtils.setEntityRotations(mc.player, camera.getYRot(), camera.getXRot());
-            }
-
-            CreatorPlacementBlockContext context = new CreatorPlacementBlockContext(mc.player, hand, stack, hit);
-
-            if (target.airTarget())
-            {
-                context.useClickedPosition();
-            }
-
-            BlockState state = blockItem.getBlock().getStateForPlacement(context);
-
-            if (state == null || state.isAir())
-            {
-                return PlacementPreflight.invalidState();
-            }
-
-            if (placement != null)
-            {
-                BlockState targetState = CreatorSchematicEditor.getBlockState(placement, target.blockPos());
-
-                if (!targetState.isAir())
-                {
-                    BlockHitResult targetHit = new BlockHitResult(
-                            target.hitVec(),
-                            target.side(),
-                            target.blockPos(),
-                            false
-                    );
-                    CreatorTargetPlaceContext targetContext = new CreatorTargetPlaceContext(
-                            mc.player,
-                            hand,
-                            stack,
-                            targetHit
-                    );
-                    boolean replaceable = targetContext.canReplace(targetState);
-
-                    if (!CreatorPlacementPolicy.canWrite(false, replaceable))
-                    {
-                        return PlacementPreflight.blocked();
-                    }
-                }
-            }
-
-            if (!CreatorPlacementEntityCollision.canPlace(mc, schematicWorld, state, target.blockPos()))
-            {
-                return PlacementPreflight.blocked();
-            }
-
-            return PlacementPreflight.success(state);
-        }
-        finally
-        {
-            EntityUtils.setEntityRotations(mc.player, oldYaw, oldPitch);
-            ((IMixinEntity) mc.player).litematica_setWorld(oldWorld);
-        }
-    }
-
     private CreatorPlacementTrace getPlacementTarget(Minecraft mc)
     {
         CreatorTargeting.TraceResult result = CreatorTargeting.traceResult(mc);
@@ -540,12 +463,18 @@ public class CreatorEditService
         return CreatorTargeting.trace(mc);
     }
 
-    private CreatorTargetResolver.Resolution resolvePlacementTarget(CreatorEditTarget target)
+    private CreatorTargetResolver.Resolution resolvePlacementTarget(CreatorEditTarget target, BlockPos writePos)
     {
         CreatorManager manager = CreatorManager.getInstance();
         List<CreatorPlacementTarget> hitCandidates = target.schematicBlock() ? CreatorPlacementIndex.INSTANCE.findAt(target.clickedBlockPos()) : List.of();
-        List<CreatorPlacementTarget> writeCandidates = CreatorPlacementIndex.INSTANCE.findAt(target.blockPos());
+        List<CreatorPlacementTarget> writeCandidates = CreatorPlacementIndex.INSTANCE.findAt(writePos);
         return CreatorTargetResolver.resolve(hitCandidates, writeCandidates, manager.getFocus());
+    }
+
+    // Placement rules read facing and sneaking from the placing player, which is the camera entity when one is active.
+    private static Player placementPlayer(Minecraft mc)
+    {
+        return CreatorCameraCompat.getCameraEntity() instanceof Player camera ? camera : mc.player;
     }
 
     private boolean canEdit(Minecraft mc)
@@ -563,68 +492,6 @@ public class CreatorEditService
         {
             this.lastNoTargetWarning = now;
             InfoUtils.showGuiOrInGameMessage(MessageType.WARNING, "litematica-creator.message.edit.no_target");
-        }
-    }
-
-    private enum PreflightOutcome
-    {
-        SUCCESS,
-        INVALID_STATE,
-        BLOCKED
-    }
-
-    private record PlacementPreflight(PreflightOutcome outcome, @Nullable BlockState state)
-    {
-        private static PlacementPreflight success(BlockState state)
-        {
-            return new PlacementPreflight(PreflightOutcome.SUCCESS, state);
-        }
-
-        private static PlacementPreflight invalidState()
-        {
-            return new PlacementPreflight(PreflightOutcome.INVALID_STATE, null);
-        }
-
-        private static PlacementPreflight blocked()
-        {
-            return new PlacementPreflight(PreflightOutcome.BLOCKED, null);
-        }
-    }
-
-    private static class CreatorTargetPlaceContext extends BlockPlaceContext
-    {
-        private CreatorTargetPlaceContext(
-                net.minecraft.world.entity.player.Player player,
-                InteractionHand hand,
-                ItemStack stack,
-                BlockHitResult hit)
-        {
-            super(player, hand, stack, hit);
-        }
-
-        private boolean canReplace(BlockState targetState)
-        {
-            this.replaceClicked = true;
-            boolean replaceable = targetState.canBeReplaced(this);
-            this.replaceClicked = replaceable;
-            return replaceable;
-        }
-    }
-
-    private static class CreatorPlacementBlockContext extends BlockPlaceContext
-    {
-        private CreatorPlacementBlockContext(
-                net.minecraft.world.entity.player.Player player,
-                InteractionHand hand,
-                ItemStack stack,
-                BlockHitResult hit)
-        {
-            super(player, hand, stack, hit);
-        }
-
-        private void useClickedPosition()
-        {
-            this.replaceClicked = true;
         }
     }
 }

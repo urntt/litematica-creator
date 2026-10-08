@@ -19,7 +19,7 @@ final class CreatorPlacementEntityCollision
     {
     }
 
-    static boolean canPlace(Minecraft minecraft, Level schematicWorld, BlockState state, BlockPos pos)
+    static boolean canPlace(Minecraft minecraft, Level level, BlockState state, BlockPos pos)
     {
         CreatorCameraController controller = CreatorCameraController.getInstance();
 
@@ -32,7 +32,7 @@ final class CreatorPlacementEntityCollision
         }
 
         CollisionContext context = CollisionContext.placementContext(minecraft.player);
-        VoxelShape localShape = context.getCollisionShape(state, schematicWorld, pos);
+        VoxelShape localShape = context.getCollisionShape(state, level, pos);
 
         if (localShape.isEmpty())
         {

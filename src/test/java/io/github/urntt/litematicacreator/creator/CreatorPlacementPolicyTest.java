@@ -19,4 +19,18 @@ class CreatorPlacementPolicyTest
     {
         assertFalse(CreatorPlacementPolicy.canWrite(false, false));
     }
+
+    @Test
+    void trustsTheCellVanillaCheckedForPlacement()
+    {
+        assertTrue(CreatorPlacementPolicy.canWriteAlongside(true, false, false));
+    }
+
+    @Test
+    void otherWrittenCellsMustStillBeFree()
+    {
+        assertTrue(CreatorPlacementPolicy.canWriteAlongside(false, true, false));
+        assertTrue(CreatorPlacementPolicy.canWriteAlongside(false, false, true));
+        assertFalse(CreatorPlacementPolicy.canWriteAlongside(false, false, false));
+    }
 }

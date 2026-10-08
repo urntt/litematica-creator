@@ -49,6 +49,37 @@ public final class CreatorSchematicEditor
         }
     }
 
+    /**
+     * Writes several cells of one placement as a single edit, such as both halves of a door. Every cell is checked
+     * before anything is written, so either all cells are written or none is.
+     *
+     * @return whether any cell changed
+     */
+    public static boolean setBlockStates(SchematicPlacement placement, Map<BlockPos, BlockState> worldStates)
+    {
+        try (CreatorSchematicEditGuard.EditTransaction transaction = CreatorSchematicEditGuard.beginEdit())
+        {
+            for (BlockPos worldPos : worldStates.keySet())
+            {
+                @Nullable CreatorPlacementTarget target = findRegionAt(placement, worldPos);
+
+                if (target != null && locateCell(placement, target, worldPos) == null)
+                {
+                    return false;
+                }
+            }
+
+            boolean changed = false;
+
+            for (Map.Entry<BlockPos, BlockState> entry : worldStates.entrySet())
+            {
+                changed |= setBlockStateLocked(placement, entry.getKey(), entry.getValue(), transaction);
+            }
+
+            return changed;
+        }
+    }
+
     private static boolean setBlockStateLocked(
             SchematicPlacement placement,
             BlockPos worldPos,
@@ -68,30 +99,17 @@ public final class CreatorSchematicEditor
             return true;
         }
 
+        @Nullable Cell cell = locateCell(placement, target, worldPos);
+
+        if (cell == null)
+        {
+            return false;
+        }
+
         LitematicaSchematic schematic = placement.getSchematic();
-        String regionName = target.regionName();
-        LitematicaBlockStateContainer container = schematic.getSubRegionContainer(regionName);
-        SubRegionPlacement regionPlacement = placement.getRelativeSubRegionPlacement(regionName);
-
-        if (container == null || regionPlacement == null)
-        {
-            return false;
-        }
-
-        BlockPos containerPos = SchematicUtils.getSchematicContainerPositionFromWorldPosition(
-                worldPos,
-                schematic,
-                regionName,
-                placement,
-                regionPlacement,
-                container
-        );
-
-        if (containerPos == null)
-        {
-            return false;
-        }
-
+        String regionName = cell.regionName();
+        LitematicaBlockStateContainer container = cell.container();
+        BlockPos containerPos = cell.containerPos();
         BlockState oldState = container.get(containerPos.getX(), containerPos.getY(), containerPos.getZ());
         BlockState newState = SchematicUtils.getUntransformedBlockState(worldState, placement, regionName);
 
@@ -144,11 +162,24 @@ public final class CreatorSchematicEditor
     {
         @Nullable CreatorPlacementTarget target = findRegionAt(placement, worldPos);
 
-        if (target == null)
+        @Nullable Cell cell = target != null ? locateCell(placement, target, worldPos) : null;
+
+        if (cell == null)
         {
             return Blocks.AIR.defaultBlockState();
         }
 
+        BlockPos containerPos = cell.containerPos();
+        return toWorldBlockState(
+                cell.container().get(containerPos.getX(), containerPos.getY(), containerPos.getZ()),
+                placement,
+                cell.regionPlacement()
+        );
+    }
+
+    @Nullable
+    private static Cell locateCell(SchematicPlacement placement, CreatorPlacementTarget target, BlockPos worldPos)
+    {
         LitematicaSchematic schematic = placement.getSchematic();
         String regionName = target.regionName();
         LitematicaBlockStateContainer container = schematic.getSubRegionContainer(regionName);
@@ -156,7 +187,7 @@ public final class CreatorSchematicEditor
 
         if (container == null || regionPlacement == null)
         {
-            return Blocks.AIR.defaultBlockState();
+            return null;
         }
 
         BlockPos containerPos = SchematicUtils.getSchematicContainerPositionFromWorldPosition(
@@ -168,16 +199,15 @@ public final class CreatorSchematicEditor
                 container
         );
 
-        if (containerPos == null)
-        {
-            return Blocks.AIR.defaultBlockState();
-        }
+        return containerPos != null ? new Cell(regionName, container, regionPlacement, containerPos) : null;
+    }
 
-        return toWorldBlockState(
-                container.get(containerPos.getX(), containerPos.getY(), containerPos.getZ()),
-                placement,
-                regionPlacement
-        );
+    private record Cell(
+            String regionName,
+            LitematicaBlockStateContainer container,
+            SubRegionPlacement regionPlacement,
+            BlockPos containerPos)
+    {
     }
 
     @Nullable

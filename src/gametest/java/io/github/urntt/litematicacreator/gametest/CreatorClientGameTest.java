@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,11 +33,22 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.util.Util;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.AbstractBedBlock;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CandleBlock;
 import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.CrossCollisionBlock;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.minecraft.world.level.block.state.properties.SlabType;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.ScheduledTick;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
@@ -46,6 +58,7 @@ import org.objectweb.asm.tree.ClassNode;
 public final class CreatorClientGameTest implements FabricClientGameTest
 {
     private static final String CREATOR_MIXIN_CONFIG = "mixins.litematica_creator.json";
+    private static final float CAMERA_EYE_HEIGHT = 1.62F;
 
     @Override
     public void runTest(ClientGameTestContext context)
@@ -268,6 +281,7 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                 check(mc.level.getBlockState(stairsPos).isAir(), "The debug stick must not change the real world");
                 CreatorCameraController.getInstance().deactivate(mc);
             });
+            runPlacementMatrix(context, world, placement, origin);
             context.runOnClient(mc ->
             {
                 var manager = CreatorManager.getInstance();
@@ -293,6 +307,244 @@ public final class CreatorClientGameTest implements FabricClientGameTest
             check(!Boolean.getBoolean("litematica.creator.gametest.verifyFailure"),
                     "Intentional failure to verify the client GameTest failure gate");
             LitematicaCreator.LOGGER.info("Creator client GameTest passed: projection edits, virtual inventory, camera, focus, discard and real-world isolation");
+        }
+    }
+
+    /**
+     * Places blocks through the real use-input path with the Creator Camera aimed at fixed targets. Every case runs and
+     * all failures are reported together, so one run shows the whole matrix.
+     */
+    private static void runPlacementMatrix(
+            ClientGameTestContext context,
+            TestSingleplayerContext world,
+            SchematicPlacement placement,
+            BlockPos origin)
+    {
+        BlockPos door = origin.offset(0, 0, 4);
+        BlockPos bed = origin.offset(6, 0, 4);
+        BlockPos slab = origin.offset(12, 0, 4);
+        BlockPos candle = origin.offset(0, 0, 9);
+        BlockPos fence = origin.offset(6, 0, 9);
+        BlockPos torchSupport = origin.offset(12, 0, 9);
+        BlockPos blockedDoor = origin.offset(0, 0, 14);
+        BlockPos realGrass = origin.offset(6, 0, 14);
+        BlockPos lichenSupport = origin.offset(12, 0, 14);
+        List<BlockPos> projectionOnly = List.of(
+                door.above(), door.above(2), bed.above(), bed.above().south(), slab.above(), candle.above(),
+                fence.above(), fence.above().west(), torchSupport.east(), blockedDoor.east(), lichenSupport.east()
+        );
+        List<String> failures = new ArrayList<>();
+
+        world.getServer().runOnServer(server ->
+        {
+            server.overworld().setBlockAndUpdate(realGrass, Blocks.GRASS_BLOCK.defaultBlockState());
+            server.overworld().setBlockAndUpdate(realGrass.above(), Blocks.SHORT_GRASS.defaultBlockState());
+        });
+        context.runOnClient(mc ->
+        {
+            check(CreatorSchematicEditor.setBlockState(placement, door, Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, bed, Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, slab, Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, candle, Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, fence, Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, fence.above().west(), Blocks.OAK_FENCE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, torchSupport, Blocks.OAK_SLAB.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, lichenSupport, Blocks.OAK_SLAB.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, blockedDoor, Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, blockedDoor.east().above(), Blocks.STONE.defaultBlockState()),
+                    "Placement matrix supports must be written");
+            check(CreatorCameraController.getInstance().activate(mc), "Creator Camera must activate for the placement matrix");
+        });
+        awaitSchematicWorld(context, placement, door, bed, slab, candle, fence, fence.above().west(), torchSupport,
+                lichenSupport, blockedDoor, blockedDoor.east().above());
+        context.waitFor(mc -> mc.level.getBlockState(realGrass.above()).is(Blocks.SHORT_GRASS));
+
+        useFromAbove(context, Items.OAK_DOOR, door.above(3));
+        context.runOnClient(mc ->
+        {
+            BlockState lower = CreatorSchematicEditor.getBlockState(placement, door.above());
+            BlockState upper = CreatorSchematicEditor.getBlockState(placement, door.above(2));
+            expect(failures, lower.is(Blocks.OAK_DOOR) && lower.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER,
+                    "A door must place its lower half on the clicked face");
+            expect(failures, upper.is(Blocks.OAK_DOOR) && upper.getValue(DoorBlock.HALF) == DoubleBlockHalf.UPPER,
+                    "A door must also place its upper half");
+        });
+
+        useFromAbove(context, Items.STRAW_BED, bed.above(2));
+        context.runOnClient(mc ->
+        {
+            BlockState foot = CreatorSchematicEditor.getBlockState(placement, bed.above());
+            BlockState head = CreatorSchematicEditor.getBlockState(placement, bed.above().south());
+            expect(failures, foot.is(Blocks.STRAW_BED) && foot.getValue(AbstractBedBlock.PART) == BedPart.FOOT,
+                    "A bed must place its foot on the clicked face");
+            expect(failures, head.is(Blocks.STRAW_BED) && head.getValue(AbstractBedBlock.PART) == BedPart.HEAD,
+                    "A bed must also place its head in the facing direction");
+        });
+
+        useFromAbove(context, Items.OAK_SLAB, slab.above(2));
+        awaitSchematicWorld(context, placement, slab.above());
+        useFromAbove(context, Items.OAK_SLAB, slab.above(2));
+        context.runOnClient(mc ->
+        {
+            BlockState merged = CreatorSchematicEditor.getBlockState(placement, slab.above());
+            expect(failures, merged.is(Blocks.OAK_SLAB) && merged.getValue(SlabBlock.TYPE) == SlabType.DOUBLE,
+                    "Using a slab on the top of a bottom slab must merge them into a double slab");
+            expect(failures, CreatorSchematicEditor.getBlockState(placement, slab.above(2)).isAir(),
+                    "Merging slabs must not place a second slab above");
+        });
+
+        useFromAbove(context, Items.CANDLE, candle.above(2));
+        awaitSchematicWorld(context, placement, candle.above());
+        useFromAbove(context, Items.CANDLE, candle.above(2));
+        context.runOnClient(mc ->
+        {
+            BlockState candles = CreatorSchematicEditor.getBlockState(placement, candle.above());
+            expect(failures, candles.is(Blocks.CANDLE) && candles.getValue(CandleBlock.CANDLES) == 2,
+                    "Using a candle on a candle must add a second candle to the same cell");
+        });
+
+        // A fence is 1.5 blocks tall, so the camera stands one block higher to stay clear of it.
+        useFromAbove(context, Items.OAK_FENCE, fence.above(3));
+        context.runOnClient(mc ->
+        {
+            BlockState placed = CreatorSchematicEditor.getBlockState(placement, fence.above());
+            BlockState neighbour = CreatorSchematicEditor.getBlockState(placement, fence.above().west());
+            expect(failures, placed.is(Blocks.OAK_FENCE) && placed.getValue(CrossCollisionBlock.WEST),
+                    "A placed fence must connect to the adjacent projection fence");
+            expect(failures, neighbour.is(Blocks.OAK_FENCE) && neighbour.getValue(CrossCollisionBlock.EAST),
+                    "The adjacent projection fence must update its shape to connect back");
+        });
+
+        context.runOnClient(mc -> CreatorManager.getInstance().clearFocusSilently());
+        useFromEast(context, Items.OAK_DOOR, blockedDoor, 0.5D);
+        context.runOnClient(mc ->
+        {
+            expect(failures, CreatorSchematicEditor.getBlockState(placement, blockedDoor.east()).isAir(),
+                    "A door whose upper cell is occupied must not be placed");
+            expect(failures, CreatorSchematicEditor.getBlockState(placement, blockedDoor.east().above()).is(Blocks.STONE),
+                    "A refused door must leave the occupying projection in place");
+            expect(failures, CreatorManager.getInstance().getFocus() == null,
+                    "A refused placement must not move Focus");
+            CreatorManager.getInstance().focusPlacement(placement);
+        });
+
+        useFromAbove(context, Items.STONE, realGrass.above(3));
+        context.runOnClient(mc ->
+        {
+            expect(failures, CreatorSchematicEditor.getBlockState(placement, realGrass.above()).is(Blocks.STONE),
+                    "Using a block on real short grass must replace the grass cell, as vanilla does");
+            expect(failures, CreatorSchematicEditor.getBlockState(placement, realGrass.above(2)).isAir(),
+                    "Using a block on real short grass must not place above the grass");
+            expect(failures, mc.level.getBlockState(realGrass.above()).is(Blocks.SHORT_GRASS),
+                    "Creator placement must not replace the real short grass");
+
+            for (BlockPos pos : projectionOnly)
+            {
+                expect(failures, mc.level.getBlockState(pos).isAir(), "Creator placement must not change the real world at " + pos);
+            }
+
+            // Look down over the whole matrix from its north edge for the screenshot.
+            var camera = CreatorCameraController.getInstance().getCamera();
+            Vec3 overview = Vec3.atBottomCenterOf(origin.offset(6, 9, -2));
+            camera.setPos(overview);
+            camera.setYRot(0.0F);
+            camera.setXRot(50.0F);
+            camera.setOldPosAndRot(overview, 0.0F, 50.0F);
+        });
+        awaitSchematicWorld(context, placement, door.above(2), bed.above().south(), slab.above(), candle.above(),
+                fence.above(), fence.above().west(), torchSupport.east(), lichenSupport.east(), realGrass.above());
+        // Let the in-game placement messages fade so they do not cover the matrix.
+        context.waitTicks(120);
+        context.takeScreenshot("creator-placement-matrix");
+        context.runOnClient(mc -> CreatorCameraController.getInstance().deactivate(mc));
+        world.getServer().runOnServer(server ->
+        {
+            for (BlockPos pos : projectionOnly)
+            {
+                expect(failures, server.overworld().getBlockState(pos).isAir(),
+                        "Creator placement must not reach the integrated server at " + pos);
+            }
+        });
+
+        check(failures.isEmpty(), "Placement matrix failed:\n - " + String.join("\n - ", failures));
+    }
+
+    // Looks straight down at the block below the camera's feet; the camera stays clear of every placed shape.
+    private static void useFromAbove(ClientGameTestContext context, Item item, BlockPos cameraFeet)
+    {
+        useWithCamera(context, item, Vec3.atBottomCenterOf(cameraFeet), 0.0F, 90.0F);
+    }
+
+    // Looks west at the east face of the target block, at the given height within that face.
+    private static void useFromEast(ClientGameTestContext context, Item item, BlockPos target, double faceHeight)
+    {
+        Vec3 eyes = new Vec3(target.getX() + 3.5D, target.getY() + faceHeight, target.getZ() + 0.5D);
+        useWithCamera(context, item, eyes.subtract(0.0D, CAMERA_EYE_HEIGHT, 0.0D), 90.0F, 0.0F);
+    }
+
+    private static void useWithCamera(ClientGameTestContext context, Item item, Vec3 feet, float yRot, float xRot)
+    {
+        context.runOnClient(mc ->
+        {
+            var inventory = CreatorInventory.getInstance();
+            inventory.runTransaction(() ->
+            {
+                for (int slot = 0; slot < CreatorInventory.SLOT_COUNT; ++slot)
+                {
+                    inventory.setStack(slot, ItemStack.EMPTY);
+                }
+                inventory.setSelectedHotbarSlot(0);
+                inventory.setStack(0, new ItemStack(item));
+            });
+            var camera = CreatorCameraController.getInstance().getCamera();
+            // A flying stand-in has no gravity, so it stays where it is aimed until the use input runs.
+            camera.getAbilities().flying = true;
+            camera.onUpdateAbilities();
+            camera.setDeltaMovement(Vec3.ZERO);
+            camera.setPos(feet);
+            camera.setYRot(yRot);
+            camera.setXRot(xRot);
+            camera.setOldPosAndRot(feet, yRot, xRot);
+            CreatorEditGestureController.INSTANCE.onPlaceInput(true, true);
+        });
+        context.waitTicks(1);
+        context.runOnClient(mc ->
+        {
+            CreatorEditGestureController.INSTANCE.onPlaceInput(false, true);
+            var camera = CreatorCameraController.getInstance().getCamera();
+            check(camera.position().equals(feet) && camera.getEyeHeight() == CAMERA_EYE_HEIGHT,
+                    "The Creator Camera must not move while a placement is aimed");
+        });
+    }
+
+    private static void awaitSchematicWorld(ClientGameTestContext context, SchematicPlacement placement, BlockPos... positions)
+    {
+        context.waitFor(mc ->
+        {
+            var schematicWorld = SchematicWorldHandler.getSchematicWorld();
+
+            if (schematicWorld == null)
+            {
+                return false;
+            }
+
+            for (BlockPos pos : positions)
+            {
+                if (schematicWorld.getBlockState(pos) != CreatorSchematicEditor.getBlockState(placement, pos))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }
+
+    private static void expect(List<String> failures, boolean condition, String message)
+    {
+        if (!condition)
+        {
+            failures.add(message);
         }
     }
 

@@ -8,6 +8,7 @@ Notable user-visible changes are recorded here in English and Chinese, following
 
 ### Added / 新增
 
+- Creator placement now follows vanilla block item rules: doors, beds, and tall plants place both cells, slabs merge, candles and sea pickles stack in one cell, facing follows the clicked face and view, and adjacent projected fences, walls, and similar blocks connect. The whole placement is checked and committed together, so no half structure is left behind. / Creator 放置改为沿用原版方块物品规则：门、床、高花放置两格，半砖合并，蜡烛与海泡菜同格叠加，朝向随点击面与视角，相邻投影中的栅栏、墙等会连接；整次放置一起校验、一起提交，不会只留下半个结构。
 - A debug stick in the Creator virtual main hand or offhand now edits projection block states with vanilla semantics: attack selects a property, use cycles its value, and sneaking reverses either; the selection is saved on the virtual stick. / Creator 虚拟主手或副手中的调试棒可按原版语义编辑投影方块状态：攻击选择属性、使用切换属性值、潜行反向，所选属性保存在虚拟调试棒上。
 - Under Creator Camera, an attack that removes no projection now swings the camera stand-in's hand once, like a vanilla attack click; nothing is sent and the real player does not animate. / Creator Camera 下攻击未删除投影时，替身会像原版攻击一样挥一次手；不发送任何数据包，真实玩家也不播放动作。
 - In Creator mode, Litematica's tool item works from the Creator virtual main hand or offhand: the Tool HUD, corner and selection clicks, mode switching, and modifier scrolling use it, and a tool click no longer also edits the projection. A tool in the real hand no longer counts while Creator mode is on. / Creator 模式下 Litematica 工具物品可从虚拟主手或副手生效：Tool HUD、角点与选择点击、模式切换及带修饰键的滚轮均识别虚拟工具，工具点击不再同时编辑投影；Creator 模式开启时真实手中的工具不再生效。
@@ -17,6 +18,7 @@ Notable user-visible changes are recorded here in English and Chinese, following
 
 ### Fixed / 修复
 
+- Placing onto a real block now decides where the block goes from that real block, as vanilla does: using a block on real short grass replaces the grass cell instead of placing above it, and the placement state is computed for the cell actually written. / 在真实方块上放置时，改为像原版一样依据该真实方块决定落点：对真实矮草放置会替换草所在格而不是放到其上方，放置状态也按实际写入的格子计算。
 - In Creator mode, the middle click no longer also runs Litematica's schematic pick block, which could change the real inventory; it now only picks into the Creator inventory. / Creator 模式下中键不再同时触发 Litematica 的原理图 pick block（它可能改动真实背包），只向 Creator 物品栏拾取。
 - Removing or replacing a projected block now also clears its block entity data and scheduled ticks, so saved schematics no longer keep stale data such as old chest contents, and emptied Creator cells are removed. / 删除或替换投影方块时会一并清除其方块实体数据与计划刻，保存的原理图不再残留旧箱子内容等过期数据，清空的 Creator cell 也会被正确移除。
 

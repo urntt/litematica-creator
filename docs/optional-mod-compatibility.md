@@ -49,6 +49,7 @@ Unit coverage verifies version policy, Tweakeroo contract probing, Creator Camer
 - **入口**：启动时一次性探测 `FeatureToggle.TWEAK_FREE_CAMERA`、`Configs.Generic` 的两个配置项，以及 `CameraEntity` 的原相机字段。运行期间只使用缓存后的反射对象。
 - **退化**：未安装时不加载任何 Tweakeroo 类。版本超出 `>=0.30.0- <0.31.0-` 或契约不完整时，记录一次明确警告并仅禁用 Tweakeroo 桥接；Creator Camera 自身仍可使用。
 - **异常边界**：运行时反射调用第一次失败后，本会话不再重复调用或刷屏；捕获配置后若只完成了部分修改，会尽力恢复原快照。
+- **放置钩子**：Creator 放置在事务世界中调用原版 `BlockItem.place`，所以 Tweakeroo 客户端放置协议（`clientPlacementRotation`）对 `BlockItem.getPlacementState` 的注入也会运行。它只解析编码进点击坐标的协议值，Creator 的普通点击不携带这类值，放置结果不变；Litematica Easy Place 的同类注入同理。两者与 Creator 放置的实机共存检查记录在 #103。
 
 26.2 时 Tweakeroo `0.29.3` 在 Sodium `0.9.2-alpha.4` 存在时会由它自己的 conditional-mixin 规则关闭两个 `sodium_breaks` Mixin；26.3 的 Tweakeroo `0.30.1` + Sodium `0.9.2+mc26.3` 组合中桥接契约同样启用。Creator Camera 不依赖这些 Tweakeroo Mixin。
 
