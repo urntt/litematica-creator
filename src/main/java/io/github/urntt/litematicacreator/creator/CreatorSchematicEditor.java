@@ -2,14 +2,18 @@ package io.github.urntt.litematicacreator.creator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
@@ -27,7 +31,9 @@ import fi.dy.masa.litematica.schematic.placement.SubRegionPlacement;
 import fi.dy.masa.litematica.schematic.placement.SubRegionPlacement.RequiredEnabled;
 import fi.dy.masa.litematica.selection.Box;
 import fi.dy.masa.litematica.util.SchematicUtils;
+import fi.dy.masa.malilib.util.data.tag.CompoundData;
 import io.github.urntt.litematicacreator.LitematicaCreator;
+import io.github.urntt.litematicacreator.compat.litematica.CreatorLitematicaDataAdapter;
 import io.github.urntt.litematicacreator.mixin.LitematicaSchematicAccessor;
 import io.github.urntt.litematicacreator.mixin.SchematicPlacementAccessor;
 import io.github.urntt.litematicacreator.mixin.SchematicPlacementManagerAccessor;
@@ -57,13 +63,32 @@ public final class CreatorSchematicEditor
      */
     public static boolean setBlockStates(SchematicPlacement placement, Map<BlockPos, BlockState> worldStates)
     {
+        return setBlockStates(placement, worldStates, Map.of());
+    }
+
+    /**
+     * Like {@link #setBlockStates(SchematicPlacement, Map)}, and also stores or removes block entity data. Block states
+     * are written first, so a block that changes drops its old data before the new data is stored.
+     *
+     * @param blockEntities world positions mapped to the data to store, or to empty to remove the cell's data
+     */
+    public static boolean setBlockStates(
+            SchematicPlacement placement,
+            Map<BlockPos, BlockState> worldStates,
+            Map<BlockPos, Optional<CompoundTag>> blockEntities)
+    {
         try (CreatorSchematicEditGuard.EditTransaction transaction = CreatorSchematicEditGuard.beginEdit())
         {
-            for (BlockPos worldPos : worldStates.keySet())
+            Set<BlockPos> positions = new HashSet<>(worldStates.keySet());
+            positions.addAll(blockEntities.keySet());
+
+            for (BlockPos worldPos : positions)
             {
                 @Nullable CreatorPlacementTarget target = findRegionAt(placement, worldPos);
 
-                if (target != null && locateCell(placement, target, worldPos) == null)
+                if (target != null ? locateCell(placement, target, worldPos) == null :
+                    blockEntities.getOrDefault(worldPos, Optional.empty()).isPresent() &&
+                    worldStates.getOrDefault(worldPos, Blocks.AIR.defaultBlockState()).isAir())
                 {
                     return false;
                 }
@@ -76,8 +101,76 @@ public final class CreatorSchematicEditor
                 changed |= setBlockStateLocked(placement, entry.getKey(), entry.getValue(), transaction);
             }
 
+            for (Map.Entry<BlockPos, Optional<CompoundTag>> entry : blockEntities.entrySet())
+            {
+                changed |= setBlockEntityDataLocked(placement, entry.getKey(), entry.getValue().orElse(null));
+            }
+
             return changed;
         }
+    }
+
+    /** A copy of the block entity data stored for a projection cell, or empty when the cell has none. */
+    public static Optional<CompoundTag> getBlockEntityData(SchematicPlacement placement, BlockPos worldPos)
+    {
+        @Nullable CreatorPlacementTarget target = findRegionAt(placement, worldPos);
+        @Nullable Cell cell = target != null ? locateCell(placement, target, worldPos) : null;
+
+        if (cell == null)
+        {
+            return Optional.empty();
+        }
+
+        @Nullable Map<BlockPos, CompoundData> blockEntities = placement.getSchematic().getBlockEntityMapForRegion(cell.regionName());
+        @Nullable CompoundData data = blockEntities != null ? blockEntities.get(cell.containerPos()) : null;
+        return data != null ? Optional.of(CreatorLitematicaDataAdapter.copyToVanilla(data)) : Optional.empty();
+    }
+
+    private static boolean setBlockEntityDataLocked(SchematicPlacement placement, BlockPos worldPos, @Nullable CompoundTag data)
+    {
+        @Nullable CreatorPlacementTarget target = findRegionAt(placement, worldPos);
+        @Nullable Cell cell = target != null ? locateCell(placement, target, worldPos) : null;
+
+        if (cell == null)
+        {
+            return false;
+        }
+
+        LitematicaSchematic schematic = placement.getSchematic();
+        Map<BlockPos, CompoundData> blockEntities = ((LitematicaSchematicAccessor) schematic).litematicacreator$getTileEntities()
+                .computeIfAbsent(cell.regionName(), name -> new HashMap<>());
+        BlockPos containerPos = cell.containerPos();
+        @Nullable CompoundTag local = null;
+
+        if (data != null)
+        {
+            // Like Litematica, stored block entity data carries its position inside the region.
+            local = data.copy();
+            local.putInt("x", containerPos.getX());
+            local.putInt("y", containerPos.getY());
+            local.putInt("z", containerPos.getZ());
+        }
+
+        // Compared as vanilla tags: MaLiLib's CompoundData equality is not symmetric and never matches empty compounds.
+        @Nullable CompoundData existing = blockEntities.get(containerPos);
+
+        if (Objects.equals(existing != null ? CreatorLitematicaDataAdapter.copyToVanilla(existing) : null, local))
+        {
+            return false;
+        }
+
+        if (local != null)
+        {
+            blockEntities.put(containerPos, CreatorLitematicaDataAdapter.copyToRuntime(local));
+        }
+        else
+        {
+            blockEntities.remove(containerPos);
+        }
+
+        markModified(schematic);
+        rebuildChangedBlock(schematic, cell.regionName(), containerPos, placementsFor(schematic, placement));
+        return true;
     }
 
     private static boolean setBlockStateLocked(

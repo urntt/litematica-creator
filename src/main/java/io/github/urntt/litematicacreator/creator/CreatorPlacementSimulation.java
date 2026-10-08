@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
@@ -16,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
@@ -44,17 +46,27 @@ final class CreatorPlacementSimulation
     /**
      * @param primaryPos the cell vanilla placed the block into
      * @param writes every cell to commit with its world-oriented state, in write order
+     * @param blockEntities block entity data the placed item carried, for cells where it differs from the default
      */
-    record Result(Outcome outcome, @Nullable BlockPos primaryPos, Map<BlockPos, BlockState> writes)
+    record Result(
+            Outcome outcome,
+            @Nullable BlockPos primaryPos,
+            Map<BlockPos, BlockState> writes,
+            Map<BlockPos, CompoundTag> blockEntities)
     {
-        private static Result placed(BlockPos primaryPos, Map<BlockPos, BlockState> writes)
+        private static Result placed(BlockPos primaryPos, Map<BlockPos, BlockState> writes, Map<BlockPos, CompoundTag> blockEntities)
         {
-            return new Result(Outcome.PLACED, primaryPos, Collections.unmodifiableMap(writes));
+            return new Result(
+                    Outcome.PLACED,
+                    primaryPos,
+                    Collections.unmodifiableMap(writes),
+                    Collections.unmodifiableMap(blockEntities)
+            );
         }
 
         private static Result failed(Outcome outcome)
         {
-            return new Result(outcome, null, Map.of());
+            return new Result(outcome, null, Map.of(), Map.of());
         }
 
         boolean placed()
@@ -147,8 +159,29 @@ final class CreatorPlacementSimulation
             return Result.failed(Outcome.BLOCKED);
         }
 
+        Map<BlockPos, CompoundTag> blockEntities = placedBlockEntities(world, writes);
         writes.putAll(updateAdjacentShapes(world, writes));
-        return Result.placed(primaryPos, writes);
+        return Result.placed(primaryPos, writes, blockEntities);
+    }
+
+    // Vanilla applied the item's components and block entity data to the block entities it asked for while placing.
+    private static Map<BlockPos, CompoundTag> placedBlockEntities(CreatorPlacementWorld world, Map<BlockPos, BlockState> writes)
+    {
+        Map<BlockPos, CompoundTag> blockEntities = new LinkedHashMap<>();
+
+        for (Map.Entry<BlockPos, BlockState> write : writes.entrySet())
+        {
+            @Nullable BlockEntity blockEntity = world.placedBlockEntity(write.getKey());
+
+            if (blockEntity != null && blockEntity.getType().isValid(write.getValue()))
+            {
+                blockEntity.setBlockState(write.getValue());
+                CreatorBlockEntityData.persistent(blockEntity, world.registryAccess())
+                        .ifPresent(data -> blockEntities.put(write.getKey(), data));
+            }
+        }
+
+        return blockEntities;
     }
 
     private static Map<BlockPos, BlockState> updateAdjacentShapes(CreatorPlacementWorld world, Map<BlockPos, BlockState> writes)

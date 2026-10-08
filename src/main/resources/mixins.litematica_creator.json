@@ -6,6 +6,7 @@
 	"client": [
 		"AvatarRendererMixin",
 		"BambooSoilMixin",
+		"BlockItemCustomDataMixin",
 		"BlockStateSurvivalMixin",
 		"ChunkRendererSchematicVboAccessor",
 		"ChunkRenderTaskSchematicAccessor",

@@ -11,6 +11,7 @@ import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import fi.dy.masa.malilib.util.data.tag.CompoundData;
 import io.github.urntt.litematicacreator.LitematicaCreator;
 import io.github.urntt.litematicacreator.camera.CreatorCameraController;
+import io.github.urntt.litematicacreator.compat.litematica.CreatorLitematicaDataAdapter;
 import io.github.urntt.litematicacreator.config.Configs;
 import io.github.urntt.litematicacreator.creator.CreatorEditGestureController;
 import io.github.urntt.litematicacreator.creator.CreatorInventory;
@@ -25,17 +26,23 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import javax.annotation.Nullable;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.level.block.AbstractBedBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CandleBlock;
@@ -47,6 +54,11 @@ import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SpeleothemBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.WallTorchBlock;
+import net.minecraft.world.level.block.entity.BannerBlockEntity;
+import net.minecraft.world.level.block.entity.BannerPatternLayers;
+import net.minecraft.world.level.block.entity.BannerPatterns;
+import net.minecraft.world.level.block.entity.BlockEntityTypes;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
@@ -285,6 +297,7 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                 CreatorCameraController.getInstance().deactivate(mc);
             });
             runPlacementMatrix(context, world, placement, origin);
+            runBlockEntityMatrix(context, world, placement, origin);
             context.runOnClient(mc ->
             {
                 var manager = CreatorManager.getInstance();
@@ -532,20 +545,150 @@ public final class CreatorClientGameTest implements FabricClientGameTest
         check(failures.isEmpty(), "Placement matrix failed:\n - " + String.join("\n - ", failures));
     }
 
+    /**
+     * Keeps block entity data carried by placed items. Like the placement matrix, every case runs and failures are
+     * reported together.
+     */
+    private static void runBlockEntityMatrix(
+            ClientGameTestContext context,
+            TestSingleplayerContext world,
+            SchematicPlacement placement,
+            BlockPos origin)
+    {
+        BlockPos namedChest = origin.offset(0, 0, -8);
+        BlockPos banner = origin.offset(6, 0, -8);
+        BlockPos commandData = origin.offset(12, 0, -8);
+        BlockPos plainChest = origin.offset(0, 0, -13);
+        List<BlockPos> projectionOnly = List.of(
+                namedChest.above(), banner.above(), commandData.above(), plainChest.above()
+        );
+        List<String> failures = new ArrayList<>();
+        List<ItemStack> realInventory = context.computeOnClient(mc ->
+        {
+            List<ItemStack> stacks = new ArrayList<>();
+
+            for (int slot = 0; slot < mc.player.getInventory().getContainerSize(); ++slot)
+            {
+                stacks.add(mc.player.getInventory().getItem(slot).copy());
+            }
+
+            return stacks;
+        });
+
+        context.runOnClient(mc ->
+        {
+            check(CreatorSchematicEditor.setBlockState(placement, namedChest, Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, banner, Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, commandData, Blocks.STONE.defaultBlockState())
+                            && CreatorSchematicEditor.setBlockState(placement, plainChest, Blocks.STONE.defaultBlockState()),
+                    "Block entity matrix projections must be written");
+            check(CreatorCameraController.getInstance().activate(mc), "Creator Camera must activate for the block entity matrix");
+        });
+        awaitSchematicWorld(context, placement, namedChest, banner, commandData, plainChest);
+
+        ItemStack named = new ItemStack(Items.CHEST);
+        named.set(DataComponents.CUSTOM_NAME, Component.literal("Creator Chest"));
+        useFromAbove(context, named, namedChest.above(2));
+        ItemStack patterned = context.computeOnClient(mc ->
+        {
+            ItemStack stack = new ItemStack(Items.BANNER.pick(DyeColor.WHITE));
+            stack.set(DataComponents.BANNER_PATTERNS, new BannerPatternLayers.Builder()
+                    .add(mc.level.registryAccess().lookupOrThrow(Registries.BANNER_PATTERN).getOrThrow(BannerPatterns.STRIPE_TOP), DyeColor.RED)
+                    .build());
+            return stack;
+        });
+        useFromAbove(context, patterned, banner.above(3));
+        CompoundTag command = new CompoundTag();
+        command.putString("Command", "say creator");
+        ItemStack commandBlock = new ItemStack(Items.COMMAND_BLOCK);
+        commandBlock.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(BlockEntityTypes.COMMAND_BLOCK, command));
+        useFromAbove(context, commandBlock, commandData.above(2));
+        useFromAbove(context, new ItemStack(Items.CHEST), plainChest.above(2));
+        awaitSchematicWorld(context, placement, namedChest.above(), banner.above(), commandData.above(), plainChest.above());
+        context.waitTicks(5);
+        context.runOnClient(mc ->
+        {
+            CompoundTag chestData = blockEntityData(placement, namedChest.above());
+            expect(failures, chestData != null && chestData.contains("CustomName"),
+                    "A named chest must keep its custom name in the projection");
+            expect(failures, SchematicWorldHandler.getSchematicWorld().getBlockEntity(namedChest.above()) instanceof ChestBlockEntity chest
+                            && chest.getCustomName() != null,
+                    "The schematic world must load the placed chest's custom name");
+            CompoundTag bannerData = blockEntityData(placement, banner.above());
+            expect(failures, bannerData != null && bannerData.contains("patterns"),
+                    "A banner must keep its patterns in the projection");
+            expect(failures, SchematicWorldHandler.getSchematicWorld().getBlockEntity(banner.above()) instanceof BannerBlockEntity flag
+                            && flag.getPatterns().layers().size() == 1,
+                    "The schematic world must render the placed banner's pattern");
+            CompoundTag commandTag = blockEntityData(placement, commandData.above());
+            expect(failures, commandTag != null && "say creator".equals(commandTag.getStringOr("Command", "")),
+                    "Block entity data on an item must be kept without the real player's permissions");
+            expect(failures, CreatorSchematicEditor.getBlockState(placement, plainChest.above()).is(Blocks.CHEST)
+                            && blockEntityData(placement, plainChest.above()) == null,
+                    "A plain chest must not store default block entity data");
+        });
+
+        context.runOnClient(mc ->
+        {
+            for (int slot = 0; slot < realInventory.size(); ++slot)
+            {
+                expect(failures, ItemStack.matches(realInventory.get(slot), mc.player.getInventory().getItem(slot)),
+                        "Block entity edits must not change the real inventory at slot " + slot);
+            }
+
+            for (BlockPos pos : projectionOnly)
+            {
+                expect(failures, mc.level.getBlockState(pos).isAir(), "Block entity edits must not change the real world at " + pos);
+            }
+
+            CreatorCameraController.getInstance().deactivate(mc);
+        });
+        world.getServer().runOnServer(server ->
+        {
+            for (BlockPos pos : projectionOnly)
+            {
+                expect(failures, server.overworld().getBlockState(pos).isAir(),
+                        "Block entity edits must not reach the integrated server at " + pos);
+            }
+        });
+
+        check(failures.isEmpty(), "Block entity matrix failed:\n - " + String.join("\n - ", failures));
+    }
+
+    @Nullable
+    private static CompoundTag blockEntityData(SchematicPlacement placement, BlockPos pos)
+    {
+        var target = CreatorSchematicEditor.findRegionAt(placement, pos);
+
+        if (target == null)
+        {
+            return null;
+        }
+
+        // Creator cells are 1x1x1 regions, so the cell's data lives at the region origin.
+        CompoundData data = placement.getSchematic().getBlockEntityMapForRegion(target.regionName()).get(BlockPos.ZERO);
+        return data != null ? CreatorLitematicaDataAdapter.copyToVanilla(data) : null;
+    }
+
     // Looks straight down at the block below the camera's feet; the camera stays clear of every placed shape.
     private static void useFromAbove(ClientGameTestContext context, Item item, BlockPos cameraFeet)
     {
-        useWithCamera(context, item, Vec3.atBottomCenterOf(cameraFeet), 0.0F, 90.0F);
+        useFromAbove(context, new ItemStack(item), cameraFeet);
+    }
+
+    private static void useFromAbove(ClientGameTestContext context, ItemStack stack, BlockPos cameraFeet)
+    {
+        useWithCamera(context, stack, Vec3.atBottomCenterOf(cameraFeet), 0.0F, 90.0F);
     }
 
     // Looks west at the east face of the target block, at the given height within that face.
     private static void useFromEast(ClientGameTestContext context, Item item, BlockPos target, double faceHeight)
     {
         Vec3 eyes = new Vec3(target.getX() + 3.5D, target.getY() + faceHeight, target.getZ() + 0.5D);
-        useWithCamera(context, item, eyes.subtract(0.0D, CAMERA_EYE_HEIGHT, 0.0D), 90.0F, 0.0F);
+        useWithCamera(context, new ItemStack(item), eyes.subtract(0.0D, CAMERA_EYE_HEIGHT, 0.0D), 90.0F, 0.0F);
     }
 
-    private static void useWithCamera(ClientGameTestContext context, Item item, Vec3 feet, float yRot, float xRot)
+    private static void useWithCamera(ClientGameTestContext context, ItemStack stack, Vec3 feet, float yRot, float xRot)
     {
         context.runOnClient(mc ->
         {
@@ -557,7 +700,7 @@ public final class CreatorClientGameTest implements FabricClientGameTest
                     inventory.setStack(slot, ItemStack.EMPTY);
                 }
                 inventory.setSelectedHotbarSlot(0);
-                inventory.setStack(0, new ItemStack(item));
+                inventory.setStack(0, stack.copy());
             });
             var camera = CreatorCameraController.getInstance().getCamera();
             // A flying stand-in has no gravity, so it stays where it is aimed until the use input runs.

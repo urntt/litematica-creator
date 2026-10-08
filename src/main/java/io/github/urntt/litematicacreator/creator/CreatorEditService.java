@@ -1,11 +1,15 @@
 package io.github.urntt.litematicacreator.creator;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nullable;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -154,7 +158,10 @@ public class CreatorEditService
         boolean editsExisting = resolution.action() == CreatorTargetResolver.Action.EDIT;
         SchematicPlacement placement = editsExisting ? resolution.placement() : manager.createBlank(result.primaryPos());
 
-        if (!CreatorSchematicEditor.setBlockStates(placement, result.writes()))
+        Map<BlockPos, Optional<CompoundTag>> blockEntities = new LinkedHashMap<>();
+        result.blockEntities().forEach((pos, data) -> blockEntities.put(pos, Optional.of(data)));
+
+        if (!CreatorSchematicEditor.setBlockStates(placement, result.writes(), blockEntities))
         {
             return CreatorEditOutcome.NO_CHANGE;
         }

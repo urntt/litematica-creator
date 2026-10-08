@@ -8,6 +8,7 @@ Notable user-visible changes are recorded here in English and Chinese, following
 
 ### Added / 新增
 
+- Placing an item that carries block entity data into a projection keeps that data, such as a container's custom name, banner patterns, a head's profile, shulker box contents, or `block_entity_data`; plain blocks store no default data. / 放置带有方块实体数据的物品时，投影会保留这些数据，例如容器的自定义名称、旗帜图案、头颅资料、潜影盒内容或 `block_entity_data`；普通方块不写入默认数据。
 - Creator placement now follows vanilla block item rules: doors, beds, and tall plants place both cells, slabs merge, candles and sea pickles stack in one cell, facing follows the clicked face and view, and adjacent projected fences, walls, and similar blocks connect. The whole placement is checked and committed together, so no half structure is left behind. / Creator 放置改为沿用原版方块物品规则：门、床、高花放置两格，半砖合并，蜡烛与海泡菜同格叠加，朝向随点击面与视角，相邻投影中的栅栏、墙等会连接；整次放置一起校验、一起提交，不会只留下半个结构。
 - Torches, lanterns, ladders, buttons, doors, candles, glow lichen, vines, pointed dripstone, bamboo, scaffolding, and similar blocks can be placed in a projection without projected support, following the clicked face, and seagrass and kelp can be placed without water. / 火把、灯笼、梯子、按钮、门、蜡烛、发光地衣、藤蔓、滴水石锥、竹子、脚手架等可以不依赖投影支撑，按点击面放置到投影中；海草与海带也无需有水即可放置。
 - A debug stick in the Creator virtual main hand or offhand now edits projection block states with vanilla semantics: attack selects a property, use cycles its value, and sneaking reverses either; the selection is saved on the virtual stick. / Creator 虚拟主手或副手中的调试棒可按原版语义编辑投影方块状态：攻击选择属性、使用切换属性值、潜行反向，所选属性保存在虚拟调试棒上。

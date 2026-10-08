@@ -35,6 +35,7 @@ public final class CreatorPlacementWorld extends WorldSchematic
     private final ClientLevel clientLevel;
     private final Map<BlockPos, BlockState> writes = new LinkedHashMap<>();
     private final Map<BlockPos, BlockState> projection = new HashMap<>();
+    private final Map<BlockPos, BlockEntity> blockEntities = new HashMap<>();
     private Function<BlockPos, BlockState> projectionReader = CreatorPlacementWorld::air;
     private Map<BlockPos, BlockState> overrides = Map.of();
     @Nullable private BlockPos placedPos;
@@ -96,6 +97,13 @@ public final class CreatorPlacementWorld extends WorldSchematic
     BlockPos placedPos()
     {
         return this.placedPos;
+    }
+
+    /** The block entity vanilla placement filled for a written cell, or {@code null} when it never asked for one. */
+    @Nullable
+    BlockEntity placedBlockEntity(BlockPos pos)
+    {
+        return this.blockEntities.get(pos);
     }
 
     BlockState projectionState(BlockPos pos)
@@ -163,11 +171,37 @@ public final class CreatorPlacementWorld extends WorldSchematic
         // Creator runs a single pass of shape updates over the projection itself once placement has finished.
     }
 
+    // Written cells get a detached block entity so vanilla can apply item data to it; the projection itself has none here.
     @Nullable
     @Override
     public BlockEntity getBlockEntity(BlockPos pos)
     {
-        return null;
+        BlockState state = this.writes.get(pos);
+
+        if (state == null)
+        {
+            return null;
+        }
+
+        BlockEntity existing = this.blockEntities.get(pos);
+
+        if (existing != null && existing.getType().isValid(state))
+        {
+            existing.setBlockState(state);
+            return existing;
+        }
+
+        @Nullable BlockEntity created = CreatorBlockEntityData.create(pos.immutable(), state);
+
+        if (created == null)
+        {
+            this.blockEntities.remove(pos);
+            return null;
+        }
+
+        created.setLevel(this);
+        this.blockEntities.put(pos.immutable(), created);
+        return created;
     }
 
     @Override
@@ -199,6 +233,7 @@ public final class CreatorPlacementWorld extends WorldSchematic
     {
         this.writes.clear();
         this.projection.clear();
+        this.blockEntities.clear();
         this.projectionReader = projectionReader;
         this.overrides = overrides;
         this.placedPos = null;
